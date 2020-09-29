@@ -16,4 +16,6 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("command failed: %v", err)
 	}
+
+	// Extend ti here for local thing.
 }
