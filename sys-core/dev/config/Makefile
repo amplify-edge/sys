@@ -7,7 +7,6 @@ LIB_FSPATH=$(GOPATH)/src/$(LIB)
 LIB_BIN_FSPATH=$(PWD)/bin/config
 
 
-
 print:
 	@echo
 	@echo

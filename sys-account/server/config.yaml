@@ -1,0 +1,7 @@
+sys-account:
+  name: alex
+  url: https://github.com/gen0cide
+  tags:
+    - golang
+    - infosec
+    - redteam
