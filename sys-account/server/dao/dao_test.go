@@ -1,83 +1,72 @@
-// TODO @gutterbacon Should be moved to sys-account, can i do it?
-package test_db
+package dao_test
 
-// import (
-// 	"fmt"
-// 	"log"
-// 	"testing"
-//
-// 	"github.com/genjidb/genji"
-// 	accounts "github.com/getcouragenow/sys/sys-account/server/dao"
-// 	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
-// )
-//
-// var (
-// 	testDb *genji.DB
-// )
-//
-// func init() {
-// 	testDb = db.SharedDatabase()
-// }
-//
-// func TestMakeSchema(t *testing.T) {
-// 	log.Print("MakeSchema testing .....")
-//
-// 	if err := db.MakeSchema(testDb); err != nil {
-// 		t.Error(err)
-// 	}
-// }
-//
-// func TestInsert(t *testing.T) {
-// 	log.Print("Insert testing .....")
-//
-// 	o := accounts.Org{ID: db.UID(), Name: "org001"}
-// 	if err := o.Insert(testDb); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	u := accounts.User{ID: db.UID(), Name: "user1", Email: "example001@gmail.com"}
-// 	if err := u.Insert(testDb); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	p := accounts.Project{ID: db.UID(), Name: "proj001", OrgID: o.ID}
-// 	if err := p.Insert(testDb); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	r := accounts.Roles{ID: db.UID(), Role: "admin"}
-// 	if err := r.Insert(testDb); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	pr := accounts.Permission{ID: db.UID(), User: u.Name, Org: o.Name, Project: p.Name, Role: r.Role}
-// 	if err := pr.Insert(testDb); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	log.Print("Print datas .....")
-// 	printTables(t)
-//
-// 	log.Print("Update .....")
-// 	u.Name = "user2"
-// 	u.Update(testDb)
-//
-// 	o.Name = "org002"
-// 	o.Update(testDb)
-//
-// 	p.Name = "proj002"
-// 	p.Update(testDb)
-//
-// 	r.Role = "user"
-// 	r.Update(testDb)
-//
-// 	pr.Org = o.Name
-// 	pr.Project = p.Name
-// 	pr.User = u.Name
-// 	pr.Update(testDb)
-// 	log.Print("Print datas .....")
-// 	printTables(t)
-// }
+import (
+	"github.com/getcouragenow/sys/sys-account/server/dao"
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
+
+	"github.com/genjidb/genji"
+	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
+)
+
+var (
+	testDb *genji.DB
+	accdb  *dao.AccountDB
+	err    error
+)
+
+func init() {
+	testDb = db.SharedDatabase()
+	log.Println("MakeSchema testing .....")
+	accdb, err = dao.NewAccountDB(testDb)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("successfully initialize accountdb :  %v", accdb)
+}
+
+func TestAccountInsert(t *testing.T) {
+	t.Log("on inserting accounts")
+	accs := []dao.Account{
+		{
+			ID:       db.UID(),
+			Name:     "Tupac Shakur",
+			Email:    "2pac@example.com",
+			Password: "no_biggie",
+			RoleId:   db.UID(),
+			UserDefinedFields: map[string]interface{}{
+				"City": "Compton",
+			},
+			CreatedAt: time.Now().UTC().Unix(),
+			UpdatedAt: time.Now().UTC().Unix(),
+			LastLogin: 0,
+			Disabled:  false,
+		},
+		{
+			ID:       db.UID(),
+			Name:     "Biggie",
+			Email:    "bigg@example.com",
+			Password: "two_packs",
+			RoleId:   db.UID(),
+			UserDefinedFields: map[string]interface{}{
+				"City": "NY",
+			},
+			CreatedAt: time.Now().UTC().Unix(),
+			UpdatedAt: time.Now().UTC().Unix(),
+			LastLogin: 0,
+			Disabled:  false,
+		},
+	}
+	for _, acc := range accs {
+		err = accdb.InsertAccount(&acc)
+		assert.NoError(t, err)
+	}
+	t.Log("successfully inserted accounts")
+}
+
+
 //
 // func TestQuery(t *testing.T) {
 // 	var o accounts.Org
