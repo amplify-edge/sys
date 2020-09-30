@@ -50,7 +50,7 @@ func (a *AccountDB) Exec(stmts []string, argSlices [][]interface{}) error {
 }
 
 func (a *AccountDB) Query(stmt string, args ...interface{}) (*query.Result, error) {
-	return a.Query(stmt, args...)
+	return a.db.Query(stmt, args...)
 }
 
 func (a *AccountDB) QueryOne(stmt string, args ...interface{}) (document.Document, error) {

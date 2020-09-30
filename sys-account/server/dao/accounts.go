@@ -30,11 +30,9 @@ func accountToQueryParams(acc *Account) (res QueryParams, err error) {
 	if err != nil {
 		return QueryParams{}, err
 	}
-	log.Printf("json string: %s", string(jstring))
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
 	res.Params = params
-	log.Printf("%v", res)
 	return res, err
 }
 
@@ -45,17 +43,19 @@ func (a Account) CreateSQL() []string {
 	return []string{tbl.CreateTable()}
 }
 
-func getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
+func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
 	baseStmt := sq.Select(AccColumns).From(AccTableName)
-	for k, v := range aqp.Params {
-		baseStmt = baseStmt.Where(k, v)
+	if aqp != nil && aqp.Params != nil {
+		for k, v := range aqp.Params {
+			baseStmt = baseStmt.Where(sq.Eq{k: v})
+		}
 	}
 	return baseStmt.ToSql()
 }
 
 func (a *AccountDB) GetAccount(aqp *QueryParams) (*Account, error) {
 	var acc Account
-	selectStmt, args, err := getAccountSelectStatement(aqp)
+	selectStmt, args, err := a.getAccountSelectStatement(aqp)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (a *AccountDB) GetAccount(aqp *QueryParams) (*Account, error) {
 
 func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
 	var accs []*Account
-	selectStmt, args, err := getAccountSelectStatement(aqp)
+	selectStmt, args, err := a.getAccountSelectStatement(aqp)
 	if err != nil {
 		return nil, err
 	}
@@ -78,14 +78,17 @@ func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
 		return nil, err
 	}
 	err = res.Iterate(func(d document.Document) error {
-		var acc *Account
-		if err = document.StructScan(d, acc); err != nil {
+		var acc Account
+		if err = document.StructScan(d, &acc); err != nil {
 			return err
 		}
-		accs = append(accs, acc)
+		accs = append(accs, &acc)
 		return nil
 	})
-	return accs, err
+	if err != nil {
+		return nil, err
+	}
+	return accs, nil
 }
 
 func (a *AccountDB) InsertAccount(acc *Account) error {
@@ -113,8 +116,21 @@ func (a *AccountDB) InsertAccount(acc *Account) error {
 
 func (a *AccountDB) UpdateAccount(acc *Account) error {
 	aqp, err := accountToQueryParams(acc)
+	if err != nil {
+		return err
+	}
 	var values [][]interface{}
 	stmt, args, err := sq.Update(AccTableName).SetMap(aqp.Params).ToSql()
+	if err != nil {
+		return err
+	}
+	values = append(values, args)
+	return a.Exec([]string{stmt}, values)
+}
+
+func (a *AccountDB) DeleteAccount(id string) error {
+	var values [][]interface{}
+	stmt, args, err := sq.Delete(AccTableName).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}

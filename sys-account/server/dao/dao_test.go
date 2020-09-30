@@ -15,21 +15,8 @@ var (
 	testDb *genji.DB
 	accdb  *dao.AccountDB
 	err    error
-)
 
-func init() {
-	testDb = db.SharedDatabase()
-	log.Println("MakeSchema testing .....")
-	accdb, err = dao.NewAccountDB(testDb)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("successfully initialize accountdb :  %v", accdb)
-}
-
-func TestAccountInsert(t *testing.T) {
-	t.Log("on inserting accounts")
-	accs := []dao.Account{
+	accs = []dao.Account{
 		{
 			ID:       db.UID(),
 			Name:     "Tupac Shakur",
@@ -59,6 +46,27 @@ func TestAccountInsert(t *testing.T) {
 			Disabled:  false,
 		},
 	}
+)
+
+func init() {
+	testDb = db.SharedDatabase()
+	log.Println("MakeSchema testing .....")
+	accdb, err = dao.NewAccountDB(testDb)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("successfully initialize accountdb :  %v", accdb)
+}
+
+func TestAll(t *testing.T) {
+	t.Run("testAccountInsert", TestAccountInsert)
+	t.Run("testAccountQuery", TestQueryAccounts)
+	t.Run("testAccountUpdate", TestUpdateAccounts)
+}
+
+func TestAccountInsert(t *testing.T) {
+	t.Log("on inserting accounts")
+
 	for _, acc := range accs {
 		err = accdb.InsertAccount(&acc)
 		assert.NoError(t, err)
@@ -66,132 +74,45 @@ func TestAccountInsert(t *testing.T) {
 	t.Log("successfully inserted accounts")
 }
 
+func TestQueryAccounts(t *testing.T) {
+	t.Logf("on querying accounts")
+	queryParams := []*dao.QueryParams{
+		{
+			Params: map[string]interface{}{
+				"name": "Biggie",
+			},
+		},
+		{
+			Params: map[string]interface{}{
+				"name": "Tupac Shakur",
+			},
+		},
+	}
+	var accs []*dao.Account
+	for _, qp := range queryParams {
+		acc, err := accdb.GetAccount(qp)
+		assert.NoError(t, err)
+		t.Logf("Account: %v\n", acc)
+		accs = append(accs, acc)
+	}
+	assert.NotEqual(t, accs[0], accs[1])
 
-//
-// func TestQuery(t *testing.T) {
-// 	var o accounts.Org
-// 	sql := fmt.Sprintf("SELECT * FROM " + o.TableName() + " WHERE name = 'org002';")
-// 	if err := db.QueryTable(testDb, &o, sql, func(out interface{}) {
-// 		log.Printf("org => %v", out.(*accounts.Org))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var p accounts.Project
-// 	sql = fmt.Sprintf("SELECT * FROM " + p.TableName() + " WHERE name = 'proj002';")
-// 	if err := db.QueryTable(testDb, &p, sql, func(out interface{}) {
-// 		log.Printf("proj => %v", out.(*accounts.Project))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var u accounts.User
-// 	sql = fmt.Sprintf("SELECT * FROM " + u.TableName() + " WHERE name = 'user2';")
-// 	if err := db.QueryTable(testDb, &u, sql, func(out interface{}) {
-// 		log.Printf("user => %v", out.(*accounts.User))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var r accounts.Roles
-// 	sql = fmt.Sprintf("SELECT * FROM " + r.TableName() + " WHERE role = 'user';")
-// 	if err := db.QueryTable(testDb, &r, sql, func(out interface{}) {
-// 		log.Printf("role => %v", out.(*accounts.Roles))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var pr accounts.Permission
-// 	sql = fmt.Sprintf("SELECT * FROM " + pr.TableName() + " WHERE org = 'org002' AND user = 'user2';")
-// 	if err := db.QueryTable(testDb, &pr, sql, func(out interface{}) {
-// 		log.Printf("promission => %v", out.(*accounts.Permission))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-// }
-//
-// func TestDelete(t *testing.T) {
-// 	log.Print("Clanup all tables .....")
-// 	o := accounts.Org{}
-// 	sql := "DELETE FROM " + o.TableName() + " WHERE name = 'org002';"
-// 	log.Printf("DELETE Table: %v\n sql = %v", o.TableName(), sql)
-// 	if err := testDb.Exec(sql); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	u := accounts.User{}
-// 	sql = "DELETE FROM " + u.TableName() + " WHERE name = 'user2';"
-// 	log.Printf("DELETE Table: %v\n sql = %v", u.TableName(), sql)
-// 	if err := testDb.Exec(sql); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	p := accounts.Project{}
-// 	sql = "DELETE FROM " + p.TableName() + " WHERE name = 'proj002';"
-// 	log.Printf("DELETE Table: %v\n sql = %v", p.TableName(), sql)
-// 	if err := testDb.Exec(sql); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	r := accounts.Roles{}
-// 	sql = "DELETE FROM " + r.TableName() + " WHERE role = 'user';"
-// 	log.Printf("DELETE Table: %v\n sql = %v", r.TableName(), sql)
-// 	if err := testDb.Exec(sql); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	pr := accounts.Permission{}
-// 	sql = "DELETE FROM " + pr.TableName() + " WHERE org = 'org002' AND user = 'user2';"
-// 	log.Printf("DELETE Table: %v\n sql = %v", pr.TableName(), sql)
-// 	if err := testDb.Exec(sql); err != nil {
-// 		t.Error(err)
-// 	}
-// }
-//
-// func TestFinalResult(t *testing.T) {
-// 	// If the final data is empty, it means that the test passed
-// 	log.Print("Print result datas .....")
-// 	printTables(t)
-// }
-//
-// func printTables(t *testing.T) {
-// 	var o accounts.Org
-// 	sql := fmt.Sprintf("SELECT * FROM " + o.TableName() + ";")
-// 	if err := db.QueryTable(testDb, &o, sql, func(out interface{}) {
-// 		log.Printf("org => %v", out.(*accounts.Org))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var p accounts.Project
-// 	sql = fmt.Sprintf("SELECT * FROM " + p.TableName() + ";")
-// 	if err := db.QueryTable(testDb, &p, sql, func(out interface{}) {
-// 		log.Printf("proj => %v", out.(*accounts.Project))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var u accounts.User
-// 	sql = fmt.Sprintf("SELECT * FROM " + u.TableName() + ";")
-// 	if err := db.QueryTable(testDb, &u, sql, func(out interface{}) {
-// 		log.Printf("user => %v", out.(*accounts.User))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var r accounts.Roles
-// 	sql = fmt.Sprintf("SELECT * FROM " + r.TableName() + ";")
-// 	if err := db.QueryTable(testDb, &r, sql, func(out interface{}) {
-// 		log.Printf("role => %v", out.(*accounts.Roles))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-//
-// 	var pr accounts.Permission
-// 	sql = fmt.Sprintf("SELECT * FROM " + pr.TableName() + ";")
-// 	if err := db.QueryTable(testDb, &pr, sql, func(out interface{}) {
-// 		log.Printf("promission => %v", out.(*accounts.Permission))
-// 	}); err != nil {
-// 		t.Error(err)
-// 	}
-// }
+	for _, qp := range queryParams {
+		accs, err = accdb.ListAccount(qp)
+		assert.NoError(t, err)
+	}
+}
+
+func TestUpdateAccounts(t *testing.T) {
+	accs[0].Name = "Makavelli"
+	accs[1].Name = "Notorious BIG"
+
+	for _, acc := range accs {
+		err = accdb.UpdateAccount(&acc)
+		assert.NoError(t, err)
+	}
+}
+
+func TestDeleteAccounts(t *testing.T) {
+	assert.NoError(t, accdb.DeleteAccount(accs[0].ID))
+}
