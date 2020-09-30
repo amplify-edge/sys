@@ -1,7 +1,15 @@
 sys-account:
-  name: alex
-  url: https://github.com/gen0cide
-  tags:
-    - golang
-    - infosec
-    - redteam
+  unauthenticatedRoutes:
+    - /getcouragenow.sys.v2.sys_account.AuthService/Login
+    - /getcouragenow.sys.v2.sys_account.AuthService/Register
+    - /getcouragenow.sys.v2.sys_account.AuthService/ResetPassword
+    - /getcouragenow.sys.v2.sys_account.AuthService/ForgotPassword
+    - /getcouragenow.sys.v2.sys_account.AuthService/RefreshAccessToken
+    - /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo
+  jwt:
+    access:
+      secret: "some_jwt_access_secret"
+      expiry: 3600
+    refresh:
+      secret: "some_jwt_refresh_secret"
+      expiry: 3600

@@ -1,2 +1,9 @@
 sys-account:
-  name: gen0cideOVERRIDEDEVELOPMENT
+  unauthenticatedRoutes:
+    - /getcouragenow.sys.v2.sys_account.AuthService/Login
+    - /getcouragenow.sys.v2.sys_account.AuthService/Register
+    - /getcouragenow.sys.v2.sys_account.AuthService/ResetPassword
+    - /getcouragenow.sys.v2.sys_account.AuthService/ForgotPassword
+    - /getcouragenow.sys.v2.sys_account.AuthService/RefreshAccessToken
+    - /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo
+  jwt:
