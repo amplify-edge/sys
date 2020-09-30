@@ -6,28 +6,35 @@ import (
 	"github.com/gen0cide/cfx"
 )
 
-// NewFooConfig is a constructor that uses the cfx package to inject the configuration
-// from CFX parsed YAML.
-func NewFooConfig(provider cfx.Container) (*Config, error) {
-	// create an empty Config object
-	cfg := &Config{}
+const (
+	ModuleName       = "sys-account"
+	errParsingConfig = "error parsing %s config: %v\n"
+)
 
-	// set defaults here if you want
-	cfg.Age = 99
+type SysAccountConfig struct {
+	UnauthenticatedRoutes []string  `json:"unauthenticatedRoutes,required" yaml:"unauthenticatedRoutes,required" mapstructure:"unauthenticatedRoutes,required"`
+	JWTConfig             JWTConfig `json:"jwt,required" yaml:"jwt,required" mapstructure:"jwt,required"`
+}
+
+type JWTConfig struct {
+	Access  TokenConfig `json:"access,omitempty" yaml:"access,omitempty" mapstructure:"access,omitempty"`
+	Refresh TokenConfig `json:"refresh,omitempty" yaml:"refresh,omitempty" mapstructure:"refresh,omitempty"`
+}
+
+type TokenConfig struct {
+	Secret string `json:"secret,omitempty" yaml:"secret,omitempty" mapstructure:"secret,omitempty"`
+	Expiry int    `json:"expiry,omitempty" yaml:"expiry,omitempty" mapstructure:"expiry,omitempty"`
+}
+
+func NewConfig(provider cfx.Container) (*SysAccountConfig, error) {
+	// create an empty Config object
+	cfg := &SysAccountConfig{}
 
 	// use the provider to populate the config
-	err := provider.Populate("foo", cfg)
+	err := provider.Populate(ModuleName, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing foo config: %v", err)
+		return nil, fmt.Errorf(errParsingConfig, ModuleName, err)
 	}
 
 	return cfg, nil
-}
-
-// Config defines an example foopkg Config object
-type Config struct {
-	Name string   `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
-	URL  string   `json:"url,omitempty" yaml:"url,omitempty" mapstructure:"url,omitempty"`
-	Age  int      `json:"age,omitempty" yaml:"age,omitempty" mapstructure:"age,omitempty"`
-	Tags []string `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
