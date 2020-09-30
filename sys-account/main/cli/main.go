@@ -17,5 +17,6 @@ func main() {
 		log.Fatalf("command failed: %v", err)
 	}
 
-	// Extend ti here for local thing.
+	// Extend it here for local thing.
+	// TODO @gutterbacon: do this once Config is here.
 }

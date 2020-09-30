@@ -46,15 +46,16 @@ func main() {
 	}
 	tokenConfig := auth.NewTokenConfig(accessSecret, refreshSecret)
 	// AuthDelivery will be the object to be passed around other services if you will
+	// TODO @gutterbacon: Once config is here, source one from the yamls
 	authDelivery := delivery.AuthDelivery{
 		Log:      log,
 		TokenCfg: tokenConfig,
 		UnauthenticatedRoutes: []string{
-			"/getcouragenow.v2.sys_account.AuthService/Login",
-			"/getcouragenow.v2.sys_account.AuthService/Register",
-			"/getcouragenow.v2.sys_account.AuthService/ResetPassword",
-			"/getcouragenow.v2.sys_account.AuthService/ForgotPassword",
-			"/getcouragenow.v2.sys_account.AuthService/RefreshAccessToken",
+			"/getcouragenow.sys.v2.sys_account.AuthService/Login",
+			"/getcouragenow.sys.v2.sys_account.AuthService/Register",
+			"/getcouragenow.sys.v2.sys_account.AuthService/ResetPassword",
+			"/getcouragenow.sys.v2.sys_account.AuthService/ForgotPassword",
+			"/getcouragenow.sys.v2.sys_account.AuthService/RefreshAccessToken",
 			// debugging purposes
 			"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
 		},

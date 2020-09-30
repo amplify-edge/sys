@@ -3,6 +3,7 @@ module github.com/getcouragenow/sys
 go 1.15
 
 require (
+	github.com/Masterminds/squirrel v1.4.0
 	github.com/NathanBaulch/protoc-gen-cobra v0.3.0
 	github.com/bold-commerce/protoc-gen-struct-transformer v1.0.7
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
