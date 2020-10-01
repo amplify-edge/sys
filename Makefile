@@ -1,8 +1,6 @@
 
-# This make file uses composition to keep things KISS and easy.
-# In the boilerpalte make files dont do any includes, because you will create multi permutations of possibilities.
-
-BOILERPLATE_FSPATH=./boilerplate
+SHARED_FSPATH=./../shared
+BOILERPLATE_FSPATH=$(SHARED_FSPATH)/boilerplate
 
 include $(BOILERPLATE_FSPATH)/help.mk
 include $(BOILERPLATE_FSPATH)/os.mk
@@ -30,33 +28,19 @@ this-all: this-print this-dep this-build this-print-end
 ## Print all settings
 this-print: 
 	@echo
-	@echo "-- sys: start --"
+	@echo "-- SYS: start --"
 	@echo SDK_BIN: $(SDK_BIN)
 	@echo
 
 this-print-end:
 	@echo
-	@echo "-- sys: end --"
+	@echo "-- SYS: end --"
 	@echo
 	@echo
 
 
-## Get dependencies for building
-this-dep: grpc-all-git-delete grpc-all-git-clone grpc-go-build grpc-grpcui-build grpc-protoc-build
-
-	@echo Need to get tools 
-
-	# Need shared repo build tools, NOT bs, because BS will becme part of SDK
-	# Want to use make and not github actions
-	# - Need to check if on a fork or not.
-	# 1. Do a git clone to the corect GOPATH.
-	# 2. check if the folder is there, and if not do a git clone.
-
-	# So need to convert GRPC tools to install using hashicorp go getter
-	# https://github.com/hashicorp/go-getter
-	# do it as part of shared/tools
-	# SDK can then build  
-
+this-dep:
+	cd $(SHARED_FSPATH) && $(MAKE) this-all
 
 this-prebuild:
 	# so the go mod is updated
