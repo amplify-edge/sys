@@ -15,6 +15,8 @@ var (
 	testDb *genji.DB
 	accdb  *dao.AccountDB
 	err    error
+	role1ID = db.UID()
+	role2ID = db.UID()
 
 	accs = []dao.Account{
 		{
@@ -22,7 +24,7 @@ var (
 			Name:     "Tupac Shakur",
 			Email:    "2pac@example.com",
 			Password: "no_biggie",
-			RoleId:   db.UID(),
+			RoleId:   role1ID,
 			UserDefinedFields: map[string]interface{}{
 				"City": "Compton",
 			},
@@ -36,9 +38,23 @@ var (
 			Name:     "Biggie",
 			Email:    "bigg@example.com",
 			Password: "two_packs",
-			RoleId:   db.UID(),
+			RoleId:   role2ID,
 			UserDefinedFields: map[string]interface{}{
 				"City": "NY",
+			},
+			CreatedAt: time.Now().UTC().Unix(),
+			UpdatedAt: time.Now().UTC().Unix(),
+			LastLogin: 0,
+			Disabled:  false,
+		},
+		{
+			ID:       db.UID(),
+			Name:     "Tupac Shakur",
+			Email:    "2pac@example.com",
+			Password: "no_biggie",
+			RoleId:   role1ID,
+			UserDefinedFields: map[string]interface{}{
+				"City": "Compton",
 			},
 			CreatedAt: time.Now().UTC().Unix(),
 			UpdatedAt: time.Now().UTC().Unix(),
@@ -59,12 +75,13 @@ func init() {
 }
 
 func TestAll(t *testing.T) {
-	t.Run("testAccountInsert", TestAccountInsert)
-	t.Run("testAccountQuery", TestQueryAccounts)
-	t.Run("testAccountUpdate", TestUpdateAccounts)
+	t.Run("Test Role Insert", testPermInsert)
+	t.Run("Test Account Insert", testAccountInsert)
+	t.Run("Test Account Query", testQueryAccounts)
+	t.Run("Test Account Update", testUpdateAccounts)
 }
 
-func TestAccountInsert(t *testing.T) {
+func testAccountInsert(t *testing.T) {
 	t.Log("on inserting accounts")
 
 	for _, acc := range accs {
@@ -74,7 +91,7 @@ func TestAccountInsert(t *testing.T) {
 	t.Log("successfully inserted accounts")
 }
 
-func TestQueryAccounts(t *testing.T) {
+func testQueryAccounts(t *testing.T) {
 	t.Logf("on querying accounts")
 	queryParams := []*dao.QueryParams{
 		{
@@ -103,7 +120,7 @@ func TestQueryAccounts(t *testing.T) {
 	}
 }
 
-func TestUpdateAccounts(t *testing.T) {
+func testUpdateAccounts(t *testing.T) {
 	accs[0].Name = "Makavelli"
 	accs[1].Name = "Notorious BIG"
 
@@ -113,6 +130,6 @@ func TestUpdateAccounts(t *testing.T) {
 	}
 }
 
-func TestDeleteAccounts(t *testing.T) {
+func testDeleteAccounts(t *testing.T) {
 	assert.NoError(t, accdb.DeleteAccount(accs[0].ID))
 }

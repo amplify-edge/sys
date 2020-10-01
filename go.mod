@@ -12,8 +12,8 @@ require (
 	github.com/gen0cide/cfx v0.0.4
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/modules v0.0.0-20200929083620-7b5ba8f4e251
-	github.com/getcouragenow/sys-share v0.0.0-20201001043138-051828c9f0e3
+	github.com/getcouragenow/modules v0.0.0-20200929083620-7b5ba8f4e251 // indirect
+	github.com/getcouragenow/sys-share v0.0.0-20201001051015-f46f227b1f3f
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/improbable-eng/grpc-web v0.13.0
@@ -24,6 +24,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
+	github.com/tetratelabs/getenvoy v0.1.8 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200927032502-5d4f70055728
 	google.golang.org/grpc v1.32.0
