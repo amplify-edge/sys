@@ -59,6 +59,8 @@ func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *rpc.LoginReq
 		return nil, err
 	}
 	return acc.ToProto(userRole)
+	//return &rpc.Account{
+	//}, nil
 }
 
 // DefaultInterceptor is default authN/authZ interceptor, validates only token correctness without performing any role specific authorization.
