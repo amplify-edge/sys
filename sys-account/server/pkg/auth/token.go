@@ -3,12 +3,11 @@ package auth
 import (
 	"time"
 
-	//"github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
-
 	"github.com/dgrijalva/jwt-go"
 
-	"github.com/getcouragenow/modules/sys-account/server/pkg/utilities"
 	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+
+	"github.com/getcouragenow/modules/sys-account/server/pkg/utilities"
 )
 
 var (

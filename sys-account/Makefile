@@ -6,13 +6,13 @@ include $(BOILERPLATE_FSPATH)/tool.mk
 include $(BOILERPLATE_FSPATH)/flu.mk
 include $(BOILERPLATE_FSPATH)/go.mk
 include $(BOILERPLATE_FSPATH)/grpc.mk
-include ./server/Makefile
-
 
 override FLU_SAMPLE_NAME =example
 override FLU_LIB_NAME =client
 override FLU_SAMPLE_FSPATH = $(PWD)/main/client
 
+this-all: this-build
+	
 ## Print all settings
 this-print: ## print
 	@echo -- REPO -- 
@@ -27,14 +27,15 @@ this-print: ## print
 
 	#$(MAKE) srv-print
 
-## Get dependencies for building
-this-dep: grpc-all-git-delete grpc-all-git-clone grpc-go-build grpc-grpcui-build grpc-protoc-build
 
 ## This builds everything
 this-build:
-	@echo "Generating GRPC models and services for Go & Flutter"
-	@mkdir -p server/rpc/v2
-	@mkdir -p client/lib/api/v2
+	@echo "Bu Build & Flutter"
+
+	# Flutter
+	#@mkdir -p client/lib/api/v2
+
+	# Go
 	@go generate
 
 ## Build and Run Server Example (Temporary until structure/stack is fixed)

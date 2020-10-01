@@ -21,7 +21,7 @@ override FLU_LIB_NAME =client
 
 CI_DEP=github.com/getcouragenow/sys
 CI_DEP_FORK=github.com/joe-getcouragenow/sys
-this-all: 
+this-all: this-dep this-build
 
 	# Need shared repo. 
 	# Want to use make and not github actions
@@ -32,7 +32,10 @@ this-all:
 	
 	@echo Need to get tools and install
 
-	cd sys-account/main/cli && go build .
-	cd sys-account/main/server && go build .
 
 
+## Get dependencies for building
+this-dep: grpc-all-git-delete grpc-all-git-clone grpc-go-build grpc-grpcui-build grpc-protoc-build
+
+this-build:
+	cd sys-account && $(MAKE) this-all
