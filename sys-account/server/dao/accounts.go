@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
+	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/crud"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 )
 
 type Account struct {
@@ -19,6 +23,31 @@ type Account struct {
 	UpdatedAt         int64
 	LastLogin         int64
 	Disabled          bool
+}
+
+func (a *Account) ToProto(role *rpc.UserRoles) (*rpc.Account, error) {
+	createdAt := time.Unix(a.CreatedAt, 0)
+	updatedAt := time.Unix(a.UpdatedAt, 0)
+	lastLogin := time.Unix(a.LastLogin, 0)
+	mapField := map[string]*structpb.Value{}
+	for k, v := range a.UserDefinedFields {
+		userField, err := structpb.NewValue(v)
+		if err != nil {
+			return nil, err
+		}
+		mapField[k] = userField
+	}
+	return &rpc.Account{
+		Id:        a.ID,
+		Email:     a.Email,
+		Password:  a.Password,
+		Role:      role,
+		CreatedAt: timestamppb.New(createdAt),
+		UpdatedAt: timestamppb.New(updatedAt),
+		LastLogin: timestamppb.New(lastLogin),
+		Disabled:  a.Disabled,
+		Fields:    &rpc.UserDefinedFields{Fields: mapField},
+	}, nil
 }
 
 func (a Account) TableName() string {

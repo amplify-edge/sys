@@ -15,9 +15,9 @@ const (
 	TablePrefix    = "sys_account"
 	TableSeparator = "_"
 	AccTableName   = "accounts"
-	RoleTableName  = "roles"
+	PermTableName  = "permissions"
 	AccColumns     = `id, name, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
-	RoleColumns    = `id, account_id, role, resources, created_at, updated_at`
+	PermColumns    = `id, account_id, role, project_id, org_id, created_at, updated_at`
 )
 
 func tableName(name, separator string) string {

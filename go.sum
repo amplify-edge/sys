@@ -134,6 +134,8 @@ github.com/getcouragenow/packages/mod-chat/server v0.0.0-20200928071859-8cdf1edd
 github.com/getcouragenow/sys-share v0.0.0-20201001033426-0481f136a1c9 h1:UDKh5syYaRmhFMdkg37698v29LIfLXLNqmnVLh37q7c=
 github.com/getcouragenow/sys-share v0.0.0-20201001043138-051828c9f0e3 h1:TRC5SvGqF4cU/nadv/QyWCT/OAURIszI2lg0cOmoJ9w=
 github.com/getcouragenow/sys-share v0.0.0-20201001043138-051828c9f0e3/go.mod h1:pok2S/49julqjqyJryy5wnhqbPptLzTNwtiqCrVydR0=
+github.com/getcouragenow/sys-share v0.0.0-20201001051015-f46f227b1f3f h1:XbIqEwCBwFz98z6cVisnMpRSGXKgghODhQUcU67/6dM=
+github.com/getcouragenow/sys-share v0.0.0-20201001051015-f46f227b1f3f/go.mod h1:pok2S/49julqjqyJryy5wnhqbPptLzTNwtiqCrVydR0=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
@@ -388,6 +390,7 @@ github.com/pelletier/go-toml v1.8.0/go.mod h1:D6yutnOGMveHEPV7VQOuvI/gXY61bv+9bA
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/sftp v1.10.1/go.mod h1:lYOWFsE0bwd1+KfKJaKeuokY15vzFx25BLbzYYoAxZI=
 github.com/pmezard/go-difflib v0.0.0-20151028094244-d8ed2627bdf0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

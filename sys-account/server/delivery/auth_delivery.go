@@ -2,7 +2,6 @@ package delivery
 
 import (
 	"context"
-
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -10,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
-
+	"github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+	"github.com/getcouragenow/sys/sys-account/server/dao"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
 )
 
@@ -21,6 +20,7 @@ type (
 
 	// AuthDelivery is the delivery layer of the authn
 	AuthDelivery struct {
+		store                 *dao.AccountDB
 		Log                   *l.Entry
 		TokenCfg              *auth.TokenConfig
 		UnauthenticatedRoutes []string // the auth interceptor would not intercept tokens on these routes (format is: /ProtoServiceName/ProtoServiceMethod, example: /proto.AuthService/Login).
@@ -41,19 +41,24 @@ var (
 // for now we hardcode the user first
 // later we'll use Genji from getcouragenow/sys-core/server/db
 func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *rpc.LoginRequest) (*rpc.Account, error) {
-	// TODO @winwisely268: query actual account from database and verify it here.
-	if req.GetEmail() != "superadmin@getcouragenow.org" && req.GetPassword() != "superadmin" {
-		return nil, status.Errorf(codes.Unauthenticated, "cannot authenticate: %v", auth.AuthError{Reason: auth.ErrInvalidCredentials})
+	qp := &dao.QueryParams{Params: map[string]interface{}{
+		"email":    req.GetEmail(),
+		"password": req.GetPassword(),
+	}}
+	acc, err := ad.store.GetAccount(qp)
+	if err != nil {
+		return nil, err
 	}
-	return &rpc.Account{
-		Id:       "1hpR8BL89uYI1ibPNgcRHI9Nn5Wi",
-		Email:    req.GetEmail(),
-		Password: req.GetPassword(),
-		Role: &rpc.UserRoles{
-			Role:     rpc.Roles_SUPERADMIN,
-			Resource: nil,
-		},
-	}, nil
+	qp = &dao.QueryParams{Params: map[string]interface{}{"id": acc.RoleId}}
+	role, err := ad.store.GetRole(qp)
+	if err != nil {
+		return nil, err
+	}
+	userRole, err := role.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return acc.ToProto(userRole)
 }
 
 // DefaultInterceptor is default authN/authZ interceptor, validates only token correctness without performing any role specific authorization.
@@ -80,7 +85,9 @@ func (ad *AuthDelivery) DefaultInterceptor(ctx context.Context) (context.Context
 
 // Register satisfies rpc.Register function on AuthService proto definition
 func (ad *AuthDelivery) Register(_ context.Context, in *rpc.RegisterRequest) (*rpc.RegisterResponse, error) {
-	// TODO @winwisely268: currently unimplemented
+	if in == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid argument")
+	}
 	return &rpc.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  "Not implemented",
