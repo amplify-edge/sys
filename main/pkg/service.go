@@ -4,23 +4,29 @@ package pkg
 import (
 	"context"
 	"fmt"
+
 	"github.com/genjidb/genji"
-	v2 "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
-	sysAccountServer "github.com/getcouragenow/sys/sys-account/server"
-	sysAccountDeli "github.com/getcouragenow/sys/sys-account/server/delivery"
-	sysAccountUtil "github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
-	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+
+	"net/http"
+	"time"
+
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"net/http"
-	"time"
+
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+
+	v2 "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+
+	sysAccountServer "github.com/getcouragenow/sys/sys-account/service/go"
+	sysAccountDeli "github.com/getcouragenow/sys/sys-account/service/go/delivery"
+	sysAccountUtil "github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 )
 
 const (
@@ -119,10 +125,10 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	}, nil
 }
 
-// RegisterServices method's job is to check if all the services 
+// RegisterServices method's job is to check if all the services
 // contained within SysServices is valid
 // if yes, it will register the service to the provided grpcServer
-// if not, then it won't. 
+// if not, then it won't.
 // For instance:
 // SysServices {
 // 		AuthService: exists

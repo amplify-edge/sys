@@ -16,7 +16,7 @@ require (
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
 	github.com/getcouragenow/modules v0.0.0-20200929083620-7b5ba8f4e251 // indirect
-	github.com/getcouragenow/sys-share v0.0.0-20201001064118-d1c68af8effd
+	github.com/getcouragenow/sys-share v0.0.0-20201001134349-b6260ad597cb
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
@@ -30,13 +30,14 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tetratelabs/getenvoy v0.1.8 // indirect
+	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	go.uber.org/fx v1.13.1 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20200930160638-afb6bcd081ae
 	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10
 	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f // indirect
-	golang.org/x/tools v0.0.0-20200930213115-e57f6d466a48 // indirect
-	google.golang.org/genproto v0.0.0-20200930140634-01fc692af84b // indirect
+	golang.org/x/tools v0.0.0-20201001104356-43ebab892c4c // indirect
+	google.golang.org/genproto v0.0.0-20201001141541-efaab9d3c4f7 // indirect
 	google.golang.org/grpc v1.32.0
 	google.golang.org/grpc/examples v0.0.0-20200925170654-e6c98a478e62 // indirect
 	google.golang.org/protobuf v1.25.0
