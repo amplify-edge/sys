@@ -5,6 +5,8 @@ package main
 
 import (
 	"context"
+	"github.com/getcouragenow/sys/sys-account/server"
+	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
 
 	"net/http"
 	"os"
@@ -24,7 +26,6 @@ import (
 	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 
 	"github.com/getcouragenow/sys/sys-account/server/delivery"
-	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
 )
 
@@ -35,6 +36,17 @@ func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
 		return nil
 	}
 }
+
+var (
+	defaultUnauthenticatedRoutes = []string{"/getcouragenow.sys.v2.sys_account.AuthService/Login",
+		"/getcouragenow.sys.v2.sys_account.AuthService/Register",
+		"/getcouragenow.sys.v2.sys_account.AuthService/ResetPassword",
+		"/getcouragenow.sys.v2.sys_account.AuthService/ForgotPassword",
+		"/getcouragenow.sys.v2.sys_account.AuthService/RefreshAccessToken",
+		// debugging purposes
+		"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
+	}
+)
 
 func main() {
 	log := logrus.New().WithField("svc", "sys-account")
@@ -48,22 +60,25 @@ func main() {
 		log.Fatalf("error creating jwt access token secret: %v\n", err)
 		os.Exit(1)
 	}
-	tokenConfig := auth.NewTokenConfig(accessSecret, refreshSecret)
+
 	// AuthDelivery will be the object to be passed around other services if you will
 	// TODO @gutterbacon: Once config is here, source one from the yamls
-	authDelivery := delivery.AuthDelivery{
-		Log:      log,
-		TokenCfg: tokenConfig,
-		UnauthenticatedRoutes: []string{
-			"/getcouragenow.sys.v2.sys_account.AuthService/Login",
-			"/getcouragenow.sys.v2.sys_account.AuthService/Register",
-			"/getcouragenow.sys.v2.sys_account.AuthService/ResetPassword",
-			"/getcouragenow.sys.v2.sys_account.AuthService/ForgotPassword",
-			"/getcouragenow.sys.v2.sys_account.AuthService/RefreshAccessToken",
-			// debugging purposes
-			"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
+	sysAccCfg := &server.SysAccountConfig{
+		UnauthenticatedRoutes: defaultUnauthenticatedRoutes,
+		JWTConfig: server.JWTConfig{
+			Access: server.TokenConfig{
+				Secret: string(accessSecret),
+			},
+			Refresh: server.TokenConfig{
+				Secret: string(refreshSecret),
+			},
 		},
 	}
+	authDelivery, err := delivery.NewAuthDeli(log, db.SharedDatabase(), sysAccCfg)
+	if err != nil {
+		log.Fatalf("cannot create auth delivery: %v", err)
+	}
+
 	recoveryOptions := []grpc_recovery.Option{
 		grpc_recovery.WithRecoveryHandler(recoveryHandler(log)),
 	}

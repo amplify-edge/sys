@@ -2,6 +2,8 @@ package delivery
 
 import (
 	"context"
+	"github.com/genjidb/genji"
+	"github.com/getcouragenow/sys/sys-account/server"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -27,6 +29,20 @@ type (
 		// repo ==> some repository layer for querying users
 	}
 )
+
+func NewAuthDeli(l *l.Entry, db *genji.DB, cfg *server.SysAccountConfig) (*AuthDelivery, error) {
+	accdb, err := dao.NewAccountDB(db)
+	if err != nil {
+		return nil, err
+	}
+	tokenCfg := auth.NewTokenConfig([]byte(cfg.JWTConfig.Access.Secret), []byte(cfg.JWTConfig.Refresh.Secret))
+	return &AuthDelivery{
+		store:                 accdb,
+		Log:                   l,
+		TokenCfg:              tokenCfg,
+		UnauthenticatedRoutes: cfg.UnauthenticatedRoutes,
+	}, nil
+}
 
 func (c ContextKey) String() string {
 	return "sys_account.delivery.grpc context key " + string(c)
@@ -59,8 +75,8 @@ func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *rpc.LoginReq
 		return nil, err
 	}
 	return acc.ToProto(userRole)
-	//return &rpc.Account{
-	//}, nil
+	// return &rpc.Account{
+	// }, nil
 }
 
 // DefaultInterceptor is default authN/authZ interceptor, validates only token correctness without performing any role specific authorization.
