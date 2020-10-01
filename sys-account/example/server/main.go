@@ -21,11 +21,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
 
-	"github.com/getcouragenow/sys/sys-account/server/delivery"
-	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
-	"github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
+	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 )
 
 func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
