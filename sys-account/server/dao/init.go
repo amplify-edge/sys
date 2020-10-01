@@ -23,6 +23,7 @@ type AccountDB struct {
 func NewAccountDB(db *genji.DB) (*AccountDB, error) {
 	tables := []coredb.DbModel{
 		Account{},
+		Permission{},
 	}
 	coredb.RegisterModels(modName, tables)
 	if err := coredb.MakeSchema(db); err != nil {
