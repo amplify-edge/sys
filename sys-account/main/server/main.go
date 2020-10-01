@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 
 	"github.com/getcouragenow/sys/sys-account/server/delivery"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"

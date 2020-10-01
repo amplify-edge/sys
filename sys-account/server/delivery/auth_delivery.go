@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 	"github.com/getcouragenow/sys/sys-account/server/dao"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
 )

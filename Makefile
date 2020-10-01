@@ -10,6 +10,7 @@ include $(BOILERPLATE_FSPATH)/gitr.mk
 include $(BOILERPLATE_FSPATH)/tool.mk
 include $(BOILERPLATE_FSPATH)/flu.mk
 include $(BOILERPLATE_FSPATH)/go.mk
+include $(BOILERPLATE_FSPATH)/grpc.mk
 
 
 # remove the "v" prefix
