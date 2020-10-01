@@ -1,6 +1,6 @@
 // package main
 // this is only used for local testing
-// making sure that the sys-account server works locally before wiring it up to the maintemplate.
+// making sure that the sys-account service works locally before wiring it up to the maintemplate.
 package main
 
 import (
@@ -118,8 +118,8 @@ func main() {
 		}), &http2.Server{}),
 	}
 	httpServer.Addr = "127.0.0.1:8888"
-	log.Infof("server listening at %v\n", httpServer.Addr)
+	log.Infof("service listening at %v\n", httpServer.Addr)
 	if err := httpServer.ListenAndServe(); err != nil {
-		log.Fatalf("error running http server: %v\n", err)
+		log.Fatalf("error running http service: %v\n", err)
 	}
 }

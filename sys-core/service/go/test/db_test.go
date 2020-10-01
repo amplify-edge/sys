@@ -7,8 +7,8 @@ package test_db
 // 	"testing"
 //
 // 	"github.com/genjidb/genji"
-// 	accounts "github.com/getcouragenow/sys/sys-account/server/dao"
-// 	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
+// 	accounts "github.com/getcouragenow/sys/sys-account/service/dao"
+// 	"github.com/getcouragenow/sys/sys-core/service/pkg/db"
 // )
 //
 // var (

@@ -57,7 +57,7 @@ var (
 )
 
 // for now we hardcode the user first
-// later we'll use Genji from getcouragenow/sys-core/server/db
+// later we'll use Genji from getcouragenow/sys-core/service/db
 func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *rpc.LoginRequest) (*rpc.Account, error) {
 	qp := &dao.QueryParams{Params: map[string]interface{}{
 		"email":    req.GetEmail(),

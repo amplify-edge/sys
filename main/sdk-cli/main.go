@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	// rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+	// rpc "github.com/getcouragenow/sys-share/sys-account/service/rpc/v2"
 	// "github.com/getcouragenow/sys-share/main/pkg"
-	"github.com/getcouragenow/sys-share/main/pkg"
+	//"github.com/getcouragenow/sys-share/main/pkg"
 )
 
 func main() {
@@ -14,5 +14,5 @@ func main() {
 	fmt.Println(" -- sdk cli -- ")
 
 	// strt proxy
-	pkg.Invoke()
+	//pkg.Invoke()
 }

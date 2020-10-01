@@ -2,12 +2,14 @@ package dao_test
 
 import (
 	"fmt"
-	"github.com/getcouragenow/sys/sys-account/service/go/dao"
-	"github.com/getcouragenow/sys/sys-account/service/go/rpc/v2"
-	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
+
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	"github.com/getcouragenow/sys/sys-account/service/go/dao"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )
 
 var (

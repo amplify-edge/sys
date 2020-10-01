@@ -14,6 +14,6 @@ package main
 // ============================================================================
 // GRPC & Protobuf
 // go:generate /usr/bin/env bash -c "echo 'generating protobuf and grpc services for flutter/dart'"
-// go:generate protoc -I./proto/v2 -I. --dart_out=grpc:./client/lib/api/v2/ ./proto/v2/authn.proto ./proto/v2/users.proto
+// go:generate protoc -I./proto/v2 -I. --dart_out=grpc:./flu/lib/api/v2/ ./proto/v2/authn.proto ./proto/v2/users.proto
 //go:generate /usr/bin/env bash -c "echo 'building flutter binary'"
 // go:generate make flu-web-build

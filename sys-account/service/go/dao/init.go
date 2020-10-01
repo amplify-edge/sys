@@ -5,7 +5,7 @@ import (
 	"github.com/genjidb/genji"
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/sql/query"
-	coredb "github.com/getcouragenow/sys/sys-core/server/pkg/db"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
