@@ -5,10 +5,11 @@ package main
 
 import (
 	"context"
-	"github.com/getcouragenow/sys/sys-account/server/delivery"
-	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
-	"github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
-	"github.com/getcouragenow/sys/sys-account/server/rpc/v2"
+
+	"net/http"
+	"os"
+	"time"
+
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -19,9 +20,12 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"net/http"
-	"os"
-	"time"
+
+	"github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
+
+	"github.com/getcouragenow/sys/sys-account/server/delivery"
+	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
+	"github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
 )
 
 func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {

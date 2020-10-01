@@ -2,15 +2,16 @@ package delivery_test
 
 import (
 	"context"
+	"os"
+	"testing"
+
+	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 	"github.com/getcouragenow/sys/sys-account/server/delivery"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
-	rpc "github.com/getcouragenow/sys/sys-account/server/rpc/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"os"
-	"testing"
 )
 
 var (

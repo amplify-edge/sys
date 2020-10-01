@@ -1,4 +1,4 @@
-name: CI - dev
+name: CI
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   all:
-    name: CI - dev
+    name: CI
    
     strategy:
       fail-fast: false

@@ -32,56 +32,7 @@ this-all:
 	
 	@echo Need to get tools and install
 
+	cd sys-account/main/cli && go build .
+	cd sys-account/main/server && go build .
 
 
-## Print all settings
-this-print: ## print
-	
-	$(MAKE) os-print
-	
-	$(MAKE) gitr-print
-	
-	$(MAKE) flu-print
-
-	$(MAKE) flu-gen-lang-print
-
-	$(MAKE) go-print
-
-this-dep:
-	# LOCAL DEVS: go to root make file and call this yourself to get all the tools !!!!
-	# install tools
-	cd ./tool && $(MAKE) this-build
-
-	# Install our grpc tools
-	#$(MAKE) grpc-all
-
-### CI
-
-## Build for CI. Does Big Gen !
-this-build: this-dep
-	# Does full gen and build (web)
-	cd ./maintemplate && $(MAKE) this-build
-
-## Build Desk For CI. Does Big Gen !
-this-flu-desk-build: this-dep
-	cd ./maintemplate && $(MAKE) flu-desk-build
-
-### Developers
-
-# NOTE: At dev time you only want to run long generators IF you know you need then.
-# So here are the make targets to use as you see fit.
-# Manaully do a "make this-dep" to get the golang tools yourself.
-# Manaully do a "make flu-config" to set to beta channnel yourself.
-# Manaully do a "make flu-gen-all" to gen all code yourself.
-# Manually do a "make flu-gen-lang-all" to gen all languages yourself.
-
-### For Local dev. Does NOT do big Gen !
-this-flu-desk-run:
-
-	cd ./maintemplate && $(MAKE) flu-desk-run
-
-### For Local dev. Does NOT do big Gen !
-this-flu-web-run:
-	
-
-	cd ./maintemplate && $(MAKE) flu-web-run
