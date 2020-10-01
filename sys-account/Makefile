@@ -11,26 +11,26 @@ override FLU_SAMPLE_NAME =example
 override FLU_LIB_NAME =client
 override FLU_SAMPLE_FSPATH = $(PWD)/main/client
 
-this-all: this-build
+this-all: this-print this-build this-print-end
 	
 ## Print all settings
-this-print: ## print
-	@echo -- REPO -- 
-	@echo REPOSITORY: $(REPOSITORY)
+this-print: 
+	@echo
+	@echo "-- sys: start --"
+	@echo SDK_BIN: $(SDK_BIN)
 	@echo
 
-	$(MAKE) os-print
+this-print-end:
+	@echo
+	@echo "-- sys: end --"
+	@echo
+	@echo
 	
-	$(MAKE) flu-print
-
-	$(MAKE) flu-gen-lang-print
-
-	#$(MAKE) srv-print
 
 
 ## This builds everything
 this-build:
-	@echo "Bu Build & Flutter"
+	@echo "Build & Flutter"
 
 	# Flutter
 	#@mkdir -p client/lib/api/v2
@@ -39,10 +39,10 @@ this-build:
 	@go generate
 
 ## Build and Run Server Example (Temporary until structure/stack is fixed)
-this-run-example: this-build
+this-ex-server-run:
 	@echo Running Example Server
-	$(GO_LIB_FSPATH)/bin-all/authserver
+	./bin-all/server/main
 
-this-run-example-ui:
+this-ex-ui-run:
 	@echo Running grpc-ui
 	@grpcui -plaintext localhost:8888
