@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/getcouragenow/sys/sys-account/server/rpc/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 )
 
 var rootCmd = &cobra.Command{

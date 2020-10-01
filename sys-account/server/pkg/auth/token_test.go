@@ -1,11 +1,12 @@
 package auth_test
 
 import (
+	"testing"
+
+	rpc "github.com/getcouragenow/sys-share/sys-account/server/rpc/v2"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/server/pkg/utilities"
-	rpc "github.com/getcouragenow/sys/sys-account/server/rpc/v2"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (
