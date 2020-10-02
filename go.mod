@@ -16,7 +16,7 @@ require (
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
 	github.com/getcouragenow/modules v0.0.0-20200929083620-7b5ba8f4e251 // indirect
-	github.com/getcouragenow/sys-share v0.0.0-20201001134349-b6260ad597cb
+	github.com/getcouragenow/sys-share v0.0.0-20201001151547-b3c6d1810034
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2

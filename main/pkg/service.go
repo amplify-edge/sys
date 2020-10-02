@@ -31,7 +31,7 @@ import (
 
 const (
 	errInvalidConfig = "error validating provided config, %s is %s"
-	errRunningServer = "error running grpc & grpc web server: %v"
+	errRunningServer = "error running grpc & grpc web service: %v"
 )
 
 // SysServices will be the struct provided to the callee of this package
@@ -178,7 +178,7 @@ func (s *SysServices) recoveryHandler() func(panic interface{}) error {
 	}
 }
 
-// run runs all the sys-* service as a server
+// run runs all the sys-* service as a service
 func (s *SysServices) run() error {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

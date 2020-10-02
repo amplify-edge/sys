@@ -34,7 +34,7 @@ this-build:
 	@echo "Build & Flutter"
 
 	# Flutter
-	#@mkdir -p client/lib/api/v2
+	#@mkdir -p flu/lib/api/v2
 
 	# Go
 	@go generate

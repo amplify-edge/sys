@@ -7,7 +7,7 @@ import (
 
 	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
 
-	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 	
 	
 )

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/genjidb/genji"
-	"github.com/getcouragenow/sys/sys-core/server/pkg/db"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )
 
 var (
