@@ -143,7 +143,7 @@ func (ad *AuthDelivery) Register(ctx context.Context, in *pkg.RegisterRequest) (
 	return &pkg.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
-		ErrorReason: nil,
+		ErrorReason: "",
 	}, nil
 }
 
@@ -171,8 +171,6 @@ func (ad *AuthDelivery) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg.L
 		Success:      true,
 		AccessToken:  tokenPairs.AccessToken,
 		RefreshToken: tokenPairs.RefreshToken,
-		ErrorReason:  nil,
-		LastLogin:    nil,
 	}, nil
 }
 
@@ -190,7 +188,7 @@ func (ad *AuthDelivery) ForgotPassword(ctx context.Context, in *pkg.ForgotPasswo
 	}, nil
 }
 
-func (ad *AuthDelivery) ResetPasssword(ctx context.Context, in *pkg.ResetPasswordRequest) (*pkg.ResetPasswordResponse, error) {
+func (ad *AuthDelivery) ResetPassword(ctx context.Context, in *pkg.ResetPasswordRequest) (*pkg.ResetPasswordResponse, error) {
 	if in == nil {
 		return &pkg.ResetPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request reset password endpoint: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
 	}
@@ -225,7 +223,6 @@ func (ad *AuthDelivery) RefreshAccessToken(ctx context.Context, in *pkg.RefreshA
 	}
 	return &pkg.RefreshAccessTokenResponse{
 		AccessToken: newAccessToken,
-		ErrorReason: nil,
 	}, nil
 }
 
@@ -244,6 +241,7 @@ func (ad *AuthDelivery) ObtainAccessClaimsFromMetadata(ctx context.Context, isAc
 }
 
 // ObtainClaimsFromContext obtains token claims from given context with value.
+// TODO @gutterbacon: see ../policy/stub.md
 func ObtainClaimsFromContext(ctx context.Context) auth.TokenClaims {
 	claims, ok := ctx.Value(ContextKeyClaims).(auth.TokenClaims)
 	if !ok {

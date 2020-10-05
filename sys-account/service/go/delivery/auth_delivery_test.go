@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	"github.com/getcouragenow/sys-share/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
@@ -18,7 +18,7 @@ import (
 
 var (
 	ad            *delivery.AuthDelivery
-	loginRequests = []*rpc.LoginRequest{
+	loginRequests = []*pkg.LoginRequest{
 		{
 			Email:    "someemail@example.com",
 			Password: "someInsecureBlaBlaPassword",

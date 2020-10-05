@@ -14,7 +14,6 @@ import (
 
 type Account struct {
 	ID                string
-	Name              string
 	Email             string
 	Password          string
 	RoleId            string
@@ -23,6 +22,24 @@ type Account struct {
 	UpdatedAt         int64
 	LastLogin         int64
 	Disabled          bool
+}
+
+func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
+	role, err := a.FromPkgRole(account.Role, account.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &Account{
+		ID:                account.Id,
+		Email:             account.Email,
+		Password:          account.Password,
+		UserDefinedFields: account.Fields.Fields,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		LastLogin:         account.LastLogin,
+		Disabled:          account.Disabled,
+		RoleId:            role.ID,
+	}, nil
 }
 
 func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {

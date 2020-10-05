@@ -5,7 +5,6 @@ package main
 
 import (
 	"context"
-
 	"net/http"
 	"os"
 	"time"
@@ -20,7 +19,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	
+
 	"github.com/getcouragenow/sys-share/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
@@ -87,16 +86,9 @@ func main() {
 			grpc_auth.StreamServerInterceptor(authDelivery.DefaultInterceptor),
 		),
 	)
-	rpc.RegisterAuthServiceService(grpcSrv, &rpc.AuthServiceService{
-		Register:           authDelivery.Register,
-		Login:              authDelivery.Login,
-		ForgotPassword:     authDelivery.ForgotPassword,
-		ResetPassword:      authDelivery.ResetPasssword,
-		RefreshAccessToken: authDelivery.RefreshAccessToken,
-	})
-	rpc.RegisterAccountServiceService(grpcSrv, &rpc.AccountServiceService{
-		GetAccount: authDelivery.GetAccount,
-	})
+	sysAccProxy := pkg.NewSysShareProxyService(&authDelivery, &authDelivery)
+	sysAccProxy.RegisterSvc(grpcSrv)
+
 	reflection.Register(grpcSrv)
 
 	grpcWebServer := grpcweb.WrapServer(

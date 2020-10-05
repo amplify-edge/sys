@@ -3,6 +3,7 @@ package dao
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/getcouragenow/sys-share/pkg"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -21,6 +22,22 @@ type Permission struct {
 	OrgId     string
 	CreatedAt int64 // UTC Unix timestamp
 	UpdatedAt int64
+}
+
+func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Permission, error) {
+	queryParam := &QueryParams{Params: map[string]interface{}{
+		"account_id": accountId,
+	}}
+	if role.Role > 0 && role.Role <= 4 { // Guest, Member, Admin, or SuperAdmin
+		queryParam.Params["role"] = fmt.Sprintf("%d", role.Role)
+	}
+	if role.OrgID != "" {
+		queryParam.Params["org_id"] = role.OrgID
+	}
+	if role.ProjectID != "" {
+		queryParam.Params["project_id"] = role.ProjectID
+	}
+	return a.GetRole(queryParam)
 }
 
 func (p *Permission) ToPkgRole() (*pkg.UserRoles, error) {

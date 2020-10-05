@@ -21,7 +21,6 @@ var (
 	accs = []dao.Account{
 		{
 			ID:       db.UID(),
-			Name:     "Tupac Shakur",
 			Email:    "2pac@example.com",
 			Password: "no_biggie",
 			RoleId:   role1ID,
@@ -35,7 +34,6 @@ var (
 		},
 		{
 			ID:       db.UID(),
-			Name:     "Biggie",
 			Email:    "bigg@example.com",
 			Password: "two_packs",
 			RoleId:   role2ID,
@@ -49,7 +47,6 @@ var (
 		},
 		{
 			ID:       db.UID(),
-			Name:     "Tupac Shakur",
 			Email:    "2pac@example.com",
 			Password: "no_biggie",
 			RoleId:   role1ID,
@@ -124,8 +121,8 @@ func testQueryAccounts(t *testing.T) {
 }
 
 func testUpdateAccounts(t *testing.T) {
-	accs[0].Name = "Makavelli"
-	accs[1].Name = "Notorious BIG"
+	accs[0].Email = "makavelli@example.com"
+	accs[1].Email = "notorious_big@example.com"
 
 	for _, acc := range accs {
 		err = accdb.UpdateAccount(&acc)

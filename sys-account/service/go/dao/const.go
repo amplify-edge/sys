@@ -16,7 +16,7 @@ const (
 	TableSeparator = "_"
 	AccTableName   = "accounts"
 	PermTableName  = "permissions"
-	AccColumns     = `id, name, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
+	AccColumns     = `id, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
 	PermColumns    = `id, account_id, role, project_id, org_id, created_at, updated_at`
 )
 
