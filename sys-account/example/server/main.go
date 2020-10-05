@@ -20,8 +20,8 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	
+	"github.com/getcouragenow/sys-share/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"

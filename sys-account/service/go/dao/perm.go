@@ -3,14 +3,12 @@ package dao
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
-
+	"github.com/getcouragenow/sys-share/pkg"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
-
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
@@ -25,25 +23,30 @@ type Permission struct {
 	UpdatedAt int64
 }
 
-func (p *Permission) ToProto() (*rpc.UserRoles, error) {
+func (p *Permission) ToPkgRole() (*pkg.UserRoles, error) {
 	role, err := strconv.Atoi(p.Role)
 	if err != nil {
 		return nil, err
 	}
 	if p.OrgId != "" {
-		return &rpc.UserRoles{
-			Role:     rpc.Roles(role),
-			Resource: &rpc.UserRoles_Org{Org: &rpc.Org{Id: p.OrgId}},
+		return &pkg.UserRoles{
+			Role:  pkg.Roles(role),
+			OrgID: p.OrgId,
 		}, nil
 	} else if p.ProjectId != "" {
-		return &rpc.UserRoles{
-			Role:     rpc.Roles(role),
-			Resource: &rpc.UserRoles_Project{Project: &rpc.Project{Id: p.ProjectId}},
+		return &pkg.UserRoles{
+			Role:      pkg.Roles(role),
+			ProjectID: p.ProjectId,
 		}, nil
-	} else if rpc.Roles(role) == rpc.Roles_SUPERADMIN {
-		return &rpc.UserRoles{
-			Role:     rpc.Roles_SUPERADMIN,
-			Resource: nil,
+	} else if pkg.Roles(role) == 4 {
+		return &pkg.UserRoles{
+			Role: pkg.Roles(role),
+			All:  true,
+		}, nil
+	} else if pkg.Roles(role) == 1 {
+		return &pkg.UserRoles{
+			Role: pkg.Roles(role),
+			All:  false,
 		}, nil
 	}
 	return nil, errors.New("invalid Role")

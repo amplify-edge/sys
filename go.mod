@@ -17,7 +17,7 @@ require (
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
 	github.com/getcouragenow/modules v0.0.0-20200929083620-7b5ba8f4e251 // indirect
-	github.com/getcouragenow/sys-share v0.0.0-20201001151547-b3c6d1810034
+	github.com/getcouragenow/sys-share v0.0.0-20201005143256-eb5b642b46ee
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
@@ -36,7 +36,7 @@ require (
 	go.uber.org/fx v1.13.1 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20200930160638-afb6bcd081ae
-	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10
+	golang.org/x/net v0.0.0-20201002202402-0a1ea396d57c
 	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f // indirect
 	golang.org/x/tools v0.0.0-20201001104356-43ebab892c4c // indirect
 	google.golang.org/genproto v0.0.0-20201001141541-efaab9d3c4f7 // indirect

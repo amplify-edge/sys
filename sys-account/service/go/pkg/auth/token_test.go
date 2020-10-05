@@ -3,7 +3,7 @@ package auth_test
 import (
 	"testing"
 
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	pkg "github.com/getcouragenow/sys-share/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
@@ -12,7 +12,7 @@ import (
 
 var (
 	tc             *auth.TokenConfig
-	accountSeeders = []*rpc.Account{
+	accountSeeders = []*pkg.Account{
 		{
 			Id:       "1hpMOKQj30jOrqtB8hLmclWtXGx",
 			Email:    "winwisely268@example.com",
@@ -23,35 +23,27 @@ var (
 			Id:       "1hpMToJZs40ZHEiIuDGQkqtd8oV",
 			Email:    "winwisely269@example.com",
 			Password: "HATH_NO_FURY_LIKE",
-			Role: &rpc.UserRoles{
-				Role:     4, // Superadmin
-				Resource: nil,
+			Role: &pkg.UserRoles{
+				Role: 4, // Superadmin
+				All:  true,
 			},
 		},
 		{
 			Id:       "1hpMToJZs40ZHEiIuDGQkqtd8oV",
 			Email:    "winwisely267@example.com",
 			Password: "A_CI_BEING_SCORNED",
-			Role: &rpc.UserRoles{
-				Role: 3, // Org Admin
-				Resource: &rpc.UserRoles_Org{
-					Org: &rpc.Org{
-						Id: "1hpMx8pkde4IGFYdhrASY5cPei2",
-					},
-				},
+			Role: &pkg.UserRoles{
+				Role:  3, // Org Admin
+				OrgID: "1hpMx8pkde4IGFYdhrASY5cPei2",
 			},
 		},
 		{
 			Id:       "1hpMToJZs40ZHEiIuDGQkqtd8oV",
 			Email:    "winwisely267@example.com",
 			Password: "WE_WANT_GO_GENERICS",
-			Role: &rpc.UserRoles{
+			Role: &pkg.UserRoles{
 				Role: 2, // Project Admin
-				Resource: &rpc.UserRoles_Project{
-					Project: &rpc.Project{
-						Id: "1hpMx8pkde4IGFYdhrASY5cPei2",
-					},
-				},
+				ProjectID: "1hpMx8pkde4IGFYdhrASY5cPei2",
 			},
 		},
 	}

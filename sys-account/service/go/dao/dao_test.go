@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	testDb *genji.DB
-	accdb  *dao.AccountDB
-	err    error
+	testDb  *genji.DB
+	accdb   *dao.AccountDB
+	err     error
 	role1ID = db.UID()
 	role2ID = db.UID()
 
@@ -75,8 +75,11 @@ func init() {
 }
 
 func TestAll(t *testing.T) {
-	t.Run("Test Role Insert", testPermInsert)
 	t.Run("Test Account Insert", testAccountInsert)
+	t.Run("Test Role Insert", testPermInsert)
+	t.Run("Test Role Get", testPermGet)
+	t.Run("Test Role List", testPermList)
+	t.Run("Test Role Update", testPermUpdate)
 	t.Run("Test Account Query", testQueryAccounts)
 	t.Run("Test Account Update", testUpdateAccounts)
 }

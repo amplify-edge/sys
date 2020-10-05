@@ -2,16 +2,12 @@ package dao
 
 import (
 	"encoding/json"
+	"github.com/getcouragenow/sys-share/pkg"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	"github.com/genjidb/genji/document"
-
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
@@ -29,28 +25,20 @@ type Account struct {
 	Disabled          bool
 }
 
-func (a *Account) ToProto(role *rpc.UserRoles) (*rpc.Account, error) {
+func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
-	mapField := map[string]*structpb.Value{}
-	for k, v := range a.UserDefinedFields {
-		userField, err := structpb.NewValue(v)
-		if err != nil {
-			return nil, err
-		}
-		mapField[k] = userField
-	}
-	return &rpc.Account{
+	return &pkg.Account{
 		Id:        a.ID,
 		Email:     a.Email,
 		Password:  a.Password,
 		Role:      role,
-		CreatedAt: timestamppb.New(createdAt),
-		UpdatedAt: timestamppb.New(updatedAt),
-		LastLogin: timestamppb.New(lastLogin),
+		CreatedAt: createdAt.Unix(),
+		UpdatedAt: updatedAt.Unix(),
+		LastLogin: lastLogin.Unix(),
 		Disabled:  a.Disabled,
-		Fields:    &rpc.UserDefinedFields{Fields: mapField},
+		Fields:    &pkg.UserDefinedFields{Fields: a.UserDefinedFields},
 	}, nil
 }
 

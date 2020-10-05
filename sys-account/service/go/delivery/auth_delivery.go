@@ -2,18 +2,18 @@ package delivery
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/genjidb/genji"
 	server "github.com/getcouragenow/sys/sys-account/service/go"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
-
+	"github.com/getcouragenow/sys-share/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/dao"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 )
@@ -58,10 +58,10 @@ var (
 
 // for now we hardcode the user first
 // later we'll use Genji from getcouragenow/sys-core/service/db
-func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *rpc.LoginRequest) (*rpc.Account, error) {
+func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
 	qp := &dao.QueryParams{Params: map[string]interface{}{
-		"email":    req.GetEmail(),
-		"password": req.GetPassword(),
+		"email":    req.Email,
+		"password": req.Password,
 	}}
 	acc, err := ad.store.GetAccount(qp)
 	if err != nil {
@@ -72,13 +72,11 @@ func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *rpc.LoginReq
 	if err != nil {
 		return nil, err
 	}
-	userRole, err := role.ToProto()
+	userRole, err := role.ToPkgRole()
 	if err != nil {
 		return nil, err
 	}
-	return acc.ToProto(userRole)
-	// return &rpc.Account{
-	// }, nil
+	return acc.ToPkgAccount(userRole)
 }
 
 // DefaultInterceptor is default authN/authZ interceptor, validates only token correctness without performing any role specific authorization.
@@ -104,38 +102,72 @@ func (ad *AuthDelivery) DefaultInterceptor(ctx context.Context) (context.Context
 }
 
 // Register satisfies rpc.Register function on AuthService proto definition
-func (ad *AuthDelivery) Register(_ context.Context, in *rpc.RegisterRequest) (*rpc.RegisterResponse, error) {
+func (ad *AuthDelivery) Register(ctx context.Context, in *pkg.RegisterRequest) (*pkg.RegisterResponse, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid argument")
 	}
-	return &rpc.RegisterResponse{
+	if in.Password != in.PasswordConfirm {
+		return nil, status.Errorf(codes.InvalidArgument, "password mismatch")
+	}
+	// New user will be assigned GUEST role and no Org / Project for now.
+	// TODO @gutterbacon: subject to change.
+	roleId := coredb.UID()
+	accountId := coredb.UID()
+	now := timestampNow()
+	err := ad.store.InsertRole(&dao.Permission{
+		ID:        roleId,
+		AccountId: accountId,
+		Role:      "1",
+		CreatedAt: now,
+	})
+	if err != nil {
+		return &pkg.RegisterResponse{
+			Success:     false,
+			ErrorReason: err.Error(),
+		}, err
+	}
+	err = ad.store.InsertAccount(&dao.Account{
+		ID:        coredb.UID(),
+		Email:     in.Email,
+		Password:  in.Password,
+		RoleId:    roleId,
+		CreatedAt: now,
+		Disabled:  false,
+	})
+	if err != nil {
+		return &pkg.RegisterResponse{
+			Success:     false,
+			ErrorReason: err.Error(),
+		}, err
+	}
+	return &pkg.RegisterResponse{
 		Success:     true,
-		SuccessMsg:  "Not implemented",
+		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
 		ErrorReason: nil,
 	}, nil
 }
 
-func (ad *AuthDelivery) Login(ctx context.Context, in *rpc.LoginRequest) (*rpc.LoginResponse, error) {
+func (ad *AuthDelivery) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg.LoginResponse, error) {
 	if in == nil {
-		return &rpc.LoginResponse{}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
+		return &pkg.LoginResponse{}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
 	}
 	var claimant auth.Claimant
 
 	u, err := ad.getAndVerifyAccount(ctx, in)
 	if err != nil {
-		return &rpc.LoginResponse{
-			ErrorReason: &rpc.ErrorReason{Reason: err.Error()},
+		return &pkg.LoginResponse{
+			ErrorReason: err.Error(),
 		}, err
 	}
 	claimant = u
 
 	tokenPairs, err := ad.TokenCfg.NewTokenPairs(claimant)
 	if err != nil {
-		return &rpc.LoginResponse{
-			ErrorReason: &rpc.ErrorReason{Reason: err.Error()},
+		return &pkg.LoginResponse{
+			ErrorReason: err.Error(),
 		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.AuthError{Reason: auth.ErrCreatingToken, Err: err})
 	}
-	return &rpc.LoginResponse{
+	return &pkg.LoginResponse{
 		Success:      true,
 		AccessToken:  tokenPairs.AccessToken,
 		RefreshToken: tokenPairs.RefreshToken,
@@ -144,66 +176,56 @@ func (ad *AuthDelivery) Login(ctx context.Context, in *rpc.LoginRequest) (*rpc.L
 	}, nil
 }
 
-func (ad *AuthDelivery) ForgotPassword(ctx context.Context, in *rpc.ForgotPasswordRequest) (*rpc.ForgotPasswordResponse, error) {
+func (ad *AuthDelivery) ForgotPassword(ctx context.Context, in *pkg.ForgotPasswordRequest) (*pkg.ForgotPasswordResponse, error) {
 	if in == nil {
-		return &rpc.ForgotPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request forgot password endpoint: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
+		return &pkg.ForgotPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request forgot password endpoint: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
 	}
-	// TODO @winwisely268: this method is a stub (unimplemented), implement this once `sys-core` database is good.
-	return &rpc.ForgotPasswordResponse{
+	// TODO @gutterbacon: this is where we should send an email to verify the user
+	// We could also add this to audit log trail.
+	// for now this method is a stub.
+	return &pkg.ForgotPasswordResponse{
 		Success:                   false,
-		SuccessMsg:                "",
-		ErrorReason:               &rpc.ErrorReason{Reason: "Unimplemented method"},
-		ForgotPasswordRequestedAt: timestamppb.Now(),
+		ErrorReason:               "Unimplemented method",
+		ForgotPasswordRequestedAt: timestampNow(),
 	}, nil
 }
 
-func (ad *AuthDelivery) ResetPasssword(ctx context.Context, in *rpc.ResetPasswordRequest) (*rpc.ResetPasswordResponse, error) {
+func (ad *AuthDelivery) ResetPasssword(ctx context.Context, in *pkg.ResetPasswordRequest) (*pkg.ResetPasswordResponse, error) {
 	if in == nil {
-		return &rpc.ResetPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request reset password endpoint: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
+		return &pkg.ResetPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request reset password endpoint: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
 	}
-	return &rpc.ResetPasswordResponse{
+	// TODO @gutterbacon: This is where we should send an email to verify the user
+	// We could also add this to audit log trail.
+	// but for now this method is a stub.
+	return &pkg.ResetPasswordResponse{
 		Success:                  false,
 		SuccessMsg:               "",
-		ErrorReason:              &rpc.ErrorReason{Reason: "Unimplemented method"},
-		ResetPasswordRequestedAt: timestamppb.Now(),
+		ErrorReason:              "Unimplemented method",
+		ResetPasswordRequestedAt: timestampNow(),
 	}, nil
 }
 
-func (ad *AuthDelivery) RefreshAccessToken(ctx context.Context, in *rpc.RefreshAccessTokenRequest) (*rpc.RefreshAccessTokenResponse, error) {
+func (ad *AuthDelivery) RefreshAccessToken(ctx context.Context, in *pkg.RefreshAccessTokenRequest) (*pkg.RefreshAccessTokenResponse, error) {
 	if in == nil {
-		return &rpc.RefreshAccessTokenResponse{}, status.Errorf(codes.InvalidArgument, "cannot request new access token: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
+		return &pkg.RefreshAccessTokenResponse{
+			ErrorReason: auth.AuthError{Reason: auth.ErrInvalidParameters}.Error(),
+		}, status.Errorf(codes.InvalidArgument, "cannot request new access token: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
 	}
 	claims, err := ad.TokenCfg.ParseTokenStringToClaim(in.RefreshToken, false)
 	if err != nil {
-		return &rpc.RefreshAccessTokenResponse{}, status.Errorf(codes.InvalidArgument, "refresh token is invalid: %v", auth.AuthError{Reason: auth.ErrInvalidToken})
+		return &pkg.RefreshAccessTokenResponse{
+			ErrorReason: auth.AuthError{Reason: auth.ErrInvalidToken}.Error(),
+		}, status.Errorf(codes.InvalidArgument, "refresh token is invalid: %v", auth.AuthError{Reason: auth.ErrInvalidToken})
 	}
 	newAccessToken, err := ad.TokenCfg.RenewAccessToken(&claims)
 	if err != nil {
-		return &rpc.RefreshAccessTokenResponse{}, status.Errorf(codes.Internal, "cannot request new access token from claims: %v", err.Error())
+		return &pkg.RefreshAccessTokenResponse{
+			ErrorReason: auth.AuthError{Reason: auth.ErrCreatingToken}.Error(),
+		}, status.Errorf(codes.Internal, "cannot request new access token from claims: %v", err.Error())
 	}
-	return &rpc.RefreshAccessTokenResponse{
+	return &pkg.RefreshAccessTokenResponse{
 		AccessToken: newAccessToken,
 		ErrorReason: nil,
-	}, nil
-}
-
-// TODO @winwisely268: GetAccount is just dummy method at this point, do use DAO!!
-func (ad *AuthDelivery) GetAccount(ctx context.Context, in *rpc.GetAccountRequest) (*rpc.Account, error) {
-	if in == nil {
-		return &rpc.Account{}, status.Errorf(codes.InvalidArgument, "cannot get user account: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
-	}
-	if in.Id != "1hpR8BL89uYI1ibPNgcRHI9Nn5Wi" {
-		return &rpc.Account{}, status.Errorf(codes.NotFound, "cannot get user account with id: %s", auth.AuthError{Reason: auth.ErrAccountNotFound})
-	}
-
-	return &rpc.Account{
-		Id:       "1hpR8BL89uYI1ibPNgcRHI9Nn5Wi",
-		Email:    "superadmin@getcouragenow.org",
-		Password: "superadmin",
-		Role: &rpc.UserRoles{
-			Role:     rpc.Roles_SUPERADMIN,
-			Resource: nil,
-		},
 	}, nil
 }
 
@@ -231,7 +253,6 @@ func ObtainClaimsFromContext(ctx context.Context) auth.TokenClaims {
 }
 
 func (ad *AuthDelivery) fromMetadata(ctx context.Context) (authMeta string, err error) {
-
 	authMeta = metautils.ExtractIncoming(ctx).Get(HeaderAuthorize)
 	if authMeta == "" {
 		return "", auth.AuthError{Reason: auth.ErrMissingToken}
