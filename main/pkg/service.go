@@ -3,14 +3,9 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"github.com/genjidb/genji"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 
-	"github.com/genjidb/genji"
-
-	"net/http"
-	"time"
-
-	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -19,6 +14,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"net/http"
 
 	"github.com/getcouragenow/sys-share/pkg"
 
@@ -53,14 +49,16 @@ type SysServiceConfig struct {
 	DB         *genji.DB // sys-core
 	SysAccount *sysAccountServer.SysAccountConfig
 	Port       int
+	Logger     *logrus.Entry
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
-func NewSysServiceConfig(db *genji.DB, unauthenticatedRoutes []string, port int) (*SysServiceConfig, error) {
+func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []string, port int) (*SysServiceConfig, error) {
 	if db == nil {
 		db = coredb.SharedDatabase()
 	}
 	ssc := &SysServiceConfig{
+		Logger:     l,
 		DB:         db,
 		Port:       port,
 		SysAccount: &sysAccountServer.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
@@ -96,9 +94,8 @@ func (ssc *SysServiceConfig) parseAndValidate() error {
 // this SysServices could be passed around to other mod-* and maintemplates-*
 // or could be run independently using Run method below
 func NewService(cfg *SysServiceConfig) (*SysServices, error) {
-	log := logrus.New().WithField("sys-pkg", "sys-services")
 	// load up the sub grpc Services
-	log.Println("Initializing GRPC Services")
+	cfg.Logger.Println("Initializing GRPC Services")
 
 	if err := cfg.parseAndValidate(); err != nil {
 		return nil, err
@@ -107,7 +104,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-Account
 	// ========================================================================
-	authDeli, err := sysAccountDeli.NewAuthDeli(log, cfg.DB, cfg.SysAccount)
+	authDeli, err := sysAccountDeli.NewAuthDeli(cfg.Logger, cfg.DB, cfg.SysAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -117,40 +114,40 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 
 	return &SysServices{
-		logger:              log,
+		logger:              cfg.Logger,
 		port:                cfg.Port,
 		authInterceptorFunc: authDeli.DefaultInterceptor,
 		ProxyService:        sysAccountProxy,
 	}, nil
 }
 
-// registerServices to the supplied grpc server.
-func (s *SysServices) registerServices(srv *grpc.Server) *grpc.Server {
-	if srv == nil {
-		recoveryOptions := []grpcRecovery.Option{
-			grpcRecovery.WithRecoveryHandler(s.recoveryHandler()),
-		}
-
-		logrusOpts := []grpcLogrus.Option{
-			grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
-		}
-
-		srv = grpc.NewServer(
-			grpcMw.WithUnaryServerChain(
-				grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
-				grpcLogrus.UnaryServerInterceptor(s.logger, logrusOpts...),
-				grpcAuth.UnaryServerInterceptor(s.authInterceptorFunc),
-			),
-			grpcMw.WithStreamServerChain(
-				grpcRecovery.StreamServerInterceptor(recoveryOptions...),
-				grpcLogrus.StreamServerInterceptor(s.logger, logrusOpts...),
-				grpcAuth.StreamServerInterceptor(s.authInterceptorFunc),
-			),
-		)
+// NewServer to the supplied grpc server.
+func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInterceptor, streamInterceptors []grpc.StreamServerInterceptor) ([]grpc.UnaryServerInterceptor, []grpc.StreamServerInterceptor) {
+	recoveryOptions := []grpcRecovery.Option{
+		grpcRecovery.WithRecoveryHandler(s.recoveryHandler()),
+	}
+	logrusOpts := []grpcLogrus.Option{
+		grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
 	}
 
+	unaryInterceptors = append(
+		unaryInterceptors,
+		grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
+		grpcLogrus.UnaryServerInterceptor(s.logger, logrusOpts...),
+		grpcAuth.UnaryServerInterceptor(s.authInterceptorFunc),
+	)
+
+	streamInterceptors = append(
+		streamInterceptors,
+		grpcRecovery.StreamServerInterceptor(recoveryOptions...),
+		grpcLogrus.StreamServerInterceptor(s.logger, logrusOpts...),
+		grpcAuth.StreamServerInterceptor(s.authInterceptorFunc),
+	)
+	return unaryInterceptors, streamInterceptors
+}
+
+func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.ProxyService.RegisterSvc(srv)
-	return srv
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {
@@ -161,27 +158,20 @@ func (s *SysServices) recoveryHandler() func(panic interface{}) error {
 	}
 }
 
-// run runs all the sys-* service as a service
-func (s *SysServices) run(srv *grpc.Server, httpServer *http.Server) error {
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	var grpcSrv *grpc.Server
-	if srv == nil {
-		grpcSrv = s.registerServices(nil)
-	} else {
-		grpcSrv = s.registerServices(srv)
-	}
-
-	grpcWebServer := grpcweb.WrapServer(
-		grpcSrv,
+// Creates a GrpcWeb wrapper around grpc.Server
+func (s *SysServices) RegisterGrpcWebServer(srv *grpc.Server) *grpcweb.WrappedGrpcServer {
+	return grpcweb.WrapServer(
+		srv,
 		grpcweb.WithCorsForRegisteredEndpointsOnly(false),
 		grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool {
 			return true
 		}),
 		grpcweb.WithWebsockets(true),
 	)
+}
 
+// run runs all the sys-* service as a service
+func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *http.Server) error {
 	if httpServer == nil {
 		httpServer = &http.Server{
 			Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -199,7 +189,7 @@ func (s *SysServices) run(srv *grpc.Server, httpServer *http.Server) error {
 }
 
 // Run is just an exported wrapper for s.run()
-func (s *SysServices) Run(srv *grpc.Server, httpServer *http.Server) {
+func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server) {
 	if err := s.run(srv, httpServer); err != nil {
 		s.logger.Fatalf(errRunningServer, err)
 	}

@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/getcouragenow/sys/main/pkg"
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -24,7 +26,7 @@ const (
 
 func main() {
 	logger := logrus.New().WithField("sys-main", "sys-*")
-	sscfg, err := pkg.NewSysServiceConfig(nil, defaultUnauthenticatedRoutes, defaultPort)
+	sscfg, err := pkg.NewSysServiceConfig(logger, nil, defaultUnauthenticatedRoutes, defaultPort)
 	if err != nil {
 		logger.Fatalf(errSourcingConfig, err)
 	}
@@ -32,5 +34,12 @@ func main() {
 	if err != nil {
 		logger.Fatalf(errCreateSysService, err)
 	}
-	sysSvc.Run(nil, nil)
+	unaryInterceptors, streamInterceptors := sysSvc.InjectInterceptors(nil, nil)
+	grpcServer := grpc.NewServer(
+		grpcMw.WithUnaryServerChain(unaryInterceptors...),
+		grpcMw.WithStreamServerChain(streamInterceptors...),
+	)
+	sysSvc.RegisterServices(grpcServer)
+	grpcWebServer := sysSvc.RegisterGrpcWebServer(grpcServer)
+	sysSvc.Run(grpcWebServer, nil)
 }
