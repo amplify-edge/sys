@@ -22,6 +22,7 @@ CI_DEP_FORK=github.com/joe-getcouragenow/sys
 
 
 SDK_BIN=$(PWD)/bin-all/sdk-cli
+SERVER_BIN=$(PWD)/bin-all/sys-main
 EXAMPLE_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_PASSWORD = superadmin
 EXAMPLE_SERVER_ADDRESS = 127.0.0.1:8888
@@ -57,9 +58,13 @@ this-build:
 	cd sys-core && $(MAKE) this-all
 
 	cd main/sdk-cli && go build -o $(SDK_BIN) .
+	go build -o $(SERVER_BIN) $(PWD)/main/server/main.go
 
 this-sdk-run:
 	$(SDK_BIN)
+
+this-server-run:
+	rm -rf getcouragenow.db && $(SERVER_BIN)
 
 this-ex-server-run:
 	cd sys-account && $(MAKE) this-ex-server-run
