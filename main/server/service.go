@@ -1,9 +1,10 @@
 // package pkg provides sub grpc services for mod-* and deploy/templates/maintemplateV*
-package pkg
+package main
 
 import (
 	"context"
 	"fmt"
+
 	"github.com/genjidb/genji"
 
 	"net/http"
