@@ -162,7 +162,7 @@ func (s *SysServices) recoveryHandler() func(panic interface{}) error {
 }
 
 // run runs all the sys-* service as a service
-func (s *SysServices) run(srv *grpc.Server) error {
+func (s *SysServices) run(srv *grpc.Server, httpServer *http.Server) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -182,14 +182,16 @@ func (s *SysServices) run(srv *grpc.Server) error {
 		grpcweb.WithWebsockets(true),
 	)
 
-	httpServer := &http.Server{
-		Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-User-Agent, X-Grpc-Web")
-			s.logger.Infof("Request Endpoint: %s", r.URL)
-			grpcWebServer.ServeHTTP(w, r)
-		}), &http2.Server{}),
+	if httpServer == nil {
+		httpServer = &http.Server{
+			Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+				w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-User-Agent, X-Grpc-Web")
+				s.logger.Infof("Request Endpoint: %s", r.URL)
+				grpcWebServer.ServeHTTP(w, r)
+			}), &http2.Server{}),
+		}
 	}
 
 	httpServer.Addr = fmt.Sprintf("127.0.0.1:%d", s.port)
@@ -197,8 +199,8 @@ func (s *SysServices) run(srv *grpc.Server) error {
 }
 
 // Run is just an exported wrapper for s.run()
-func (s *SysServices) Run(srv *grpc.Server) {
-	if err := s.run(srv); err != nil {
+func (s *SysServices) Run(srv *grpc.Server, httpServer *http.Server) {
+	if err := s.run(srv, httpServer); err != nil {
 		s.logger.Fatalf(errRunningServer, err)
 	}
 }

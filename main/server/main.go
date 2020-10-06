@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	defaultPort = 8888
+	defaultPort         = 8888
 	errSourcingConfig   = "error while sourcing config: %v"
 	errCreateSysService = "error while creating sys-* service: %v"
 )
@@ -32,5 +32,5 @@ func main() {
 	if err != nil {
 		logger.Fatalf(errCreateSysService, err)
 	}
-	sysSvc.Run(nil)
+	sysSvc.Run(nil, nil)
 }
