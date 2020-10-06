@@ -4,25 +4,22 @@ package pkg
 import (
 	"context"
 	"fmt"
-
 	"github.com/genjidb/genji"
 
 	"net/http"
 	"time"
 
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 
-	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-
-	v2 "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	"github.com/getcouragenow/sys-share/pkg"
 
 	sysAccountServer "github.com/getcouragenow/sys/sys-account/service/go"
 	sysAccountDeli "github.com/getcouragenow/sys/sys-account/service/go/delivery"
@@ -43,8 +40,7 @@ const (
 type SysServices struct {
 	logger              *logrus.Entry
 	authInterceptorFunc func(context.Context) (context.Context, error)
-	Auth                *v2.AuthServiceService
-	Account             *v2.AccountServiceService
+	ProxyService        *pkg.SysShareProxyService
 }
 
 // SysServiceConfig contains all the configuration
@@ -97,31 +93,14 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		return nil, err
 	}
 
-	authSvc := &v2.AuthServiceService{
-		Register:           authDeli.Register,
-		Login:              authDeli.Login,
-		ForgotPassword:     authDeli.ForgotPassword,
-		ResetPassword:      authDeli.ResetPasssword,
-		RefreshAccessToken: authDeli.RefreshAccessToken,
-	}
-
-	accountSvc := &v2.AccountServiceService{
-		NewAccount:          nil,
-		GetAccount:          authDeli.GetAccount,
-		ListAccounts:        nil,
-		SearchAccounts:      nil,
-		AssignAccountToRole: nil,
-		UpdateAccount:       nil,
-		DisableAccount:      nil,
-	}
+	sysAccountProxy := pkg.NewSysShareProxyService(authDeli, authDeli)
 
 	// ========================================================================
 
 	return &SysServices{
 		logger:              log,
 		authInterceptorFunc: authDeli.DefaultInterceptor,
-		Auth:                authSvc,
-		Account:             accountSvc,
+		ProxyService:        sysAccountProxy,
 	}, nil
 }
 
@@ -161,12 +140,7 @@ func (s *SysServices) RegisterServices(srv *grpc.Server) *grpc.Server {
 		)
 	}
 
-	if s.Auth != nil {
-		v2.RegisterAuthServiceService(srv, s.Auth)
-	}
-	if s.Account != nil {
-		v2.RegisterAccountServiceService(srv, s.Account)
-	}
+	s.ProxyService.RegisterSvc(srv)
 	return srv
 }
 
@@ -184,7 +158,7 @@ func (s *SysServices) run() error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	grpcSrv := s.RegisterServices(nil)
-	reflection.Register(grpcSrv)
+	//reflection.Register(grpcSrv)
 
 	grpcWebServer := grpcweb.WrapServer(
 		grpcSrv,

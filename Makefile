@@ -22,6 +22,9 @@ CI_DEP_FORK=github.com/joe-getcouragenow/sys
 
 
 SDK_BIN=$(PWD)/bin-all/sdk-cli
+EXAMPLE_EMAIL = superadmin@getcouragenow.org
+EXAMPLE_PASSWORD = superadmin
+EXAMPLE_SERVER_ADDRESS = 127.0.0.1:8888
 
 this-all: this-print this-dep this-build this-print-end
 
@@ -61,5 +64,11 @@ this-sdk-run:
 this-ex-server-run:
 	cd sys-account && $(MAKE) this-ex-server-run
 
-this-ex-ui-run:
-	cd sys-account && $(MAKE) this-ex-ui-run
+this-ex-client-auth:
+	cd sys-account && $(MAKE) this-ex-client-auth
+
+this-example-sdk-auth:
+	@echo Running Example Register Client
+	cd ./bin-all/ && ./sdk-cli sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS)
+	@echo Running Example Login Client
+	cd ./bin-all/ && ./sdk-cli sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS)

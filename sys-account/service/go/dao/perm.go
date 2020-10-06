@@ -3,50 +3,62 @@ package dao
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
-
-	log "github.com/sirupsen/logrus"
-
+	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
-
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	"github.com/getcouragenow/sys-share/pkg"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
 
 type Permission struct {
-	ID        string
-	AccountId string
-	Role      string
-	ProjectId string
-	OrgId     string
-	CreatedAt int64 // UTC Unix timestamp
-	UpdatedAt int64
+	ID        string `genji:"id"`
+	AccountId string `genji:"account_id"`
+	Role      int `genji:"role"`
+	ProjectId string `genji:"project_id"`
+	OrgId     string `genji:"org_id"`
+	CreatedAt int64 `genji:"created_at"`
+	UpdatedAt int64 `genji:"updated_at"`
 }
 
-func (p *Permission) ToProto() (*rpc.UserRoles, error) {
-	role, err := strconv.Atoi(p.Role)
-	if err != nil {
-		return nil, err
+func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Permission, error) {
+	queryParam := &QueryParams{Params: map[string]interface{}{
+		"account_id": accountId,
+	}}
+	if role.Role > 0 && role.Role <= 4 { // Guest, Member, Admin, or SuperAdmin
+		queryParam.Params["role"] = fmt.Sprintf("%d", role.Role)
+	}
+	if role.OrgID != "" {
+		queryParam.Params["org_id"] = role.OrgID
+	}
+	if role.ProjectID != "" {
+		queryParam.Params["project_id"] = role.ProjectID
+	}
+	return a.GetRole(queryParam)
+}
+
+func (p *Permission) ToPkgRole() (*pkg.UserRoles, error) {
+	role := p.Role
+	if role == 0 || role >= 4 {
+		return nil, errors.New("invalid role")
+	}
+	userRole := &pkg.UserRoles{
+		Role: pkg.Roles(role),
 	}
 	if p.OrgId != "" {
-		return &rpc.UserRoles{
-			Role:     rpc.Roles(role),
-			Resource: &rpc.UserRoles_Org{Org: &rpc.Org{Id: p.OrgId}},
-		}, nil
-	} else if p.ProjectId != "" {
-		return &rpc.UserRoles{
-			Role:     rpc.Roles(role),
-			Resource: &rpc.UserRoles_Project{Project: &rpc.Project{Id: p.ProjectId}},
-		}, nil
-	} else if rpc.Roles(role) == rpc.Roles_SUPERADMIN {
-		return &rpc.UserRoles{
-			Role:     rpc.Roles_SUPERADMIN,
-			Resource: nil,
-		}, nil
+		userRole.OrgID = p.OrgId
 	}
-	return nil, errors.New("invalid Role")
+	if p.ProjectId != "" {
+		userRole.ProjectID = p.ProjectId
+	}
+	if pkg.Roles(role) == 4 {
+		userRole.All = true
+	}
+	if pkg.Roles(role) == 1 {
+		userRole.All = false
+	}
+	return userRole, nil
 }
 
 func (p Permission) TableName() string {
@@ -66,9 +78,10 @@ func permissionToQueryParam(acc *Permission) (res QueryParams, err error) {
 
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (p Permission) CreateSQL() []string {
-	fields := initFields(PermColumns)
+	fields := initFields(PermColumns, PermColumnsType)
 	tbl := crud.NewTable(PermTableName, fields)
-	return []string{tbl.CreateTable()}
+	return []string{tbl.CreateTable(),
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_account_id ON permissions(account_id)`}
 }
 
 func (a *AccountDB) getPermSelectStatements(aqp *QueryParams) (string, []interface{}, error) {
@@ -87,6 +100,10 @@ func (a *AccountDB) GetRole(aqp *QueryParams) (*Permission, error) {
 	if err != nil {
 		return nil, err
 	}
+	a.log.WithFields(log.Fields{
+		"queryStatement": selectStmt,
+		"arguments":      args,
+	}).Debug("Querying roles")
 	doc, err := a.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err
@@ -120,12 +137,10 @@ func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Permission, error) {
 }
 
 func (a *AccountDB) InsertRole(p *Permission) error {
-	var allVals [][]interface{}
 	aqp, err := permissionToQueryParam(p)
 	if err != nil {
 		return err
 	}
-	log.Printf("query params: %v", aqp)
 	columns, values := aqp.ColumnsAndValues()
 	stmt, args, err := sq.Insert(PermTableName).
 		Columns(columns...).
@@ -134,12 +149,11 @@ func (a *AccountDB) InsertRole(p *Permission) error {
 	a.log.WithFields(log.Fields{
 		"statement": stmt,
 		"args":      args,
-	})
+	}).Info("INSERT to permissions table")
 	if err != nil {
 		return err
 	}
-	allVals = append(allVals, args)
-	return a.Exec([]string{stmt}, allVals)
+	return a.Exec(stmt, args)
 }
 
 func (a *AccountDB) UpdateRole(p *Permission) error {
@@ -147,13 +161,11 @@ func (a *AccountDB) UpdateRole(p *Permission) error {
 	if err != nil {
 		return err
 	}
-	var values [][]interface{}
 	stmt, args, err := sq.Update(PermTableName).SetMap(aqp.Params).ToSql()
 	if err != nil {
 		return err
 	}
-	values = append(values, args)
-	return a.Exec([]string{stmt}, values)
+	return a.Exec(stmt, args)
 }
 
 func (a *AccountDB) DeleteRole(id string) error {
@@ -163,5 +175,5 @@ func (a *AccountDB) DeleteRole(id string) error {
 		return err
 	}
 	values = append(values, args)
-	return a.Exec([]string{stmt}, values)
+	return a.Exec(stmt, args)
 }

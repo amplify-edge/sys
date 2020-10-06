@@ -5,11 +5,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	"github.com/getcouragenow/sys-share/pkg"
 
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
-	
-	
 )
 
 var (
@@ -36,13 +34,13 @@ func NewTokenConfig(accessSecret, refreshSecret []byte) *TokenConfig {
 // Claimants are ones who are able to get token claims
 type Claimant interface {
 	GetEmail() string
-	GetRole() *rpc.UserRoles
+	GetRole() *pkg.UserRoles
 }
 
 // TokenClaims is the representation of JWT auth claims
 type TokenClaims struct {
 	UserId    string         `json:"userId"`
-	Role      *rpc.UserRoles `json:"role"`
+	Role      *pkg.UserRoles `json:"role"`
 	UserEmail string         `json:"userEmail"`
 	jwt.StandardClaims
 }

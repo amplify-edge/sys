@@ -1,4 +1,5 @@
-import 'package:sys_account/api/v2/users.pbgrpc.dart' as rpc;
+import 'package:sys_share_sys_account_service/sys_share_sys_account_service.dart'
+    as rpc;
 import 'package:grpc/grpc_web.dart';
 
 class UserRepo {

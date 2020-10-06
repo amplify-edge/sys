@@ -1,5 +1,6 @@
-import 'package:sys_account/api/v2/authn.pbgrpc.dart' as rpc;
 import 'package:grpc/grpc_web.dart';
+import 'package:sys_share_sys_account_service/sys_share_sys_account_service.dart'
+    as rpc;
 
 class AuthRepo {
   static final client = _authClient();
@@ -41,3 +42,4 @@ class AuthRepo {
     return rpc.AuthServiceClient(channel);
   }
 }
+//

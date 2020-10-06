@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"errors"
 	"github.com/genjidb/genji"
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/sql/query"
@@ -33,19 +32,15 @@ func NewAccountDB(db *genji.DB) (*AccountDB, error) {
 	return &AccountDB{db, log}, nil
 }
 
-func (a *AccountDB) Exec(stmts []string, argSlices [][]interface{}) error {
-	if len(stmts) != len(argSlices) {
-		return errors.New("mismatch statements and argument counts")
-	}
+func (a *AccountDB) Exec(stmt string, argSlices []interface{}) error {
 	tx, err := a.db.Begin(true)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	for i, stmt := range stmts {
-		if err := tx.Exec(stmt, argSlices[i]...); err != nil {
-			return err
-		}
+
+	if err := tx.Exec(stmt, argSlices...); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

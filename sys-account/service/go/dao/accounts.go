@@ -2,55 +2,60 @@ package dao
 
 import (
 	"encoding/json"
+	"github.com/getcouragenow/sys-share/pkg"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	"github.com/genjidb/genji/document"
-
-	rpc "github.com/getcouragenow/sys-share/sys-account/service/go/rpc/v2"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
 
 type Account struct {
-	ID                string
-	Name              string
-	Email             string
-	Password          string
-	RoleId            string
-	UserDefinedFields map[string]interface{}
-	CreatedAt         int64
-	UpdatedAt         int64
-	LastLogin         int64
-	Disabled          bool
+	ID                string `genji:"id"`
+	Email             string `genji:"email"`
+	Password          string `genji:"password"`
+	RoleId            string `genji:"role_id"`
+	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
+	CreatedAt         int64 `genji:"created_at"`
+	UpdatedAt         int64 `genji:"updated_at"`
+	LastLogin         int64 `genji:"last_login"`
+	Disabled          bool `genji:"disabled"`
 }
 
-func (a *Account) ToProto(role *rpc.UserRoles) (*rpc.Account, error) {
+func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
+	role, err := a.FromPkgRole(account.Role, account.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &Account{
+		ID:                account.Id,
+		Email:             account.Email,
+		Password:          account.Password,
+		UserDefinedFields: account.Fields.Fields,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		LastLogin:         account.LastLogin,
+		Disabled:          account.Disabled,
+		RoleId:            role.ID,
+	}, nil
+}
+
+func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
-	mapField := map[string]*structpb.Value{}
-	for k, v := range a.UserDefinedFields {
-		userField, err := structpb.NewValue(v)
-		if err != nil {
-			return nil, err
-		}
-		mapField[k] = userField
-	}
-	return &rpc.Account{
+	return &pkg.Account{
 		Id:        a.ID,
 		Email:     a.Email,
 		Password:  a.Password,
 		Role:      role,
-		CreatedAt: timestamppb.New(createdAt),
-		UpdatedAt: timestamppb.New(updatedAt),
-		LastLogin: timestamppb.New(lastLogin),
+		CreatedAt: createdAt.Unix(),
+		UpdatedAt: updatedAt.Unix(),
+		LastLogin: lastLogin.Unix(),
 		Disabled:  a.Disabled,
-		Fields:    &rpc.UserDefinedFields{Fields: mapField},
+		Fields:    &pkg.UserDefinedFields{Fields: a.UserDefinedFields},
 	}, nil
 }
 
@@ -71,9 +76,12 @@ func accountToQueryParams(acc *Account) (res QueryParams, err error) {
 
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (a Account) CreateSQL() []string {
-	fields := initFields(AccColumns)
+	fields := initFields(AccColumns, AccColumnsType)
 	tbl := crud.NewTable(AccTableName, fields)
-	return []string{tbl.CreateTable()}
+	return []string{
+		tbl.CreateTable(),
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email)",
+	}
 }
 
 func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
@@ -125,7 +133,6 @@ func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
 }
 
 func (a *AccountDB) InsertAccount(acc *Account) error {
-	var allVals [][]interface{}
 	aqp, err := accountToQueryParams(acc)
 	if err != nil {
 		return err
@@ -139,12 +146,11 @@ func (a *AccountDB) InsertAccount(acc *Account) error {
 	a.log.WithFields(log.Fields{
 		"statement": stmt,
 		"args":      args,
-	})
+	}).Info("INSERT to accounts table")
 	if err != nil {
 		return err
 	}
-	allVals = append(allVals, args)
-	return a.Exec([]string{stmt}, allVals)
+	return a.Exec(stmt, values)
 }
 
 func (a *AccountDB) UpdateAccount(acc *Account) error {
@@ -152,21 +158,17 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	var values [][]interface{}
 	stmt, args, err := sq.Update(AccTableName).SetMap(aqp.Params).ToSql()
 	if err != nil {
 		return err
 	}
-	values = append(values, args)
-	return a.Exec([]string{stmt}, values)
+	return a.Exec(stmt, args)
 }
 
 func (a *AccountDB) DeleteAccount(id string) error {
-	var values [][]interface{}
 	stmt, args, err := sq.Delete(AccTableName).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}
-	values = append(values, args)
-	return a.Exec([]string{stmt}, values)
+	return a.Exec(stmt, args)
 }

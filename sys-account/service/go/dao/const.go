@@ -12,12 +12,14 @@ import (
 // const.go contains
 // all the table columns / fields basically.
 const (
-	TablePrefix    = "sys_account"
-	TableSeparator = "_"
-	AccTableName   = "accounts"
-	PermTableName  = "permissions"
-	AccColumns     = `id, name, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
-	PermColumns    = `id, account_id, role, project_id, org_id, created_at, updated_at`
+	TablePrefix     = "sys_account"
+	TableSeparator  = "_"
+	AccTableName    = "accounts"
+	PermTableName   = "permissions"
+	AccColumns      = `id, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
+	AccColumnsType  = `TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
+	PermColumns     = `id, account_id, role, project_id, org_id, created_at, updated_at`
+	PermColumnsType = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
 )
 
 func tableName(name, separator string) string {
@@ -28,13 +30,14 @@ func tableName(name, separator string) string {
 }
 
 // initFields will only be called once during AccountDB initialization (singleton)
-func initFields(columns string) map[string]string {
+func initFields(columns string, values string) map[string]string {
 	ret := map[string]string{}
+	vals := strings.Split(values, ",")
 	for i, col := range strings.Split(columns, ",") {
 		if i == 0 {
-			ret[col] = "TEXT PRIMARY KEY"
+			ret[col] = vals[i] + " PRIMARY KEY"
 		} else {
-			ret[col] = "TEXT"
+			ret[col] = vals[i]
 		}
 	}
 	return ret

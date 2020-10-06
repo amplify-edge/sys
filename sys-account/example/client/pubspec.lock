@@ -158,6 +158,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.3.0"
+  hive:
+    dependency: transitive
+    description:
+      name: hive
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.4.4+1"
   html:
     dependency: transitive
     description:
@@ -341,16 +348,25 @@ packages:
   sys_account:
     dependency: "direct main"
     description:
-      path: "../../client"
+      path: "../../service/flu"
       relative: true
     source: path
     version: "1.0.0+1"
   sys_core:
     dependency: transitive
     description:
-      path: "../../../sys-core/client"
+      path: "../../../sys-core/service/flu"
       relative: true
     source: path
+    version: "0.0.1"
+  sys_share_sys_account_service:
+    dependency: transitive
+    description:
+      path: "sys-account/service/flu"
+      ref: HEAD
+      resolved-ref: eb5b642b46ee2a8c5ce758b2dec0ebba15a75dab
+      url: "git://github.com/getcouragenow/sys-share.git"
+    source: git
     version: "0.0.1"
   term_glyph:
     dependency: transitive
@@ -396,4 +412,4 @@ packages:
     version: "2.2.1"
 sdks:
   dart: ">=2.10.0-0.0.dev <2.10.0"
-  flutter: ">=1.16.0"
+  flutter: ">=1.17.0 <2.0.0"
