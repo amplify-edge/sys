@@ -25,17 +25,18 @@ jobs:
           go-version: ${{ matrix.go-version }}
         id: go
 
-      - name: Check out THIS code into the Go module directory
+      - name: Check out THIS code into the Go src directory
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: go/src/github.com/${{ github.repository }}
 
-      - name: Check out the SHARED code into the Go module directory
+      - name: Check out the SHARED code into the Go src directory
         uses: actions/checkout@v2
         with:
           path: go/src/github.com/${{ github.repository }}
           repository: getcouragenow/shared
+          token: ${{ secrets.PAT_FULL }}
 
       - name: make ${{ matrix.target }}
         run: |
