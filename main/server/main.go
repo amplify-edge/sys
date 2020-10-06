@@ -45,7 +45,7 @@ func main() {
 			RotationDuration: 1,
 			DbDir:            defaultDbDir,
 		},
-		CornConfig: corecfg.CornConfig{
+		CronConfig: corecfg.CronConfig{
 			BackupSchedule: defaultDbBackupSchedulSpec,
 			RotateSchedule: defaultDbRotateSchedulSpec,
 			BackupDir:      defaultDbBackupDir,

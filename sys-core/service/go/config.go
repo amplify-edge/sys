@@ -33,7 +33,7 @@ type DbConfig struct {
 	DbDir            string `json:"dbDir,omitempty" yaml:"dbDir,omitempty" mapstructure:"dbDir,omitempty"`
 }
 
-type CornConfig struct {
+type CronConfig struct {
 	BackupSchedule string `json:"backupSchedule,omitempty" yaml:"backupSchedule,omitempty" mapstructure:"backupSchedule,omitempty"`
 	RotateSchedule string `json:"rotateSchedule,omitempty" yaml:"rotateSchedule,omitempty" mapstructure:"rotateSchedule,omitempty"`
 	BackupDir      string `json:"backupDir,omitempty" yaml:"backupDir,omitempty" mapstructure:"backupDir,omitempty"`
@@ -41,5 +41,5 @@ type CornConfig struct {
 
 type SysCoreConfig struct {
 	DbConfig   DbConfig   `json:"db,required" yaml:"db,required" mapstructure:"db,required"`
-	CornConfig CornConfig `json:"cron,required" yaml:"cron,required" mapstructure:"cron,required"`
+	CronConfig CronConfig `json:"cron,required" yaml:"cron,required" mapstructure:"cron,required"`
 }

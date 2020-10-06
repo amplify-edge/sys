@@ -18,8 +18,8 @@ type BackupCron struct {
 func NewBackupCron(config *service.SysCoreConfig) *BackupCron {
 	return &BackupCron{
 		cron:       cron.New(),
-		backupSpec: config.CornConfig.BackupSchedule,
-		rotateSpec: config.CornConfig.RotateSchedule,
+		backupSpec: config.CronConfig.BackupSchedule,
+		rotateSpec: config.CronConfig.RotateSchedule,
 	}
 }
 
@@ -27,7 +27,7 @@ func (bc *BackupCron) Start() {
 	bc.cron.AddFunc(bc.backupSpec, func() {
 		fmt.Println("Do bakcup schedule!")
 		currentTime := time.Now().Format("200601021859")
-		backupFile := config.CornConfig.BackupDir + "/" + "db_" + currentTime + ".bak"
+		backupFile := config.CronConfig.BackupDir + "/" + "db_" + currentTime + ".bak"
 		dbPath := config.DbConfig.DbDir + "/" + config.DbConfig.Name
 		//Must be closed before backup
 

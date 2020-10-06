@@ -43,8 +43,8 @@ func InitDatabase(cfg *service.SysCoreConfig) error {
 		os.MkdirAll(cfg.DbConfig.DbDir, os.ModePerm)
 	}
 
-	if exists, _ := PathExists(cfg.CornConfig.BackupDir); !exists {
-		os.MkdirAll(cfg.CornConfig.BackupDir, os.ModePerm)
+	if exists, _ := PathExists(cfg.CronConfig.BackupDir); !exists {
+		os.MkdirAll(cfg.CronConfig.BackupDir, os.ModePerm)
 	}
 
 	if database != nil {
