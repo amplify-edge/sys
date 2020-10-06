@@ -10,7 +10,7 @@ include $(BOILERPLATE_FSPATH)/go.mk
 
 override FLU_SAMPLE_NAME =example
 override FLU_LIB_NAME =client
-override FLU_SAMPLE_FSPATH = $(PWD)/main/client
+override FLU_SAMPLE_FSPATH = $(PWD)/example/client
 
 EXAMPLE_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_PASSWORD = superadmin
