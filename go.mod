@@ -14,7 +14,7 @@ require (
 	github.com/gen0cide/cfx v0.0.4
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/sys-share v0.0.0-20201005143256-eb5b642b46ee
+	github.com/getcouragenow/sys-share v0.0.0-20201006083537-6c3fbe32d14e
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
