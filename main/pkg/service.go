@@ -1,9 +1,9 @@
-// package pkg provides sub grpc services for mod-* and deploy/templates/maintemplateV*
-package main
+package pkg
 
 import (
 	"context"
 	"fmt"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 
 	"github.com/genjidb/genji"
 
@@ -37,20 +37,38 @@ const (
 // for example it will be:
 // - sys-account (auth and account service)
 // - sys-core (not sure about db)
-// TODO @gutterbacon : When other sys-* are built, put it here.
+// TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy, then call it here.
 type SysServices struct {
 	logger              *logrus.Entry
 	authInterceptorFunc func(context.Context) (context.Context, error)
+	port                int
 	ProxyService        *pkg.SysShareProxyService
 }
 
 // SysServiceConfig contains all the configuration
 // for each services, because SysService needs this in order to
 // load up and provide sub grpc services.
-// TODO @gutterbacon : When other sys-* are built, put it here.
+// TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
 	DB         *genji.DB // sys-core
 	SysAccount *sysAccountServer.SysAccountConfig
+	Port       int
+}
+
+// TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
+func NewSysServiceConfig(db *genji.DB, unauthenticatedRoutes []string, port int) (*SysServiceConfig, error) {
+	if db == nil {
+		db = coredb.SharedDatabase()
+	}
+	ssc := &SysServiceConfig{
+		DB:         db,
+		Port:       port,
+		SysAccount: &sysAccountServer.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
+	}
+	if err := ssc.parseAndValidate(); err != nil {
+		return nil, err
+	}
+	return ssc, nil
 }
 
 func (ssc *SysServiceConfig) parseAndValidate() error {
@@ -100,24 +118,14 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 
 	return &SysServices{
 		logger:              log,
+		port:                cfg.Port,
 		authInterceptorFunc: authDeli.DefaultInterceptor,
 		ProxyService:        sysAccountProxy,
 	}, nil
 }
 
-// RegisterServices method's job is to check if all the services
-// contained within SysServices is valid
-// if yes, it will register the service to the provided grpcServer
-// if not, then it won't.
-// For instance:
-// SysServices {
-// 		AuthService: exists
-//      AccountService: nil
-// }
-// then it will only register AuthService to the grpc.Server
-// the method returns the provided grpc.Server if it exists
-// or create one if it's not.
-func (s *SysServices) RegisterServices(srv *grpc.Server) *grpc.Server {
+// registerServices to the supplied grpc server.
+func (s *SysServices) registerServices(srv *grpc.Server) *grpc.Server {
 	if srv == nil {
 		recoveryOptions := []grpcRecovery.Option{
 			grpcRecovery.WithRecoveryHandler(s.recoveryHandler()),
@@ -154,12 +162,16 @@ func (s *SysServices) recoveryHandler() func(panic interface{}) error {
 }
 
 // run runs all the sys-* service as a service
-func (s *SysServices) run() error {
+func (s *SysServices) run(srv *grpc.Server) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	grpcSrv := s.RegisterServices(nil)
-	//reflection.Register(grpcSrv)
+	var grpcSrv *grpc.Server
+	if srv == nil {
+		grpcSrv = s.registerServices(nil)
+	} else {
+		grpcSrv = s.registerServices(srv)
+	}
 
 	grpcWebServer := grpcweb.WrapServer(
 		grpcSrv,
@@ -180,12 +192,13 @@ func (s *SysServices) run() error {
 		}), &http2.Server{}),
 	}
 
+	httpServer.Addr = fmt.Sprintf("127.0.0.1:%d", s.port)
 	return httpServer.ListenAndServe()
 }
 
 // Run is just an exported wrapper for s.run()
-func (s *SysServices) Run() {
-	if err := s.run(); err != nil {
+func (s *SysServices) Run(srv *grpc.Server) {
+	if err := s.run(srv); err != nil {
 		s.logger.Fatalf(errRunningServer, err)
 	}
 }
