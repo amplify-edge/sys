@@ -3,8 +3,11 @@ package pkg
 import (
 	"context"
 	"fmt"
+
 	"github.com/genjidb/genji"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+
+	"net/http"
 
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -14,7 +17,6 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	"net/http"
 
 	"github.com/getcouragenow/sys-share/pkg"
 
@@ -55,7 +57,7 @@ type SysServiceConfig struct {
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
 func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []string, port int) (*SysServiceConfig, error) {
 	if db == nil {
-		db = coredb.SharedDatabase()
+		db, _ = coredb.SharedDatabase()
 	}
 	ssc := &SysServiceConfig{
 		Logger:     l,

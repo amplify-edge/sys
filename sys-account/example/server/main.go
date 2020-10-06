@@ -5,12 +5,13 @@ package main
 
 import (
 	"context"
-	"github.com/genjidb/genji"
-	server "github.com/getcouragenow/sys/sys-account/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/genjidb/genji"
+	server "github.com/getcouragenow/sys/sys-account/service/go"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -41,7 +42,7 @@ func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
 }
 
 func initdb() {
-	gdb = coredb.SharedDatabase()
+	gdb, _ = coredb.SharedDatabase()
 }
 
 func main() {

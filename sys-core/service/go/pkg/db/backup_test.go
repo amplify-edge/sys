@@ -15,7 +15,7 @@ var (
 )
 
 func init() {
-	testDb = db.SharedDatabase()
+	testDb, _ = db.SharedDatabase()
 }
 
 func TestBackup(t *testing.T) {
@@ -23,7 +23,7 @@ func TestBackup(t *testing.T) {
 		os.MkdirAll(backupDir, os.ModePerm)
 	}
 	backupFile := "./" + backupDir + "/" + "db_backup.bak"
-	dbName := db.SharedDbName()
+	dbName := "getcouragenow.db"
 	log.Printf("backup %v => %v", dbName, backupFile)
 	//Db must be closed first
 	testDb.Close()

@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
@@ -10,14 +11,15 @@ import (
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/segmentio/ksuid"
+
+	service "github.com/getcouragenow/sys/sys-core/service/go"
 )
 
 var (
-	database *genji.DB
-	dbName   = "getcouragenow.db"
-	//Move the encrypt key to the yml configuration file later.
-	dbEncryptKey = "testkey!@"
-	models       = make(map[string][]DbModel)
+	database *genji.DB = nil
+	models             = make(map[string][]DbModel)
+	config   *service.SysCoreConfig
+	bakcron  *BackupCron
 )
 
 //UID Generate ksuid.
@@ -33,13 +35,44 @@ type DbModel interface {
 	CreateSQL() []string
 }
 
-//SharedDatabase Returns the global Genji database shared pointer.
-func SharedDatabase() *genji.DB {
-	return database
+//InitDatabase Must be initialized before using database.
+func InitDatabase(cfg *service.SysCoreConfig) error {
+	config = cfg
+
+	if exists, _ := PathExists(cfg.DbConfig.DbDir); !exists {
+		os.MkdirAll(cfg.DbConfig.DbDir, os.ModePerm)
+	}
+
+	if exists, _ := PathExists(cfg.CronConfig.BackupDir); !exists {
+		os.MkdirAll(cfg.CronConfig.BackupDir, os.ModePerm)
+	}
+
+	if database != nil {
+		return fmt.Errorf("The database has been initialized")
+	}
+
+	dbName := config.DbConfig.Name
+	dbPath := cfg.DbConfig.DbDir + "/" + dbName
+	log.Print("Db " + dbPath + "Open .....")
+	var err error
+	database, err = makeDb(dbPath, config.DbConfig.EncryptKey)
+	if err != nil {
+		log.Fatalf("Db "+dbPath+"Open failed: %v", err)
+		return err
+	}
+	bakcron = NewBackupCron(cfg)
+	bakcron.Start()
+	return nil
 }
 
-func SharedDbName() string {
-	return dbName
+//SharedDatabase Returns the global Genji database shared pointer.
+func SharedDatabase() (*genji.DB, error) {
+	if database == nil {
+		err := fmt.Errorf("DB is not initialized, please call InitDatabase first")
+		log.Fatal(err)
+		return nil, err
+	}
+	return database, nil
 }
 
 func makeDb(name string, key string) (*genji.DB, error) {
