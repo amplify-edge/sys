@@ -9,17 +9,15 @@ import (
 	"net/http"
 	"time"
 
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
-	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 
 	"github.com/getcouragenow/sys-share/pkg"
 
@@ -160,7 +158,7 @@ func (s *SysServices) run() error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	grpcSrv := s.RegisterServices(nil)
-	reflection.Register(grpcSrv)
+	//reflection.Register(grpcSrv)
 
 	grpcWebServer := grpcweb.WrapServer(
 		grpcSrv,
