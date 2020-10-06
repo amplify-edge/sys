@@ -1,11 +1,12 @@
 package dao_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/getcouragenow/sys/sys-account/service/go/dao"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 
 	"github.com/genjidb/genji"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
@@ -63,7 +64,7 @@ var (
 )
 
 func init() {
-	testDb = db.SharedDatabase()
+	testDb, _ = db.SharedDatabase()
 	log.Println("MakeSchema testing .....")
 	accdb, err = dao.NewAccountDB(testDb)
 	if err != nil {
