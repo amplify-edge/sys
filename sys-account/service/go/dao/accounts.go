@@ -13,15 +13,15 @@ import (
 )
 
 type Account struct {
-	ID                string
-	Email             string
-	Password          string
-	RoleId            string
-	UserDefinedFields map[string]interface{}
-	CreatedAt         int64
-	UpdatedAt         int64
-	LastLogin         int64
-	Disabled          bool
+	ID                string `genji:"id"`
+	Email             string `genji:"email"`
+	Password          string `genji:"password"`
+	RoleId            string `genji:"role_id"`
+	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
+	CreatedAt         int64 `genji:"created_at"`
+	UpdatedAt         int64 `genji:"updated_at"`
+	LastLogin         int64 `genji:"last_login"`
+	Disabled          bool `genji:"disabled"`
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
@@ -76,9 +76,12 @@ func accountToQueryParams(acc *Account) (res QueryParams, err error) {
 
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (a Account) CreateSQL() []string {
-	fields := initFields(AccColumns)
+	fields := initFields(AccColumns, AccColumnsType)
 	tbl := crud.NewTable(AccTableName, fields)
-	return []string{tbl.CreateTable()}
+	return []string{
+		tbl.CreateTable(),
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email)",
+	}
 }
 
 func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
@@ -130,7 +133,6 @@ func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
 }
 
 func (a *AccountDB) InsertAccount(acc *Account) error {
-	var allVals [][]interface{}
 	aqp, err := accountToQueryParams(acc)
 	if err != nil {
 		return err
@@ -144,12 +146,11 @@ func (a *AccountDB) InsertAccount(acc *Account) error {
 	a.log.WithFields(log.Fields{
 		"statement": stmt,
 		"args":      args,
-	})
+	}).Info("INSERT to accounts table")
 	if err != nil {
 		return err
 	}
-	allVals = append(allVals, args)
-	return a.Exec([]string{stmt}, allVals)
+	return a.Exec(stmt, values)
 }
 
 func (a *AccountDB) UpdateAccount(acc *Account) error {
@@ -157,21 +158,17 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	var values [][]interface{}
 	stmt, args, err := sq.Update(AccTableName).SetMap(aqp.Params).ToSql()
 	if err != nil {
 		return err
 	}
-	values = append(values, args)
-	return a.Exec([]string{stmt}, values)
+	return a.Exec(stmt, args)
 }
 
 func (a *AccountDB) DeleteAccount(id string) error {
-	var values [][]interface{}
 	stmt, args, err := sq.Delete(AccTableName).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}
-	values = append(values, args)
-	return a.Exec([]string{stmt}, values)
+	return a.Exec(stmt, args)
 }

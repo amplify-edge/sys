@@ -2,8 +2,6 @@ package delivery
 
 import (
 	"context"
-	"fmt"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -22,7 +20,7 @@ func (ad *AuthDelivery) NewAccount(ctx context.Context, in *pkg.Account) (*pkg.A
 	if err := ad.store.InsertRole(&dao.Permission{
 		ID:        roleId,
 		AccountId: in.Id, // TODO @gutterbacon check for uniqueness
-		Role:      fmt.Sprintf("%d", in.Role.Role),
+		Role:      int(in.Role.Role),
 		ProjectId: in.Role.ProjectID,
 		OrgId:     in.Role.OrgID,
 		CreatedAt: now,

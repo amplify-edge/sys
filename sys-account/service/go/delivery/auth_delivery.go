@@ -65,11 +65,17 @@ func (ad *AuthDelivery) getAndVerifyAccount(_ context.Context, req *pkg.LoginReq
 	}}
 	acc, err := ad.store.GetAccount(qp)
 	if err != nil {
+		ad.Log.Warnf("error while querying account: %v", err)
 		return nil, err
 	}
-	qp = &dao.QueryParams{Params: map[string]interface{}{"id": acc.RoleId}}
+	ad.Log.WithFields(l.Fields{
+		"account_id": acc.ID,
+		"role_id":    acc.RoleId,
+	}).Info("querying user")
+	qp = &dao.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}}
 	role, err := ad.store.GetRole(qp)
 	if err != nil {
+		ad.Log.Warnf("error while querying role: %v", err)
 		return nil, err
 	}
 	userRole, err := role.ToPkgRole()
@@ -114,11 +120,14 @@ func (ad *AuthDelivery) Register(ctx context.Context, in *pkg.RegisterRequest) (
 	roleId := coredb.UID()
 	accountId := coredb.UID()
 	now := timestampNow()
-	err := ad.store.InsertRole(&dao.Permission{
-		ID:        roleId,
-		AccountId: accountId,
-		Role:      "1",
-		CreatedAt: now,
+	err := ad.store.InsertAccount(&dao.Account{
+		ID:                accountId,
+		Email:             in.Email,
+		Password:          in.Password,
+		RoleId:            roleId,
+		CreatedAt:         now,
+		UserDefinedFields: map[string]interface{}{},
+		Disabled:          false,
 	})
 	if err != nil {
 		return &pkg.RegisterResponse{
@@ -126,13 +135,11 @@ func (ad *AuthDelivery) Register(ctx context.Context, in *pkg.RegisterRequest) (
 			ErrorReason: err.Error(),
 		}, err
 	}
-	err = ad.store.InsertAccount(&dao.Account{
-		ID:        coredb.UID(),
-		Email:     in.Email,
-		Password:  in.Password,
-		RoleId:    roleId,
+	err = ad.store.InsertRole(&dao.Permission{
+		ID:        roleId,
+		AccountId: accountId,
+		Role:      1,
 		CreatedAt: now,
-		Disabled:  false,
 	})
 	if err != nil {
 		return &pkg.RegisterResponse{

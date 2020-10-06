@@ -12,15 +12,16 @@ import (
 )
 
 var (
-	testDb  *genji.DB
-	accdb   *dao.AccountDB
-	err     error
-	role1ID = db.UID()
-	role2ID = db.UID()
+	testDb     *genji.DB
+	accdb      *dao.AccountDB
+	err        error
+	role1ID    = db.UID()
+	role2ID    = db.UID()
+	account0ID = db.UID()
 
 	accs = []dao.Account{
 		{
-			ID:       db.UID(),
+			ID:       account0ID,
 			Email:    "2pac@example.com",
 			Password: "no_biggie",
 			RoleId:   role1ID,
@@ -47,11 +48,11 @@ var (
 		},
 		{
 			ID:       db.UID(),
-			Email:    "2pac@example.com",
+			Email:    "shakur@example.com",
 			Password: "no_biggie",
 			RoleId:   role1ID,
 			UserDefinedFields: map[string]interface{}{
-				"City": "Compton",
+				"City": "Compton LA",
 			},
 			CreatedAt: time.Now().UTC().Unix(),
 			UpdatedAt: time.Now().UTC().Unix(),
@@ -74,10 +75,10 @@ func init() {
 func TestAll(t *testing.T) {
 	t.Run("Test Account Insert", testAccountInsert)
 	t.Run("Test Role Insert", testPermInsert)
-	t.Run("Test Role Get", testPermGet)
-	t.Run("Test Role List", testPermList)
-	t.Run("Test Role Update", testPermUpdate)
 	t.Run("Test Account Query", testQueryAccounts)
+	t.Run("Test Role List", testPermList)
+	t.Run("Test Role Get", testPermGet)
+	t.Run("Test Role Update", testPermUpdate)
 	t.Run("Test Account Update", testUpdateAccounts)
 }
 
@@ -96,12 +97,12 @@ func testQueryAccounts(t *testing.T) {
 	queryParams := []*dao.QueryParams{
 		{
 			Params: map[string]interface{}{
-				"name": "Biggie",
+				"email": "bigg@example.com",
 			},
 		},
 		{
 			Params: map[string]interface{}{
-				"name": "Tupac Shakur",
+				"email": "2pac@example.com",
 			},
 		},
 	}

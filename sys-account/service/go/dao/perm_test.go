@@ -1,7 +1,6 @@
 package dao_test
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -15,21 +14,19 @@ var (
 		{
 			// Admin of an Org
 			ID:        role1ID,
-			AccountId: accs[0].ID,
-			Role:      fmt.Sprintf("%d", 3), // 3 is Admin
+			AccountId: account0ID,
+			Role:      3, // 3 is Admin
 			OrgId:     db.UID(),
 			CreatedAt: time.Now().UTC().Unix(),
-			UpdatedAt: 0,
 		},
 		{
 			// Member of an Org
 			ID:        role2ID,
 			AccountId: accs[1].ID,
-			Role:      fmt.Sprintf("%d", 2), // 2 is member
+			Role:      2, // 2 is member
 			ProjectId: db.UID(),
 			OrgId:     db.UID(),
 			CreatedAt: time.Now().UTC().Unix(),
-			UpdatedAt: 0,
 		},
 	}
 )
@@ -48,26 +45,31 @@ func testPermGet(t *testing.T) {
 		"id": role1ID,
 	}})
 	assert.NoError(t, err)
-	assert.Equal(t, perm.ID, perms[0].ID)
-	t.Logf("Permission queried: %v", perm)
+	assert.Equal(t, perms[0], perm)
+
+	perm, err = accdb.GetRole(&dao.QueryParams{Params: map[string]interface{}{
+		"account_id": account0ID,
+	}})
+	assert.NoError(t, err)
+	assert.Equal(t, perms[0], perm)
 }
 
 func testPermList(t *testing.T) {
 	t.Log("on listing / searching permission / role")
 	perm, err := accdb.ListRole(&dao.QueryParams{Params: map[string]interface{}{
 		"project_id": perms[1].ProjectId,
-		"role":       fmt.Sprintf("%d", 2),
+		"role":       2,
 	}})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(perm))
 	assert.Equal(t, perms[1].Role, perm[0].Role)
-	t.Logf("Permission queried: %v", perm)
+	t.Logf("Permission queried: %v", perm[0])
 }
 
 func testPermUpdate(t *testing.T) {
 	t.Log("on updating role / permission")
 	err := accdb.UpdateRole(&dao.Permission{
-		Role:      "3",
+		Role:      3,
 		ProjectId: perms[1].ProjectId,
 	})
 	assert.NoError(t, err)
