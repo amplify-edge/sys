@@ -131,7 +131,7 @@ packages:
       name: flutter_modular
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.0+1"
+    version: "2.0.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -171,7 +171,7 @@ packages:
       name: html
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.14.0+3"
+    version: "0.14.0+4"
   http:
     dependency: transitive
     description:
@@ -364,7 +364,7 @@ packages:
     description:
       path: "sys-account/service/flu"
       ref: HEAD
-      resolved-ref: eb5b642b46ee2a8c5ce758b2dec0ebba15a75dab
+      resolved-ref: "6c3fbe32d14e3b289646a2241370c36c74735db2"
       url: "git://github.com/getcouragenow/sys-share.git"
     source: git
     version: "0.0.1"

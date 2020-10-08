@@ -1,19 +1,20 @@
+import 'package:sys_account/core/shared_repositories/utilities.dart';
 import 'package:sys_share_sys_account_service/sys_share_sys_account_service.dart'
     as rpc;
 import 'package:grpc/grpc_web.dart';
 
-class UserRepo {
+class UserRepo extends BaseRepo {
   // TODO @winwisely268: this is ugly, ideally we want flu side interceptor
   // as well so each request will have authorization metadata.
   static Future<rpc.Account> getUser({String id, String accessToken}) async {
     final req = rpc.GetAccountRequest()..id = id;
 
     try {
+      final md = BaseRepo.callMetadata;
+      md.putIfAbsent("Authorization", () => accessToken);
       final resp = await accountClient(accessToken)
-          .getAccount(req,
-              options: CallOptions(metadata: {"Authorization": accessToken}))
+          .getAccount(req, options: CallOptions(metadata: md))
           .then((res) {
-        print(res);
         return res;
       });
       return resp;
@@ -24,8 +25,6 @@ class UserRepo {
   }
 
   static rpc.AccountServiceClient accountClient(String accessToken) {
-    final channel =
-        GrpcWebClientChannel.xhr(Uri(host: "127.0.0.1", port: 8888));
-    return rpc.AccountServiceClient(channel);
+    return rpc.AccountServiceClient(BaseRepo.channel);
   }
 }
