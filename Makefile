@@ -25,7 +25,7 @@ SDK_BIN=$(PWD)/bin-all/sdk-cli
 SERVER_BIN=$(PWD)/bin-all/sys-main
 EXAMPLE_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_PASSWORD = superadmin
-EXAMPLE_SERVER_ADDRESS = 127.0.0.1:8888
+EXAMPLE_SERVER_ADDRESS = 127.0.0.1:9074
 
 this-all: this-print this-dep this-build this-print-end
 
