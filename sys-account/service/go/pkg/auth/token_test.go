@@ -3,7 +3,11 @@ package auth_test
 import (
 	"testing"
 
-	pkg "github.com/getcouragenow/sys-share/pkg"
+	//pkg "github.com/getcouragenow/sys-share/pkg"
+
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	pkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
@@ -42,7 +46,7 @@ var (
 			Email:    "winwisely267@example.com",
 			Password: "WE_WANT_GO_GENERICS",
 			Role: &pkg.UserRoles{
-				Role: 2, // Project Admin
+				Role:      2, // Project Admin
 				ProjectID: "1hpMx8pkde4IGFYdhrASY5cPei2",
 			},
 		},

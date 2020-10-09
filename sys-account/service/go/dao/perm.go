@@ -4,22 +4,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	sq "github.com/Masterminds/squirrel"
-	"github.com/genjidb/genji/document"
-	"github.com/getcouragenow/sys-share/pkg"
+
 	log "github.com/sirupsen/logrus"
 
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/genjidb/genji/document"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
 
 type Permission struct {
 	ID        string `genji:"id"`
 	AccountId string `genji:"account_id"`
-	Role      int `genji:"role"`
+	Role      int    `genji:"role"`
 	ProjectId string `genji:"project_id"`
 	OrgId     string `genji:"org_id"`
-	CreatedAt int64 `genji:"created_at"`
-	UpdatedAt int64 `genji:"updated_at"`
+	CreatedAt int64  `genji:"created_at"`
+	UpdatedAt int64  `genji:"updated_at"`
 }
 
 func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Permission, error) {

@@ -61,7 +61,8 @@ func InitDatabase(cfg *service.SysCoreConfig) error {
 		return err
 	}
 	bakcron = NewBackupCron(cfg)
-	bakcron.Start()
+	// TODO: Causes concurrency issues. Needs rethink..
+	//bakcron.Start()
 	return nil
 }
 

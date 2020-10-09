@@ -9,10 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/genjidb/genji"
-	server "github.com/getcouragenow/sys/sys-account/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
-
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -24,6 +20,10 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/getcouragenow/sys-share/pkg"
+
+	"github.com/genjidb/genji"
+	server "github.com/getcouragenow/sys/sys-account/service/go"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"

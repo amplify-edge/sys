@@ -5,10 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
-
-	corepkg "github.com/getcouragenow/sys/main/pkg"
+	"github.com/getcouragenow/sys/main/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )
@@ -67,13 +64,11 @@ func main() {
 		logger.Fatalf(errGetSharedDatabase, err)
 	}
 
-	//sscfg, err := pkg.NewSysServiceConfig(logger, gdb, defaultUnauthenticatedRoutes, defaultPort)
-	sscfg, err := corepkg.NewSysServiceConfig(logger, gdb, defaultUnauthenticatedRoutes, defaultPort)
+	sscfg, err := pkg.NewSysServiceConfig(logger, gdb, defaultUnauthenticatedRoutes, defaultPort)
 	if err != nil {
 		logger.Fatalf(errSourcingConfig, err)
 	}
-	//sysSvc, err := pkg.NewService(sscfg)
-	sysSvc, err := corepkg.NewService(sscfg)
+	sysSvc, err := pkg.NewService(sscfg)
 	if err != nil {
 		logger.Fatalf(errCreateSysService, err)
 	}

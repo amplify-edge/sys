@@ -10,7 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
