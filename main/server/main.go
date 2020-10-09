@@ -19,8 +19,9 @@ var (
 		"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
 	}
 
-	defaultDbName              = "getcouragenow.db"
-	defaultDbEncryptionKey     = "testkey@!" //for test only.
+	defaultDbName          = "getcouragenow.db"
+	defaultDbEncryptionKey = "testkey@!" //for test only.
+	// TODO: Make config
 	defaultDbDir               = "./db"
 	defaultDbBackupDir         = "./db/backups"
 	defaultDbBackupSchedulSpec = "@every 15s"
@@ -28,6 +29,7 @@ var (
 )
 
 const (
+	// TODO: Make config
 	defaultPort          = 8888
 	errSourcingConfig    = "error while sourcing config: %v"
 	errCreateSysService  = "error while creating sys-* service: %v"
