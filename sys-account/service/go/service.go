@@ -1,7 +1,14 @@
-// package service is the package that will be actually imported to sys-main
 package service
 
-type SysAccountService struct {
+import (
+	"context"
+	"github.com/sirupsen/logrus"
+)
 
+type SysAccountService struct {
+	logger *logrus.Entry
+	authInterceptorFunc func(context.Context) (context.Context, error)
+	port int
+	ProxyService *pkg
 }
 
