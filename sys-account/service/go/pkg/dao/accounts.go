@@ -2,26 +2,29 @@ package dao
 
 import (
 	"encoding/json"
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
 	log "github.com/sirupsen/logrus"
 
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
 
 type Account struct {
-	ID                string `genji:"id"`
-	Email             string `genji:"email"`
-	Password          string `genji:"password"`
-	RoleId            string `genji:"role_id"`
+	ID                string                 `genji:"id"`
+	Email             string                 `genji:"email"`
+	Password          string                 `genji:"password"`
+	RoleId            string                 `genji:"role_id"`
 	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
-	CreatedAt         int64 `genji:"created_at"`
-	UpdatedAt         int64 `genji:"updated_at"`
-	LastLogin         int64 `genji:"last_login"`
-	Disabled          bool `genji:"disabled"`
+	CreatedAt         int64                  `genji:"created_at"`
+	UpdatedAt         int64                  `genji:"updated_at"`
+	LastLogin         int64                  `genji:"last_login"`
+	Disabled          bool                   `genji:"disabled"`
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {

@@ -1,7 +1,10 @@
 package main
 
 import (
-	"github.com/getcouragenow/sys-share/pkg"
+	//"github.com/getcouragenow/sys-share/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+
 	log "github.com/sirupsen/logrus"
 )
 

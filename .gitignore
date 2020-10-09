@@ -1,5 +1,9 @@
 vendor
 .idea
 .vscode
+
+# dev builds
 bin-all
-getcouragenow.db
+
+# dev db
+db

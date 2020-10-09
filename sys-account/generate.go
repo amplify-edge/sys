@@ -4,16 +4,7 @@ package main
 // GO
 // ============================================================================
 // Gen and Build main
-//go:generate /usr/bin/env bash -c "echo 'Building example golang binaries (CLI and Server)'"
-//go:generate /usr/bin/env bash -c "mkdir -p bin-all/{server,cli,client}"
-//go:generate go build -v -o bin-all/server/go/ ./example/server/go/main.go
-//go:generate go build -v -o bin-all/cli/go/ ./example/cli/go/main.go
-
-// ============================================================================
-// Flutter
-// ============================================================================
-// GRPC & Protobuf
-// go:generate /usr/bin/env bash -c "echo 'generating protobuf and grpc services for flutter/dart'"
-// go:generate protoc -I./proto/v2 -I. --dart_out=grpc:./flu/lib/api/v2/ ./proto/v2/authn.proto ./proto/v2/users.proto
-// go:generate /usr/bin/env bash -c "echo 'building flutter binary'"
-// go:generate make flu-web-build
+// go:generate /usr/bin/env bash -c "echo 'Building example golang binaries (CLI and Server)'"
+// go:generate /usr/bin/env bash -c "mkdir -p bin-all/{server,cli,client}"
+// go:generate go build -v -o bin-all/server ./example/server/main.go
+// go:generate go build -v -o bin-all/cli ./example/cli/main.go

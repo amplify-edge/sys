@@ -1,4 +1,4 @@
-package repo_test
+package repo
 
 import (
 	"context"
@@ -13,11 +13,10 @@ import (
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 )
 
 var (
-	ad            *repo.SysAccountRepo
+	ad            *SysAccountRepo
 	loginRequests = []*pkg.LoginRequest{
 		{
 			Email:    "someemail@example.com",
@@ -34,9 +33,9 @@ func TestSysAccountRepoAll(t *testing.T) {
 	os.Setenv("JWT_ACCESS_SECRET", "AccessVerySecretHush!")
 	os.Setenv("JWT_REFRESH_SECRET", "RefreshVeryHushHushFriends!")
 	tc := auth.NewTokenConfig([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")))
-	ad = &repo.SysAccountRepo{
-		Log:      logrus.New().WithField("test", "auth-delivery"),
-		TokenCfg: tc,
+	ad = &SysAccountRepo{
+		log:      logrus.New().WithField("test", "auth-delivery"),
+		tokenCfg: tc,
 	}
 	t.Run("Test Login User", testUserLogin)
 	t.Parallel()

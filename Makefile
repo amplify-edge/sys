@@ -23,6 +23,9 @@ CI_DEP_FORK=github.com/joe-getcouragenow/sys
 
 SDK_BIN=$(PWD)/bin-all/sdk-cli
 SERVER_BIN=$(PWD)/bin-all/sys-main
+# TODO. Make config.
+SERVER_ADDRESS=127.0.0.1:8888
+
 EXAMPLE_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_PASSWORD = superadmin
 EXAMPLE_SERVER_ADDRESS = 127.0.0.1:9074
@@ -46,19 +49,26 @@ this-print-end:
 this-dep:
 	cd $(SHARED_FSPATH) && $(MAKE) this-all
 
+### BUILD
+
 this-prebuild:
 	# so the go mod is updated
 	go get -u github.com/getcouragenow/sys-share
 
-this-build:
+this-build: this-build-delete
 
 	mkdir -p ./bin-all
 
 	cd sys-account && $(MAKE) this-all
 	cd sys-core && $(MAKE) this-all
 
-	cd main/sdk-cli && go build -o $(SDK_BIN) .
-	go build -o $(SERVER_BIN) $(PWD)/main/server/main.go
+	cd example/sdk-cli && go build -o $(SDK_BIN) .
+	cd example/server && go build -o $(SERVER_BIN) .
+
+this-build-delete:
+	rm -rf ./bin-all
+
+### RUN
 
 this-sdk-run:
 	$(SDK_BIN)
@@ -66,14 +76,8 @@ this-sdk-run:
 this-server-run:
 	rm -rf getcouragenow.db && $(SERVER_BIN)
 
-this-ex-server-run:
-	cd sys-account && $(MAKE) this-ex-server-run
-
-this-ex-client-auth:
-	cd sys-account && $(MAKE) this-ex-client-auth
-
 this-example-sdk-auth:
-	@echo Running Example Register Client
-	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS)
+	@echo Running Example Registe±–r Client
+	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(SERVER_ADDRESS)
 	@echo Running Example Login Client
-	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS)
+	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(SERVER_ADDRESS)
