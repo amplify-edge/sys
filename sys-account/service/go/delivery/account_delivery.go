@@ -2,10 +2,14 @@ package delivery
 
 import (
 	"context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+
 	"github.com/getcouragenow/sys/sys-account/service/go/dao"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"

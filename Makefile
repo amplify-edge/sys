@@ -49,25 +49,32 @@ this-print-end:
 this-dep:
 	cd $(SHARED_FSPATH) && $(MAKE) this-all
 
+### BUILD
+
 this-prebuild:
 	# so the go mod is updated
 	go get -u github.com/getcouragenow/sys-share
 
-this-build:
+this-build: this-build-delete
 
 	mkdir -p ./bin-all
 
 	cd sys-account && $(MAKE) this-all
 	cd sys-core && $(MAKE) this-all
 
-	cd main/sdk-cli && go build -o $(SDK_BIN) .
-	go build -o $(SERVER_BIN) $(PWD)/main/server/main.go
+	cd example/sdk-cli && go build -o $(SDK_BIN) .
+	cd example/server && go build -o $(SERVER_BIN) .
+
+this-build-delete:
+	rm -rf ./bin-all
+
+### RUN
 
 this-sdk-run:
 	$(SDK_BIN)
 
 this-server-run:
-	rm -rf getcouragenow.db && $(SERVER_BIN) 
+	rm -rf getcouragenow.db && $(SERVER_BIN)
 
 this-example-sdk-auth:
 	@echo Running Example Registe±–r Client

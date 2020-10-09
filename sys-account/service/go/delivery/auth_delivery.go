@@ -4,16 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/genjidb/genji"
-	server "github.com/getcouragenow/sys/sys-account/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	l "github.com/sirupsen/logrus"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+
+	"github.com/genjidb/genji"
+	server "github.com/getcouragenow/sys/sys-account/service/go"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+
 	"github.com/getcouragenow/sys/sys-account/service/go/dao"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 )

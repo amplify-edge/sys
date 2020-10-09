@@ -5,7 +5,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )

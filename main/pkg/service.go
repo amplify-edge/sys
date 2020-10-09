@@ -3,10 +3,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-
-	"github.com/genjidb/genji"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
-
 	"net/http"
 
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -18,7 +14,12 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	//"github.com/getcouragenow/sys/main/pkg"
+	// FIX IS:
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+
+	"github.com/genjidb/genji"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 
 	sysAccountServer "github.com/getcouragenow/sys/sys-account/service/go"
 	sysAccountDeli "github.com/getcouragenow/sys/sys-account/service/go/delivery"
@@ -40,7 +41,7 @@ type SysServices struct {
 	logger              *logrus.Entry
 	authInterceptorFunc func(context.Context) (context.Context, error)
 	port                int
-	ProxyService        *pkg.SysShareProxyService
+	ProxyService        *pkg.SysAccountProxyService
 }
 
 // SysServiceConfig contains all the configuration
@@ -111,7 +112,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		return nil, err
 	}
 
-	sysAccountProxy := pkg.NewSysShareProxyService(authDeli, authDeli)
+	sysAccountProxy := pkg.NewSysAccountProxyService(authDeli, authDeli)
 
 	// ========================================================================
 
