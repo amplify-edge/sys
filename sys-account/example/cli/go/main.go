@@ -3,7 +3,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 )
 
 func main() {

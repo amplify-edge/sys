@@ -13,19 +13,19 @@ import (
 	server "github.com/getcouragenow/sys/sys-account/service/go"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 )
 
@@ -76,35 +76,35 @@ func main() {
 			Refresh: server.TokenConfig{Secret: string(refreshSecret)},
 		},
 	}
-	authDelivery, err := delivery.NewAuthDeli(log, gdb, accCfg)
+	authDelivery, err := repo.NewAuthDeli(log, gdb, accCfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	recoveryOptions := []grpc_recovery.Option{
-		grpc_recovery.WithRecoveryHandler(recoveryHandler(log)),
+	recoveryOptions := []grpcRecovery.Option{
+		grpcRecovery.WithRecoveryHandler(recoveryHandler(log)),
 	}
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	logrusOpts := []grpc_logrus.Option{
-		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
+	logrusOpts := []grpcLogrus.Option{
+		grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
 	}
 
 	grpcSrv := grpc.NewServer(
-		grpc_middleware.WithUnaryServerChain(
-			grpc_recovery.UnaryServerInterceptor(recoveryOptions...),
-			grpc_logrus.UnaryServerInterceptor(log, logrusOpts...),
-			grpc_auth.UnaryServerInterceptor(authDelivery.DefaultInterceptor),
+		grpcMw.WithUnaryServerChain(
+			grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
+			grpcLogrus.UnaryServerInterceptor(log, logrusOpts...),
+			grpcAuth.UnaryServerInterceptor(authDelivery.DefaultInterceptor),
 		),
-		grpc_middleware.WithStreamServerChain(
-			grpc_recovery.StreamServerInterceptor(recoveryOptions...),
-			grpc_logrus.StreamServerInterceptor(log, logrusOpts...),
-			grpc_auth.StreamServerInterceptor(authDelivery.DefaultInterceptor),
+		grpcMw.WithStreamServerChain(
+			grpcRecovery.StreamServerInterceptor(recoveryOptions...),
+			grpcLogrus.StreamServerInterceptor(log, logrusOpts...),
+			grpcAuth.StreamServerInterceptor(authDelivery.DefaultInterceptor),
 		),
 	)
-	sysAccProxy := pkg.NewSysShareProxyService(authDelivery, authDelivery)
+	sysAccProxy := pkg.NewSysAccountProxyService(authDelivery, authDelivery)
 	sysAccProxy.RegisterSvc(grpcSrv)
 
 	grpcWebServer := grpcweb.WrapServer(

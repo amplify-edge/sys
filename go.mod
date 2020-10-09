@@ -14,7 +14,7 @@ require (
 	github.com/gen0cide/cfx v0.0.4
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/sys-share v0.0.0-20201006083537-6c3fbe32d14e // indirect
+	github.com/getcouragenow/sys-share v0.0.0-20201009120557-4ee9fe8212a8 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
@@ -36,5 +36,3 @@ require (
 	google.golang.org/grpc/examples v0.0.0-20200925170654-e6c98a478e62 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
-
-replace github.com/getcouragenow/sys-share => ../sys-share/

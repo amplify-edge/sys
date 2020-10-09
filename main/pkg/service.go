@@ -18,10 +18,10 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	"github.com/getcouragenow/sys-share/pkg"
+	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	sysAccountServer "github.com/getcouragenow/sys/sys-account/service/go"
-	sysAccountDeli "github.com/getcouragenow/sys/sys-account/service/go/delivery"
+	sysAccountDeli "github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 	sysAccountUtil "github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 )
 
@@ -40,7 +40,7 @@ type SysServices struct {
 	logger              *logrus.Entry
 	authInterceptorFunc func(context.Context) (context.Context, error)
 	port                int
-	ProxyService        *pkg.SysShareProxyService
+	ProxyService        *pkg.SysAccountProxyService
 }
 
 // SysServiceConfig contains all the configuration
@@ -111,7 +111,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		return nil, err
 	}
 
-	sysAccountProxy := pkg.NewSysShareProxyService(authDeli, authDeli)
+	sysAccountProxy := pkg.NewSysAccountProxyService(authDeli, authDeli)
 
 	// ========================================================================
 
