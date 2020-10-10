@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/genjidb/genji"
-	sysAccountServer "github.com/getcouragenow/sys/sys-account/service/go"
+	accountpkg "github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )
 
@@ -31,7 +31,7 @@ const (
 type SysServices struct {
 	logger        *logrus.Entry
 	port          int
-	sysAccountSvc *sysAccountServer.SysAccountService
+	sysAccountSvc *accountpkg.SysAccountService
 }
 
 // SysServiceConfig contains all the configuration
@@ -40,7 +40,7 @@ type SysServices struct {
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
 	store      *genji.DB // sys-core
-	sysAccount *sysAccountServer.SysAccountServiceConfig
+	sysAccount *accountpkg.SysAccountServiceConfig
 	port       int
 	logger     *logrus.Entry
 }
@@ -54,7 +54,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []
 			return nil, err
 		}
 	}
-	newSysAccountCfg, err := sysAccountServer.NewSysAccountServiceConfig(l, db, unauthenticatedRoutes)
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, unauthenticatedRoutes)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-Account
 	// ========================================================================
-	sysAccountSvc, err := sysAccountServer.NewSysAccountService(cfg.sysAccount)
+	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.sysAccount)
 	if err != nil {
 		return nil, err
 	}

@@ -3,11 +3,6 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-<<<<<<< HEAD:sys-account/example/cli/go/main.go
-=======
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
->>>>>>> upstream/master:sys-account/example/cli/main.gox
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 )
 

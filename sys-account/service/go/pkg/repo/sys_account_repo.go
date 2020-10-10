@@ -3,7 +3,7 @@ package repo
 import (
 	"github.com/genjidb/genji"
 
-	service "github.com/getcouragenow/sys/sys-account/service/go"
+	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	l "github.com/sirupsen/logrus"

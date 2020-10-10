@@ -4,48 +4,38 @@
 package main
 
 import (
-	"context"
+	"fmt"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	"net/http"
-	"os"
-	"time"
 
-<<<<<<< HEAD:sys-account/example/server/go/main.go
+	// external
 	"github.com/genjidb/genji"
-	server "github.com/getcouragenow/sys/sys-account/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
-
-	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-=======
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
->>>>>>> upstream/master:sys-account/example/server/main.gox
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-
-<<<<<<< HEAD:sys-account/example/server/go/main.go
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
-=======
-	"github.com/genjidb/genji"
-	server "github.com/getcouragenow/sys/sys-account/service/go"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
-
-	"github.com/getcouragenow/sys/sys-account/service/go/delivery"
->>>>>>> upstream/master:sys-account/example/server/main.gox
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 )
 
 var (
-	gdb *genji.DB
+	gdb                          *genji.DB
+	defaultUnauthenticatedRoutes = []string{
+		"/v2.services.AuthService/Login",
+		"/v2.services.AuthService/Register",
+		"/v2.services.AuthService/ResetPassword",
+		"/v2.services.AuthService/ForgotPassword",
+		"/v2.services.AuthService/RefreshAccessToken",
+		// debugging purposes
+		"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
+	}
+	defaultAddr = "127.0.0.1"
+	defaultPort = 8888
 )
 
 func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
@@ -63,64 +53,41 @@ func initdb() {
 func main() {
 	initdb()
 	log := logrus.New().WithField("svc", "sys-account")
-	accessSecret, err := utilities.GenRandomByteSlice(32)
+	sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, defaultUnauthenticatedRoutes)
 	if err != nil {
-		log.Fatalf("error creating jwt access token secret: %v\n", err)
-		os.Exit(1)
-	}
-	refreshSecret, err := utilities.GenRandomByteSlice(32)
-	if err != nil {
-		log.Fatalf("error creating jwt access token secret: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("error creating config: %v", err)
 	}
 
-	// AuthDelivery will be the object to be passed around other services if you will
+	svc, err := accountpkg.NewSysAccountService(sysAccountConfig)
+	if err != nil {
+		log.Fatalf("error creating sys-account service: %v", err)
+	}
+
+	// AuthRepo will be the object to be passed around other services if you will
 	// TODO @gutterbacon: Once config is here, source one from the yamls
-	accCfg := &server.SysAccountConfig{
-		UnauthenticatedRoutes: []string{
-			"/v2.services.AuthService/Login",
-			"/v2.services.AuthService/Register",
-			"/v2.services.AuthService/ResetPassword",
-			"/v2.services.AuthService/ForgotPassword",
-			"/v2.services.AuthService/RefreshAccessToken",
-			// debugging purposes
-			"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
-		},
-		JWTConfig: server.JWTConfig{
-			Access:  server.TokenConfig{Secret: string(accessSecret)},
-			Refresh: server.TokenConfig{Secret: string(refreshSecret)},
-		},
-	}
-	authDelivery, err := repo.NewAuthDeli(log, gdb, accCfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	recoveryOptions := []grpcRecovery.Option{
 		grpcRecovery.WithRecoveryHandler(recoveryHandler(log)),
 	}
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
 
 	logrusOpts := []grpcLogrus.Option{
 		grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
 	}
 
+	unaryItc := []grpc.UnaryServerInterceptor{
+		grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
+		grpcLogrus.UnaryServerInterceptor(log, logrusOpts...),
+	}
+
+	streamItc := []grpc.StreamServerInterceptor{
+		grpcRecovery.StreamServerInterceptor(recoveryOptions...),
+		grpcLogrus.StreamServerInterceptor(log, logrusOpts...),
+	}
+
+	unaryItc, streamItc = svc.InjectInterceptors(unaryItc, streamItc)
 	grpcSrv := grpc.NewServer(
-		grpcMw.WithUnaryServerChain(
-			grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
-			grpcLogrus.UnaryServerInterceptor(log, logrusOpts...),
-			grpcAuth.UnaryServerInterceptor(authDelivery.DefaultInterceptor),
-		),
-		grpcMw.WithStreamServerChain(
-			grpcRecovery.StreamServerInterceptor(recoveryOptions...),
-			grpcLogrus.StreamServerInterceptor(log, logrusOpts...),
-			grpcAuth.StreamServerInterceptor(authDelivery.DefaultInterceptor),
-		),
+		grpcMw.WithUnaryServerChain(unaryItc...),
+		grpcMw.WithStreamServerChain(streamItc...),
 	)
-	sysAccProxy := pkg.NewSysAccountProxyService(authDelivery, authDelivery)
-	sysAccProxy.RegisterSvc(grpcSrv)
 
 	grpcWebServer := grpcweb.WrapServer(
 		grpcSrv,
@@ -140,7 +107,7 @@ func main() {
 			grpcWebServer.ServeHTTP(w, r)
 		}), &http2.Server{}),
 	}
-	httpServer.Addr = "127.0.0.1:8888"
+	httpServer.Addr = fmt.Sprintf("%s:%d", defaultAddr, defaultPort)
 	log.Infof("service listening at %v\n", httpServer.Addr)
 	if err := httpServer.ListenAndServe(); err != nil {
 		log.Fatalf("error running http service: %v\n", err)

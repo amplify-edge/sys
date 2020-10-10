@@ -1,9 +1,10 @@
-package service
+package accountpkg
 
 import (
 	"context"
 	"fmt"
 	"github.com/genjidb/genji"
+	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 	sysAccountUtil "github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
@@ -26,7 +27,7 @@ type SysAccountService struct {
 
 type SysAccountServiceConfig struct {
 	store  *genji.DB
-	cfg    *SysAccountConfig
+	cfg    *service.SysAccountConfig
 	logger *logrus.Entry
 }
 
@@ -44,7 +45,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRo
 
 	sasc := &SysAccountServiceConfig{
 		store:  db,
-		cfg:    &SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
+		cfg:    &service.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
 		logger: sysAccountLogger,
 	}
 	if err := sasc.parseAndValidate(); err != nil {
