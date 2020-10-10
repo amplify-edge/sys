@@ -6,8 +6,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
@@ -59,7 +57,7 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg
 func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequest) (*pkg.Account, error) {
 	if in == nil {
 		return &pkg.Account{},
-			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
+			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
 
 	// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
@@ -67,17 +65,17 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequ
 		"id": in.Id,
 	}})
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", auth.AuthError{Reason: auth.ErrAccountNotFound})
+		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", auth.Error{Reason: auth.ErrAccountNotFound})
 	}
 	role, err := ad.store.GetRole(&dao.QueryParams{Params: map[string]interface{}{
 		"id": acc.RoleId,
 	}})
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.AuthError{Reason: auth.ErrAccountNotFound})
+		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
 	}
 	userRole, err := role.ToPkgRole()
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.AuthError{Reason: auth.ErrAccountNotFound})
+		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
 	}
 
 	return acc.ToPkgAccount(userRole)
@@ -86,7 +84,7 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequ
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
 func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccountsRequest) (*pkg.ListAccountsResponse, error) {
 	if in == nil {
-		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", auth.AuthError{Reason: auth.ErrInvalidParameters})
+		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
 	return &pkg.ListAccountsResponse{}, nil
 }

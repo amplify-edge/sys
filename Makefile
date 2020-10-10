@@ -77,7 +77,7 @@ this-server-run:
 	rm -rf getcouragenow.db && $(SERVER_BIN)
 
 this-example-sdk-auth:
-	@echo Running Example Registe±–r Client
+	@echo Running Example Register Client
 	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(SERVER_ADDRESS)
 	@echo Running Example Login Client
 	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(SERVER_ADDRESS)

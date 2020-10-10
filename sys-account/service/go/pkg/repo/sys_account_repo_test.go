@@ -44,10 +44,10 @@ func TestSysAccountRepoAll(t *testing.T) {
 func testUserLogin(t *testing.T) {
 	// empty request
 	_, err := ad.Login(context.Background(), nil)
-	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.AuthError{Reason: auth.ErrInvalidParameters}))
+	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.Error{Reason: auth.ErrInvalidParameters}))
 	// Wrong credentials
 	_, err = ad.Login(context.Background(), loginRequests[0])
-	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "cannot authenticate: %v", auth.AuthError{Reason: auth.ErrInvalidCredentials}))
+	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "cannot authenticate: %v", auth.Error{Reason: auth.ErrInvalidCredentials}))
 	// Correct Credentials
 	resp, err := ad.Login(context.Background(), loginRequests[1])
 	assert.NoError(t, err)

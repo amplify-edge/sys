@@ -2,6 +2,7 @@ package dao
 
 import (
 	"encoding/json"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -136,6 +137,11 @@ func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
 }
 
 func (a *AccountDB) InsertAccount(acc *Account) error {
+	passwd, err := pass.GenHash(acc.Password)
+	if err != nil {
+		return err
+	}
+	acc.Password = passwd
 	aqp, err := accountToQueryParams(acc)
 	if err != nil {
 		return err

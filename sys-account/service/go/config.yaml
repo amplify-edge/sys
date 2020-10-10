@@ -1,10 +1,10 @@
 sys-account:
   unauthenticatedRoutes:
-    - /getcouragenow.sys.v2.sys_account.AuthService/Login
-    - /getcouragenow.sys.v2.sys_account.AuthService/Register
-    - /getcouragenow.sys.v2.sys_account.AuthService/ResetPassword
-    - /getcouragenow.sys.v2.sys_account.AuthService/ForgotPassword
-    - /getcouragenow.sys.v2.sys_account.AuthService/RefreshAccessToken
+    - /v2.AuthService/Login
+    - /v2.AuthService/Register
+    - /v2.AuthService/ResetPassword
+    - /v2.AuthService/ForgotPassword
+    - /v2.AuthService/RefreshAccessToken
     - /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo
   jwt:
     access:

@@ -100,7 +100,7 @@ func (tc *TokenConfig) ParseTokenStringToClaim(authenticate string, isAccess boo
 	var claims TokenClaims
 	token, err := jwt.ParseWithClaims(authenticate, &claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, AuthError{Reason: ErrDecryptionToken}
+			return nil, Error{Reason: ErrDecryptionToken}
 		}
 		if isAccess {
 			return tc.AccessSecret, nil
@@ -109,11 +109,11 @@ func (tc *TokenConfig) ParseTokenStringToClaim(authenticate string, isAccess boo
 		}
 	})
 	if err != nil {
-		return TokenClaims{}, AuthError{Reason: ErrDecryptionToken, Err: err}
+		return TokenClaims{}, Error{Reason: ErrDecryptionToken, Err: err}
 	}
 
 	if !token.Valid {
-		return TokenClaims{}, AuthError{Reason: ErrInvalidToken}
+		return TokenClaims{}, Error{Reason: ErrInvalidToken}
 	}
 	return claims, nil
 }

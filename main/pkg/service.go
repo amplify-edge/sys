@@ -1,11 +1,9 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
-	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -14,14 +12,8 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-
 	"github.com/genjidb/genji"
 	sysAccountServer "github.com/getcouragenow/sys/sys-account/service/go"
-	sysAccountDeli "github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
-	sysAccountUtil "github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )
 
@@ -37,10 +29,9 @@ const (
 // - sys-core (not sure about db)
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy, then call it here.
 type SysServices struct {
-	logger              *logrus.Entry
-	authInterceptorFunc func(context.Context) (context.Context, error)
-	port                int
-	ProxyService        *pkg.SysAccountProxyService
+	logger        *logrus.Entry
+	port          int
+	sysAccountSvc *sysAccountServer.SysAccountService
 }
 
 // SysServiceConfig contains all the configuration
@@ -48,48 +39,32 @@ type SysServices struct {
 // load up and provide sub grpc services.
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
-	DB         *genji.DB // sys-core
-	SysAccount *sysAccountServer.SysAccountConfig
-	Port       int
-	Logger     *logrus.Entry
+	store      *genji.DB // sys-core
+	sysAccount *sysAccountServer.SysAccountServiceConfig
+	port       int
+	logger     *logrus.Entry
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
 func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []string, port int) (*SysServiceConfig, error) {
+	var err error
 	if db == nil {
-		db, _ = coredb.SharedDatabase()
+		db, err = coredb.SharedDatabase()
+		if err != nil {
+			return nil, err
+		}
 	}
-	ssc := &SysServiceConfig{
-		Logger:     l,
-		DB:         db,
-		Port:       port,
-		SysAccount: &sysAccountServer.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
-	}
-	if err := ssc.parseAndValidate(); err != nil {
+	newSysAccountCfg, err := sysAccountServer.NewSysAccountServiceConfig(l, db, unauthenticatedRoutes)
+	if err != nil {
 		return nil, err
 	}
+	ssc := &SysServiceConfig{
+		logger:     l,
+		store:      db,
+		port:       port,
+		sysAccount: newSysAccountCfg,
+	}
 	return ssc, nil
-}
-
-func (ssc *SysServiceConfig) parseAndValidate() error {
-	if ssc.SysAccount.JWTConfig.Access.Secret == "" {
-		accessSecret, err := sysAccountUtil.GenRandomByteSlice(32)
-		if err != nil {
-			return err
-		}
-		ssc.SysAccount.JWTConfig.Access.Secret = string(accessSecret)
-	}
-	if ssc.SysAccount.JWTConfig.Refresh.Secret == "" {
-		refreshSecret, err := sysAccountUtil.GenRandomByteSlice(32)
-		if err != nil {
-			return err
-		}
-		ssc.SysAccount.JWTConfig.Refresh.Secret = string(refreshSecret)
-	}
-	if ssc.SysAccount.UnauthenticatedRoutes == nil {
-		return fmt.Errorf(errInvalidConfig, "sys_account.unauthenticatedRoutes", "missing")
-	}
-	return nil
 }
 
 // NewService will create new SysServices
@@ -97,29 +72,21 @@ func (ssc *SysServiceConfig) parseAndValidate() error {
 // or could be run independently using Run method below
 func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// load up the sub grpc Services
-	cfg.Logger.Println("Initializing GRPC Services")
-
-	if err := cfg.parseAndValidate(); err != nil {
-		return nil, err
-	}
+	cfg.logger.Println("Initializing GRPC Services")
 
 	// ========================================================================
 	// Sys-Account
 	// ========================================================================
-	authDeli, err := sysAccountDeli.NewAuthDeli(cfg.Logger, cfg.DB, cfg.SysAccount)
+	sysAccountSvc, err := sysAccountServer.NewSysAccountService(cfg.sysAccount)
 	if err != nil {
 		return nil, err
 	}
-
-	sysAccountProxy := pkg.NewSysAccountProxyService(authDeli, authDeli)
-
 	// ========================================================================
 
 	return &SysServices{
-		logger:              cfg.Logger,
-		port:                cfg.Port,
-		authInterceptorFunc: authDeli.DefaultInterceptor,
-		ProxyService:        sysAccountProxy,
+		logger:        cfg.logger,
+		port:          cfg.port,
+		sysAccountSvc: sysAccountSvc,
 	}, nil
 }
 
@@ -131,25 +98,25 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 	logrusOpts := []grpcLogrus.Option{
 		grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
 	}
-
+	// inject unary interceptors
 	unaryInterceptors = append(
 		unaryInterceptors,
 		grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
 		grpcLogrus.UnaryServerInterceptor(s.logger, logrusOpts...),
-		grpcAuth.UnaryServerInterceptor(s.authInterceptorFunc),
 	)
-
+	// inject stream interceptors
 	streamInterceptors = append(
 		streamInterceptors,
 		grpcRecovery.StreamServerInterceptor(recoveryOptions...),
 		grpcLogrus.StreamServerInterceptor(s.logger, logrusOpts...),
-		grpcAuth.StreamServerInterceptor(s.authInterceptorFunc),
 	)
+	// inject grpc auth
+	unaryInterceptors, streamInterceptors = s.sysAccountSvc.InjectInterceptors(unaryInterceptors, streamInterceptors)
 	return unaryInterceptors, streamInterceptors
 }
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
-	s.ProxyService.RegisterSvc(srv)
+	s.sysAccountSvc.RegisterServices(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {
