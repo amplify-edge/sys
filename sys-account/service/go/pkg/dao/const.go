@@ -15,11 +15,11 @@ const (
 	TablePrefix     = "sys_account"
 	TableSeparator  = "_"
 	AccTableName    = "accounts"
-	PermTableName   = "permissions"
+	RolesTableName   = "roles"
 	AccColumns      = `id, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
 	AccColumnsType  = `TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
-	PermColumns     = `id, account_id, role, project_id, org_id, created_at, updated_at`
-	PermColumnsType = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
+	RolesColumns     = `id, account_id, role, project_id, org_id, created_at, updated_at`
+	RolesColumnsType = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
 )
 
 func tableName(name, separator string) string {

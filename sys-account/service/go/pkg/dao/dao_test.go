@@ -75,11 +75,11 @@ func init() {
 
 func TestAll(t *testing.T) {
 	t.Run("Test Account Insert", testAccountInsert)
-	t.Run("Test Role Insert", testPermInsert)
+	t.Run("Test Role Insert", testRolesInsert)
 	t.Run("Test Account Query", testQueryAccounts)
-	t.Run("Test Role List", testPermList)
-	t.Run("Test Role Get", testPermGet)
-	t.Run("Test Role Update", testPermUpdate)
+	t.Run("Test Role List", testRolesList)
+	t.Run("Test Role Get", testRolesGet)
+	t.Run("Test Role Update", testRolesUpdate)
 	t.Run("Test Account Update", testUpdateAccounts)
 }
 

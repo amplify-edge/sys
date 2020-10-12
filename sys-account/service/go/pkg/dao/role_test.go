@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	perms = []*dao.Permission{
+	perms = []*dao.Role{
 		{
 			// Admin of an Org
 			ID:        role1ID,
@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func testPermInsert(t *testing.T) {
+func testRolesInsert(t *testing.T) {
 	t.Log("on inserting permissions / roles")
 	for _, role := range perms {
 		err = accdb.InsertRole(role)
@@ -39,7 +39,7 @@ func testPermInsert(t *testing.T) {
 	}
 }
 
-func testPermGet(t *testing.T) {
+func testRolesGet(t *testing.T) {
 	t.Log("on querying permission / role")
 	perm, err := accdb.GetRole(&dao.QueryParams{Params: map[string]interface{}{
 		"id": role1ID,
@@ -54,7 +54,7 @@ func testPermGet(t *testing.T) {
 	assert.Equal(t, perms[0], perm)
 }
 
-func testPermList(t *testing.T) {
+func testRolesList(t *testing.T) {
 	t.Log("on listing / searching permission / role")
 	perm, err := accdb.ListRole(&dao.QueryParams{Params: map[string]interface{}{
 		"project_id": perms[1].ProjectId,
@@ -63,12 +63,12 @@ func testPermList(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(perm))
 	assert.Equal(t, perms[1].Role, perm[0].Role)
-	t.Logf("Permission queried: %v", perm[0])
+	t.Logf("Role queried: %v", perm[0])
 }
 
-func testPermUpdate(t *testing.T) {
+func testRolesUpdate(t *testing.T) {
 	t.Log("on updating role / permission")
-	err := accdb.UpdateRole(&dao.Permission{
+	err := accdb.UpdateRole(&dao.Role{
 		Role:      3,
 		ProjectId: perms[1].ProjectId,
 	})

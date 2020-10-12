@@ -6,8 +6,6 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	sq "github.com/Masterminds/squirrel"
@@ -15,7 +13,7 @@ import (
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
 
-type Permission struct {
+type Role struct {
 	ID        string `genji:"id"`
 	AccountId string `genji:"account_id"`
 	Role      int    `genji:"role"`
@@ -25,7 +23,7 @@ type Permission struct {
 	UpdatedAt int64  `genji:"updated_at"`
 }
 
-func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Permission, error) {
+func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Role, error) {
 	queryParam := &QueryParams{Params: map[string]interface{}{
 		"account_id": accountId,
 	}}
@@ -41,7 +39,7 @@ func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Permiss
 	return a.GetRole(queryParam)
 }
 
-func (p *Permission) ToPkgRole() (*pkg.UserRoles, error) {
+func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 	role := p.Role
 	if role == 0 || role >= 4 {
 		return nil, errors.New("invalid role")
@@ -64,11 +62,11 @@ func (p *Permission) ToPkgRole() (*pkg.UserRoles, error) {
 	return userRole, nil
 }
 
-func (p Permission) TableName() string {
-	return tableName(PermTableName, "_")
+func (p Role) TableName() string {
+	return tableName(RolesTableName, "_")
 }
 
-func permissionToQueryParam(acc *Permission) (res QueryParams, err error) {
+func permissionToQueryParam(acc *Role) (res QueryParams, err error) {
 	jstring, err := json.Marshal(acc)
 	if err != nil {
 		return QueryParams{}, err
@@ -80,15 +78,15 @@ func permissionToQueryParam(acc *Permission) (res QueryParams, err error) {
 }
 
 // CreateSQL will only be called once by sys-core see sys-core API.
-func (p Permission) CreateSQL() []string {
-	fields := initFields(PermColumns, PermColumnsType)
-	tbl := crud.NewTable(PermTableName, fields)
+func (p Role) CreateSQL() []string {
+	fields := initFields(RolesColumns, RolesColumnsType)
+	tbl := crud.NewTable(RolesTableName, fields)
 	return []string{tbl.CreateTable(),
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_account_id ON permissions(account_id)`}
 }
 
-func (a *AccountDB) getPermSelectStatements(aqp *QueryParams) (string, []interface{}, error) {
-	baseStmt := sq.Select(PermColumns).From(PermTableName)
+func (a *AccountDB) getRolesSelectStatements(aqp *QueryParams) (string, []interface{}, error) {
+	baseStmt := sq.Select(RolesColumns).From(RolesTableName)
 	if aqp != nil && aqp.Params != nil {
 		for k, v := range aqp.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
@@ -97,9 +95,9 @@ func (a *AccountDB) getPermSelectStatements(aqp *QueryParams) (string, []interfa
 	return baseStmt.ToSql()
 }
 
-func (a *AccountDB) GetRole(aqp *QueryParams) (*Permission, error) {
-	var p Permission
-	selectStmt, args, err := a.getPermSelectStatements(aqp)
+func (a *AccountDB) GetRole(aqp *QueryParams) (*Role, error) {
+	var p Role
+	selectStmt, args, err := a.getRolesSelectStatements(aqp)
 	if err != nil {
 		return nil, err
 	}
@@ -115,9 +113,9 @@ func (a *AccountDB) GetRole(aqp *QueryParams) (*Permission, error) {
 	return &p, err
 }
 
-func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Permission, error) {
-	var perms []*Permission
-	selectStmt, args, err := a.getPermSelectStatements(aqp)
+func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Role, error) {
+	var perms []*Role
+	selectStmt, args, err := a.getRolesSelectStatements(aqp)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +124,7 @@ func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Permission, error) {
 		return nil, err
 	}
 	err = res.Iterate(func(d document.Document) error {
-		var perm Permission
+		var perm Role
 		if err = document.StructScan(d, &perm); err != nil {
 			return err
 		}
@@ -139,13 +137,13 @@ func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Permission, error) {
 	return perms, nil
 }
 
-func (a *AccountDB) InsertRole(p *Permission) error {
+func (a *AccountDB) InsertRole(p *Role) error {
 	aqp, err := permissionToQueryParam(p)
 	if err != nil {
 		return err
 	}
 	columns, values := aqp.ColumnsAndValues()
-	stmt, args, err := sq.Insert(PermTableName).
+	stmt, args, err := sq.Insert(RolesTableName).
 		Columns(columns...).
 		Values(values...).
 		ToSql()
@@ -159,12 +157,12 @@ func (a *AccountDB) InsertRole(p *Permission) error {
 	return a.Exec(stmt, args)
 }
 
-func (a *AccountDB) UpdateRole(p *Permission) error {
+func (a *AccountDB) UpdateRole(p *Role) error {
 	aqp, err := permissionToQueryParam(p)
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(PermTableName).SetMap(aqp.Params).ToSql()
+	stmt, args, err := sq.Update(RolesTableName).SetMap(aqp.Params).ToSql()
 	if err != nil {
 		return err
 	}
@@ -173,7 +171,7 @@ func (a *AccountDB) UpdateRole(p *Permission) error {
 
 func (a *AccountDB) DeleteRole(id string) error {
 	var values [][]interface{}
-	stmt, args, err := sq.Delete(PermTableName).Where("id = ?", id).ToSql()
+	stmt, args, err := sq.Delete(RolesTableName).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}
