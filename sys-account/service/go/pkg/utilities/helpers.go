@@ -8,9 +8,6 @@ import (
 var (
 	configNumberSequence    = regexp.MustCompile(`([a-zA-Z])(\d+)([a-zA-Z]?)`)
 	configNumberReplacement = []byte("$1 $2 $3")
-	upperCaseAcronym        = map[string]bool{
-		"ID": false,
-	}
 )
 
 func ToSnakeCase(s string) string {

@@ -22,29 +22,29 @@ var (
 	bakcron  *BackupCron
 )
 
-//UID Generate ksuid.
+// UID Generate ksuid.
 func UID() string {
 	return ksuid.New().String()
 }
 
-//DbModel Basic table model interface,
+// DbModel Basic table model interface,
 type DbModel interface {
-	//Table name
+	// Table name
 	TableName() string
-	//Used to return the SQL used to create tables and indexes
+	// Used to return the SQL used to create tables and indexes
 	CreateSQL() []string
 }
 
-//InitDatabase Must be initialized before using database.
+// InitDatabase Must be initialized before using database.
 func InitDatabase(cfg *service.SysCoreConfig) error {
 	config = cfg
 
 	if exists, _ := PathExists(cfg.DbConfig.DbDir); !exists {
-		os.MkdirAll(cfg.DbConfig.DbDir, os.ModePerm)
+		_ = os.MkdirAll(cfg.DbConfig.DbDir, os.ModePerm)
 	}
 
 	if exists, _ := PathExists(cfg.CronConfig.BackupDir); !exists {
-		os.MkdirAll(cfg.CronConfig.BackupDir, os.ModePerm)
+		_ = os.MkdirAll(cfg.CronConfig.BackupDir, os.ModePerm)
 	}
 
 	if database != nil {
@@ -62,11 +62,11 @@ func InitDatabase(cfg *service.SysCoreConfig) error {
 	}
 	bakcron = NewBackupCron(cfg)
 	// TODO: Causes concurrency issues. Needs rethink..
-	//bakcron.Start()
+	// bakcron.Start()
 	return nil
 }
 
-//SharedDatabase Returns the global Genji database shared pointer.
+// SharedDatabase Returns the global Genji database shared pointer.
 func SharedDatabase() (*genji.DB, error) {
 	if database == nil {
 		err := fmt.Errorf("DB is not initialized, please call InitDatabase first")
@@ -102,7 +102,7 @@ func makeDb(name string, key string) (*genji.DB, error) {
 	return db, nil
 }
 
-//RegisterModels for mod-*, For example, mod-accounts, mod-chat, sys-core.
+// RegisterModels for mod-*, For example, mod-accounts, mod-chat, sys-core.
 func RegisterModels(mod string, mds []DbModel) {
 	models[mod] = mds
 }
@@ -157,7 +157,7 @@ func QueryTable(db *genji.DB, in interface{}, sql string, outcb func(out interfa
 		if err != nil {
 			return err
 		}
-		//log.Printf("out => %v", out)
+		// log.Printf("out => %v", out)
 		outcb(out)
 		return nil
 	})

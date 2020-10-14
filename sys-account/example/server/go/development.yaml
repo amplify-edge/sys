@@ -1,0 +1,9 @@
+sys-account:
+  unauthenticatedRoutes:
+    - /v2.AuthService/Login
+    - /v2.AuthService/Register
+    - /v2.AuthService/ResetPassword
+    - /v2.AuthService/ForgotPassword
+    - /v2.AuthService/RefreshAccessToken
+    - /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo
+  jwt:

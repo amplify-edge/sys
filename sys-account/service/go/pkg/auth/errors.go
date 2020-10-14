@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type AuthErrorReason int
+type ErrorReason int
 
 const (
 	ErrInvalidParameters = iota
@@ -16,22 +16,24 @@ const (
 	ErrRegistrationError
 	ErrCreatingToken
 	ErrAccountNotFound
+	ErrQueryAccount
+	ErrVerifyPassword
 )
 
 // AuthError containing error reason and golang's err
-type AuthError struct {
-	Reason AuthErrorReason
+type Error struct {
+	Reason ErrorReason
 	Err    error
 }
 
-func (err AuthError) Error() string {
+func (err Error) Error() string {
 	if err.Err != nil {
 		return fmt.Sprintf("%s (%v)", err.description(), err.Err)
 	}
 	return err.description()
 }
 
-func (err AuthError) description() string {
+func (err Error) description() string {
 	switch err.Reason {
 	case ErrInvalidParameters:
 		return "Invalid credentials parameters"
@@ -59,6 +61,13 @@ func (err AuthError) description() string {
 
 	case ErrAccountNotFound:
 		return "Error account not found"
+
+	case ErrQueryAccount:
+		return "Error querying account"
+
+	case ErrVerifyPassword:
+		return "Error verifying password"
 	}
+
 	return "Unknown error"
 }
