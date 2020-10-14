@@ -107,7 +107,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			ErrorReason: err.Error(),
 		}, err
 	}
-	err = ad.store.InsertRole(&dao.Permission{
+	err = ad.store.InsertRole(&dao.Role{
 		ID:        roleId,
 		AccountId: accountId,
 		Role:      1,
