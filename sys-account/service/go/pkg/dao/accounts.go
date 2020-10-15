@@ -2,18 +2,16 @@ package dao
 
 import (
 	"encoding/json"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
 	log "github.com/sirupsen/logrus"
 
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 )
 
 type Account struct {
@@ -81,15 +79,15 @@ func accountToQueryParams(acc *Account) (res QueryParams, err error) {
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (a Account) CreateSQL() []string {
 	fields := initFields(AccColumns, AccColumnsType)
-	tbl := crud.NewTable(AccTableName, fields)
+	tbl := crud.NewTable(a.TableName(), fields)
 	return []string{
 		tbl.CreateTable(),
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email)",
+		fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON %s(email)", a.TableName()),
 	}
 }
 
 func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
-	baseStmt := sq.Select(AccColumns).From(AccTableName)
+	baseStmt := sq.Select(AccColumns).From(tableName(AccTableName, "_"))
 	if aqp != nil && aqp.Params != nil {
 		for k, v := range aqp.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
@@ -148,7 +146,7 @@ func (a *AccountDB) InsertAccount(acc *Account) error {
 	}
 	log.Printf("query params: %v", aqp)
 	columns, values := aqp.ColumnsAndValues()
-	stmt, args, err := sq.Insert(AccTableName).
+	stmt, args, err := sq.Insert(tableName(AccTableName, "_")).
 		Columns(columns...).
 		Values(values...).
 		ToSql()
@@ -167,7 +165,7 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(AccTableName).SetMap(aqp.Params).ToSql()
+	stmt, args, err := sq.Update(tableName(AccTableName, "_")).SetMap(aqp.Params).ToSql()
 	if err != nil {
 		return err
 	}
@@ -175,7 +173,7 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 }
 
 func (a *AccountDB) DeleteAccount(id string) error {
-	stmt, args, err := sq.Delete(AccTableName).Where("id = ?", id).ToSql()
+	stmt, args, err := sq.Delete(tableName(AccTableName, "_")).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}

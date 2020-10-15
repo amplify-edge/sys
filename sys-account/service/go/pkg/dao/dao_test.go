@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"github.com/genjidb/genji"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/genjidb/genji"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 )
 
@@ -19,6 +20,14 @@ var (
 	role1ID    = db.UID()
 	role2ID    = db.UID()
 	account0ID = db.UID()
+
+	defaultDbName          = "getcouragenow.db"
+	defaultDbEncryptionKey = "testkey@!" // for test only.
+	// TODO: Make config
+	defaultDbDir               = "./db"
+	defaultDbBackupDir         = "./db/backups"
+	defaultDbBackupSchedulSpec = "@every 15s"
+	defaultDbRotateSchedulSpec = "@every 1h"
 
 	accs = []dao.Account{
 		{
@@ -64,6 +73,24 @@ var (
 )
 
 func init() {
+	csc := &corecfg.SysCoreConfig{
+		DbConfig: corecfg.DbConfig{
+			Name:             defaultDbName,
+			EncryptKey:       defaultDbEncryptionKey,
+			RotationDuration: 1,
+			DbDir:            defaultDbDir,
+		},
+		CronConfig: corecfg.CronConfig{
+			BackupSchedule: defaultDbBackupSchedulSpec,
+			RotateSchedule: defaultDbRotateSchedulSpec,
+			BackupDir:      defaultDbBackupDir,
+		},
+	}
+
+	if err := db.InitDatabase(csc); err != nil {
+		log.Fatalf("error initializing db: %v", err)
+	}
+
 	testDb, _ = db.SharedDatabase()
 	log.Println("MakeSchema testing .....")
 	accdb, err = dao.NewAccountDB(testDb)

@@ -36,6 +36,7 @@ func (c ContextKey) String() string {
 func NewAuthRepo(l *l.Entry, db *genji.DB, cfg *service.SysAccountConfig) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db)
 	if err != nil {
+		l.Errorf("Error while initializing DAO: %v", err)
 		return nil, err
 	}
 	tokenCfg := auth.NewTokenConfig([]byte(cfg.JWTConfig.Access.Secret), []byte(cfg.JWTConfig.Refresh.Secret))

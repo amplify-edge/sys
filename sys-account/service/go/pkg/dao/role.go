@@ -80,13 +80,13 @@ func permissionToQueryParam(acc *Role) (res QueryParams, err error) {
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (p Role) CreateSQL() []string {
 	fields := initFields(RolesColumns, RolesColumnsType)
-	tbl := crud.NewTable(RolesTableName, fields)
+	tbl := crud.NewTable(p.TableName(), fields)
 	return []string{tbl.CreateTable(),
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_account_id ON permissions(account_id)`}
+		fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_account_id ON %s(account_id)`, p.TableName())}
 }
 
 func (a *AccountDB) getRolesSelectStatements(aqp *QueryParams) (string, []interface{}, error) {
-	baseStmt := sq.Select(RolesColumns).From(RolesTableName)
+	baseStmt := sq.Select(RolesColumns).From(tableName(RolesTableName, "_"))
 	if aqp != nil && aqp.Params != nil {
 		for k, v := range aqp.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
@@ -143,7 +143,7 @@ func (a *AccountDB) InsertRole(p *Role) error {
 		return err
 	}
 	columns, values := aqp.ColumnsAndValues()
-	stmt, args, err := sq.Insert(RolesTableName).
+	stmt, args, err := sq.Insert(tableName(RolesTableName, "_")).
 		Columns(columns...).
 		Values(values...).
 		ToSql()
@@ -162,7 +162,7 @@ func (a *AccountDB) UpdateRole(p *Role) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(RolesTableName).SetMap(aqp.Params).ToSql()
+	stmt, args, err := sq.Update(tableName(RolesTableName, "_")).SetMap(aqp.Params).ToSql()
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (a *AccountDB) UpdateRole(p *Role) error {
 
 func (a *AccountDB) DeleteRole(id string) error {
 	var values [][]interface{}
-	stmt, args, err := sq.Delete(RolesTableName).Where("id = ?", id).ToSql()
+	stmt, args, err := sq.Delete(tableName(RolesTableName, "_")).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}

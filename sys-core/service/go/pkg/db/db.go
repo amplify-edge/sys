@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/segmentio/ksuid"
+	log "github.com/sirupsen/logrus"
 
 	service "github.com/getcouragenow/sys/sys-core/service/go"
 )
@@ -123,8 +123,7 @@ func MakeSchema(gdb *genji.DB) error {
 			log.Printf("Create Table: %v, sql = %v", table.TableName(), table.CreateSQL()[0])
 			for _, sql := range table.CreateSQL() {
 				if err := gdb.Exec(sql); err != nil {
-					err = tx.Rollback()
-					log.Panic(err)
+					log.Error(err)
 					return err
 				}
 			}
@@ -133,8 +132,7 @@ func MakeSchema(gdb *genji.DB) error {
 
 	err = tx.Commit()
 	if err != nil {
-		err = tx.Rollback()
-		log.Panic(err)
+		log.Error(err)
 		return err
 	}
 
