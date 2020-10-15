@@ -27,7 +27,7 @@ type SysAccountService struct {
 
 type SysAccountServiceConfig struct {
 	store  *genji.DB
-	cfg    *service.SysAccountConfig
+	Cfg    *service.SysAccountConfig
 	logger *logrus.Entry
 }
 
@@ -45,7 +45,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRo
 
 	sasc := &SysAccountServiceConfig{
 		store:  db,
-		cfg:    &service.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
+		Cfg:    &service.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
 		logger: sysAccountLogger,
 	}
 	if err := sasc.parseAndValidate(); err != nil {
@@ -55,21 +55,21 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRo
 }
 
 func (ssc *SysAccountServiceConfig) parseAndValidate() error {
-	if ssc.cfg.JWTConfig.Access.Secret == "" {
+	if ssc.Cfg.JWTConfig.Access.Secret == "" {
 		accessSecret, err := sysAccountUtil.GenRandomByteSlice(32)
 		if err != nil {
 			return err
 		}
-		ssc.cfg.JWTConfig.Access.Secret = string(accessSecret)
+		ssc.Cfg.JWTConfig.Access.Secret = string(accessSecret)
 	}
-	if ssc.cfg.JWTConfig.Refresh.Secret == "" {
+	if ssc.Cfg.JWTConfig.Refresh.Secret == "" {
 		refreshSecret, err := sysAccountUtil.GenRandomByteSlice(32)
 		if err != nil {
 			return err
 		}
-		ssc.cfg.JWTConfig.Refresh.Secret = string(refreshSecret)
+		ssc.Cfg.JWTConfig.Refresh.Secret = string(refreshSecret)
 	}
-	if ssc.cfg.UnauthenticatedRoutes == nil {
+	if ssc.Cfg.UnauthenticatedRoutes == nil {
 		return fmt.Errorf(errInvalidConfig, "sys_account.unauthenticatedRoutes", "missing")
 	}
 	return nil
@@ -78,7 +78,7 @@ func (ssc *SysAccountServiceConfig) parseAndValidate() error {
 func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, error) {
 	cfg.logger.Infoln("Initializing Sys-Account Service")
 
-	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.cfg)
+	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -40,7 +40,7 @@ type SysServices struct {
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
 	store      *genji.DB // sys-core
-	sysAccount *accountpkg.SysAccountServiceConfig
+	SysAccount *accountpkg.SysAccountServiceConfig
 	port       int
 	logger     *logrus.Entry
 }
@@ -62,7 +62,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []
 		logger:     l,
 		store:      db,
 		port:       port,
-		sysAccount: newSysAccountCfg,
+		SysAccount: newSysAccountCfg,
 	}
 	return ssc, nil
 }
@@ -77,7 +77,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-Account
 	// ========================================================================
-	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.sysAccount)
+	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.SysAccount)
 	if err != nil {
 		return nil, err
 	}
