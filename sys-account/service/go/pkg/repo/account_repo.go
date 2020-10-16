@@ -16,7 +16,7 @@ import (
 func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
 	now := timestampNow()
 	roleId := coredb.UID()
-	if err := ad.store.InsertRole(&dao.Permission{
+	if err := ad.store.InsertRole(&dao.Role{
 		ID:        roleId,
 		AccountId: in.Id, // TODO @gutterbacon check for uniqueness
 		Role:      int(in.Role.Role),

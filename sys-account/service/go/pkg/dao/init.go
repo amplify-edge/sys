@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	tablePrefix = "sys_core"
+	tablePrefix = "sys_accounts"
 	modName     = "accounts"
 )
 
