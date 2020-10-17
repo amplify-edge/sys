@@ -92,9 +92,13 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 	}
 	filter := &dao.QueryParams{Params: map[string]interface{}{}}
 	orderBy := in.OrderBy + " ASC"
-	cursor, err = strconv.ParseInt(in.CurrentPageId, 10, 64)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
+	if in.CurrentPageId != "" {
+		cursor, err = strconv.ParseInt(in.CurrentPageId, 10, 64)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
+		}
+	} else {
+		cursor = 0
 	}
 	if in.PerPageEntries == 0 {
 		limit = dao.DefaultLimit
