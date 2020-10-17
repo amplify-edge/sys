@@ -1,5 +1,4 @@
-
-sys-core:
+sysCoreConfig:
   db:
     name: "getcouragenow.db"
     encryptKey: "testkey!@"

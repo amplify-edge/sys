@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -83,10 +85,45 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequ
 
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
 func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccountsRequest) (*pkg.ListAccountsResponse, error) {
+	var limit, cursor int64
+	var err error
 	if in == nil {
 		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
-	return &pkg.ListAccountsResponse{}, nil
+	filter := &dao.QueryParams{Params: map[string]interface{}{}}
+	orderBy := in.OrderBy + " ASC"
+	cursor, err = strconv.ParseInt(in.CurrentPageId, 10, 64)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
+	}
+	if in.PerPageEntries == 0 {
+		limit = dao.DefaultLimit
+	}
+	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+	var accounts []*pkg.Account
+
+	for _, acc := range listAccounts {
+		r, err := ad.store.GetRole(&dao.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
+		if err != nil {
+			return nil, err
+		}
+		role, err := r.ToPkgRole()
+		if err != nil {
+			return nil, err
+		}
+		account, err := acc.ToPkgAccount(role)
+		if err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, account)
+	}
+	return &pkg.ListAccountsResponse{
+		Accounts:   accounts,
+		NextPageId: fmt.Sprintf("%d", next),
+	}, nil
 }
 
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.

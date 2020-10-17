@@ -53,7 +53,7 @@ func initdb() {
 func main() {
 	initdb()
 	log := logrus.New().WithField("svc", "sys-account")
-	sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, defaultUnauthenticatedRoutes)
+	sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, "path")
 	if err != nil {
 		log.Fatalf("error creating config: %v", err)
 	}

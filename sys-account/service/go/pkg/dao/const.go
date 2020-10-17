@@ -12,14 +12,16 @@ import (
 // const.go contains
 // all the table columns / fields basically.
 const (
-	TablePrefix     = "sys_account"
-	TableSeparator  = "_"
-	AccTableName    = "accounts"
+	TablePrefix      = "sys_account"
+	TableSeparator   = "_"
+	AccTableName     = "accounts"
 	RolesTableName   = "roles"
-	AccColumns      = `id, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
-	AccColumnsType  = `TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
+	AccColumns       = `id, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
+	AccColumnsType   = `TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
+	AccCursor        = `created_at`
 	RolesColumns     = `id, account_id, role, project_id, org_id, created_at, updated_at`
 	RolesColumnsType = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
+	DefaultLimit     = 10
 )
 
 func tableName(name, separator string) string {

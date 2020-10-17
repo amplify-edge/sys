@@ -7,3 +7,6 @@ bin-all
 
 # dev db
 db
+
+# dev config
+config/**
