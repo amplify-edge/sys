@@ -20,10 +20,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
         with:
           name: getcouragenow/shared
-          ref: refs/heads/release
+          ref: refs/heads/master
 
       
       - uses: actions/checkout@v2
