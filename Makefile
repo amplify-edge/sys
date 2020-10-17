@@ -81,3 +81,12 @@ this-example-sdk-auth:
 	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(SERVER_ADDRESS)
 	@echo Running Example Login Client
 	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(SERVER_ADDRESS)
+
+# gotten from "make this-example-sdk-auth"
+# TODO: easy way to capture this ? Might have to set to ENV and then get from ENV when runnng this make target
+# TODO: error: "command failed: grpc: the credentials require transport level security (use grpc.WithTransportCredentials() to set)"
+EXAMPLE_TOKEN=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIiLCJyb2xlIjp7InJvbGUiOjF9LCJ1c2VyRW1haWwiOiJzdXBlcmFkbWluQGdldGNvdXJhZ2Vub3cub3JnIiwiZXhwIjoxNjAyOTEwODA4fQ.ppCcWFxLt1nWZMBz_I8d_O2E2eje0EKCsDwVRzXNcbFFBzDykdIEdXgtUGWp8oLi6jcfYaQygyAmlMuZVZ-Blg
+this-example-sdk-accounts:
+	@echo Running Example Accounts CRUD
+	$(SDK_BIN) sys-account account-service list-accounts --jwt-access-token $(EXAMPLE_TOKEN) --server-addr $(SERVER_ADDRESS) --tls-insecure-skip-verify
+
