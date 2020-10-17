@@ -19,17 +19,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      
-      - uses: actions/checkout@v2
-        with:
-          repository: getcouragenow/shared
-          path: ./../shared
-
-      
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          submodules: recursive
       - uses: actions/cache@v2
         with:
           path: ~/go/pkg/mod
