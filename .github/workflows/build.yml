@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: getcouragenow/shared
-          ref: refs/heads/master
+          path: ./../shared
 
       
       - uses: actions/checkout@v2
