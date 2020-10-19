@@ -86,13 +86,30 @@ func (a Account) CreateSQL() []string {
 	}
 }
 
-func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
+func (a *AccountDB) queryFilter(filter *QueryParams) sq.SelectBuilder {
 	baseStmt := sq.Select(AccColumns).From(tableName(AccTableName, "_"))
-	if aqp != nil && aqp.Params != nil {
-		for k, v := range aqp.Params {
+	if filter != nil && filter.Params != nil {
+		for k, v := range filter.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
 		}
 	}
+	return baseStmt
+}
+
+func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
+	baseStmt := a.queryFilter(aqp)
+	return baseStmt.ToSql()
+}
+
+func (a *AccountDB) listAccountSelectStatement(filter *QueryParams, orderBy string, limit int64, cursor *int64) (string, []interface{}, error) {
+	var csr int
+	baseStmt := a.queryFilter(filter)
+	if cursor == nil {
+		csr = 0
+	}
+	baseStmt.Where(sq.GtOrEq{AccCursor: csr})
+	baseStmt.Limit(uint64(limit))
+	baseStmt.OrderBy(orderBy)
 	return baseStmt.ToSql()
 }
 
@@ -110,15 +127,15 @@ func (a *AccountDB) GetAccount(aqp *QueryParams) (*Account, error) {
 	return &acc, err
 }
 
-func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
+func (a *AccountDB) ListAccount(aqp *QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
 	var accs []*Account
-	selectStmt, args, err := a.getAccountSelectStatement(aqp)
+	selectStmt, args, err := a.listAccountSelectStatement(aqp, orderBy, limit, &cursor)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	res, err := a.Query(selectStmt, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	err = res.Iterate(func(d document.Document) error {
 		var acc Account
@@ -129,9 +146,9 @@ func (a *AccountDB) ListAccount(aqp *QueryParams) ([]*Account, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return accs, nil
+	return accs, accs[len(accs)-1].CreatedAt, nil
 }
 
 func (a *AccountDB) InsertAccount(acc *Account) error {

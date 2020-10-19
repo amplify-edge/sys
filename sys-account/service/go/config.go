@@ -2,39 +2,82 @@ package service
 
 import (
 	"fmt"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 
-	"github.com/gen0cide/cfx"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	ModuleName       = "sys-account"
-	errParsingConfig = "error parsing %s config: %v\n"
+	errParsingConfig           = "error parsing %s config: %v\n"
+	errNoUnauthenticatedRoutes = "error: no unauthenticated routes defined"
 )
 
 type SysAccountConfig struct {
-	UnauthenticatedRoutes []string  `json:"unauthenticatedRoutes,required" yaml:"unauthenticatedRoutes,required" mapstructure:"unauthenticatedRoutes,required"`
-	JWTConfig             JWTConfig `json:"jwt,required" yaml:"jwt,required" mapstructure:"jwt,required"`
+	SysAccountConfig Config `yaml:"sysAccountConfig" mapstructure:"sysAccountConfig"`
+}
+
+func (s *SysAccountConfig) Validate() error {
+	return s.SysAccountConfig.validate()
+}
+
+type Config struct {
+	UnauthenticatedRoutes []string  `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
+	JWTConfig             JWTConfig `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+}
+
+func (c Config) validate() error {
+	if len(c.UnauthenticatedRoutes) == 0 {
+		return fmt.Errorf(errNoUnauthenticatedRoutes)
+	}
+	if err := c.JWTConfig.validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type JWTConfig struct {
-	Access  TokenConfig `json:"access,omitempty" yaml:"access,omitempty" mapstructure:"access,omitempty"`
-	Refresh TokenConfig `json:"refresh,omitempty" yaml:"refresh,omitempty" mapstructure:"refresh,omitempty"`
+	Access  TokenConfig `json:"access" yaml:"access" mapstructure:"access"`
+	Refresh TokenConfig `json:"refresh" yaml:"refresh" mapstructure:"refresh"`
+}
+
+func (j JWTConfig) validate() error {
+	if err := j.Access.validate(); err != nil {
+		return err
+	}
+	if err := j.Refresh.validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type TokenConfig struct {
-	Secret string `json:"secret,omitempty" yaml:"secret,omitempty" mapstructure:"secret,omitempty"`
-	Expiry int    `json:"expiry,omitempty" yaml:"expiry,omitempty" mapstructure:"expiry,omitempty"`
+	Secret string `json:"secret" yaml:"secret" mapstructure:"secret"`
+	Expiry int    `json:"expiry" yaml:"expiry" mapstructure:"expiry"`
 }
 
-func NewConfig(provider cfx.Container) (*SysAccountConfig, error) {
-	// create an empty Config object
-	cfg := &SysAccountConfig{}
-
-	// use the provider to populate the config
-	err := provider.Populate(ModuleName, cfg)
-	if err != nil {
-		return nil, fmt.Errorf(errParsingConfig, ModuleName, err)
+func (t TokenConfig) validate() error {
+	if t.Secret == "" {
+		secret, err := sharedConfig.GenRandomByteSlice(32)
+		if err != nil {
+			return err
+		}
+		t.Secret = string(secret)
 	}
+	return nil
+}
 
+func NewConfig(filepath string) (*SysAccountConfig, error) {
+	cfg := &SysAccountConfig{}
+	f, err := sharedConfig.LoadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	if err := yaml.UnmarshalStrict(f, &cfg); err != nil {
+		return nil, fmt.Errorf(errParsingConfig, filepath, err)
+	}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	return cfg, nil
 }
+

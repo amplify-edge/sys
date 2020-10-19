@@ -2,11 +2,9 @@ package accountpkg
 
 import (
 	"context"
-	"fmt"
 	"github.com/genjidb/genji"
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
-	sysAccountUtil "github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
@@ -31,7 +29,7 @@ type SysAccountServiceConfig struct {
 	logger *logrus.Entry
 }
 
-func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []string) (*SysAccountServiceConfig, error) {
+func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, filepath string) (*SysAccountServiceConfig, error) {
 	var err error
 	if db == nil {
 		db, err = coredb.SharedDatabase()
@@ -43,36 +41,17 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRo
 		"sys": "sys-account",
 	})
 
-	sasc := &SysAccountServiceConfig{
-		store:  db,
-		Cfg:    &service.SysAccountConfig{UnauthenticatedRoutes: unauthenticatedRoutes},
-		logger: sysAccountLogger,
-	}
-	if err := sasc.parseAndValidate(); err != nil {
+	accountCfg, err := service.NewConfig(filepath)
+	if err != nil {
 		return nil, err
 	}
-	return sasc, nil
-}
 
-func (ssc *SysAccountServiceConfig) parseAndValidate() error {
-	if ssc.Cfg.JWTConfig.Access.Secret == "" {
-		accessSecret, err := sysAccountUtil.GenRandomByteSlice(32)
-		if err != nil {
-			return err
-		}
-		ssc.Cfg.JWTConfig.Access.Secret = string(accessSecret)
+	sasc := &SysAccountServiceConfig{
+		store:  db,
+		Cfg:    accountCfg,
+		logger: sysAccountLogger,
 	}
-	if ssc.Cfg.JWTConfig.Refresh.Secret == "" {
-		refreshSecret, err := sysAccountUtil.GenRandomByteSlice(32)
-		if err != nil {
-			return err
-		}
-		ssc.Cfg.JWTConfig.Refresh.Secret = string(refreshSecret)
-	}
-	if ssc.Cfg.UnauthenticatedRoutes == nil {
-		return fmt.Errorf(errInvalidConfig, "sys_account.unauthenticatedRoutes", "missing")
-	}
-	return nil
+	return sasc, nil
 }
 
 func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, error) {

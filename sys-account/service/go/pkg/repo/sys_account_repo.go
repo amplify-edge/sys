@@ -39,11 +39,11 @@ func NewAuthRepo(l *l.Entry, db *genji.DB, cfg *service.SysAccountConfig) (*SysA
 		l.Errorf("Error while initializing DAO: %v", err)
 		return nil, err
 	}
-	tokenCfg := auth.NewTokenConfig([]byte(cfg.JWTConfig.Access.Secret), []byte(cfg.JWTConfig.Refresh.Secret))
+	tokenCfg := auth.NewTokenConfig([]byte(cfg.SysAccountConfig.JWTConfig.Access.Secret), []byte(cfg.SysAccountConfig.JWTConfig.Refresh.Secret))
 	return &SysAccountRepo{
 		store:                 accdb,
 		log:                   l,
 		tokenCfg:              tokenCfg,
-		unauthenticatedRoutes: cfg.UnauthenticatedRoutes,
+		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
 	}, nil
 }

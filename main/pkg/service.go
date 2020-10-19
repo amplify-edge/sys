@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	"net/http"
 
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -34,35 +35,67 @@ type SysServices struct {
 	sysAccountSvc *accountpkg.SysAccountService
 }
 
+type ServiceConfigPaths struct {
+	core    string
+	account string
+}
+
+func NewServiceConfigPaths(core, account string) *ServiceConfigPaths {
+	return &ServiceConfigPaths{
+		core:    core,
+		account: account,
+	}
+}
+
+// TODO: Will be needed later for config patching on runtime
+type serviceConfigs struct {
+	account *accountpkg.SysAccountServiceConfig
+	core    *corecfg.SysCoreConfig
+}
+
 // SysServiceConfig contains all the configuration
 // for each services, because SysService needs this in order to
 // load up and provide sub grpc services.
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
-	store      *genji.DB // sys-core
-	SysAccount *accountpkg.SysAccountServiceConfig
-	port       int
-	logger     *logrus.Entry
+	store  *genji.DB // sys-core
+	port   int
+	logger *logrus.Entry
+	cfg    *serviceConfigs
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
-func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, unauthenticatedRoutes []string, port int) (*SysServiceConfig, error) {
+func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, servicePaths *ServiceConfigPaths, port int) (*SysServiceConfig, error) {
 	var err error
+	var csc *corecfg.SysCoreConfig
 	if db == nil {
+		if servicePaths.core == "" {
+			return nil, fmt.Errorf("error neither db nor sys-core config path is provided")
+		}
+		csc, err = corecfg.NewConfig(servicePaths.core)
+		if err != nil {
+			return nil, err
+		}
+		if err := coredb.InitDatabase(csc); err != nil {
+			return nil, err
+		}
 		db, err = coredb.SharedDatabase()
 		if err != nil {
 			return nil, err
 		}
 	}
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, unauthenticatedRoutes)
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account)
 	if err != nil {
 		return nil, err
 	}
+
+	// configs
+
 	ssc := &SysServiceConfig{
-		logger:     l,
-		store:      db,
-		port:       port,
-		SysAccount: newSysAccountCfg,
+		logger: l,
+		store:  db,
+		port:   port,
+		cfg:    &serviceConfigs{account: newSysAccountCfg, core: csc},
 	}
 	return ssc, nil
 }
@@ -77,7 +110,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-Account
 	// ========================================================================
-	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.SysAccount)
+	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.cfg.account)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +191,11 @@ func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *
 }
 
 // Run is just an exported wrapper for s.run()
-func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server) {
-	if err := s.run(srv, httpServer); err != nil {
-		s.logger.Fatalf(errRunningServer, err)
+func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server) error {
+	err := s.run(srv, httpServer)
+	if err != nil {
+		s.logger.Errorf(errRunningServer, err)
+		return err
 	}
+	return nil
 }

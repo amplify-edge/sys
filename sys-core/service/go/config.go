@@ -2,44 +2,97 @@ package service
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/gen0cide/cfx"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	ModuleName       = "sys-core"
 	errParsingConfig = "error parsing %s config: %v\n"
+	errDbNameEmpty   = "error: db name empty"
+	errDbRotation    = "error: db rotation has to be greater than or equal to 1 (day)"
+	errCronSchedule  = "error: db cron schedule is in wrong format / empty"
+	defaultDirPerm   = 0755
 )
 
-// NewFooConfig is a constructor that uses the cfx package to inject the configuration
-// from CFX parsed YAML.
-func NewConfig(provider cfx.Container) (*SysCoreConfig, error) {
-	// create an empty Config object
-	cfg := &SysCoreConfig{}
-
-	// use the provider to populate the config
-	err := provider.Populate(ModuleName, cfg)
+func NewConfig(filepath string) (*SysCoreConfig, error) {
+	sysCfg := &SysCoreConfig{}
+	f, err := sharedConfig.LoadFile(filepath)
 	if err != nil {
-		return nil, fmt.Errorf(errParsingConfig, ModuleName, err)
+		return nil, err
+	}
+	if err := yaml.UnmarshalStrict(f, &sysCfg); err != nil {
+		return nil, fmt.Errorf(errParsingConfig, filepath, err)
 	}
 
-	return cfg, nil
-}
-
-type DbConfig struct {
-	Name             string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
-	EncryptKey       string `json:"encryptKey,omitempty" yaml:"encryptKey,omitempty" mapstructure:"encryptKey,omitempty"`
-	RotationDuration int    `json:"rotationDuration,omitempty" yaml:"rotationDuration,omitempty" mapstructure:"rotationDuration,omitempty"`
-	DbDir            string `json:"dbDir,omitempty" yaml:"dbDir,omitempty" mapstructure:"dbDir,omitempty"`
-}
-
-type CronConfig struct {
-	BackupSchedule string `json:"backupSchedule,omitempty" yaml:"backupSchedule,omitempty" mapstructure:"backupSchedule,omitempty"`
-	RotateSchedule string `json:"rotateSchedule,omitempty" yaml:"rotateSchedule,omitempty" mapstructure:"rotateSchedule,omitempty"`
-	BackupDir      string `json:"backupDir,omitempty" yaml:"backupDir,omitempty" mapstructure:"backupDir,omitempty"`
+	return sysCfg, nil
 }
 
 type SysCoreConfig struct {
-	DbConfig   DbConfig   `json:"db,required" yaml:"db,required" mapstructure:"db,required"`
-	CronConfig CronConfig `json:"cron,required" yaml:"cron,required" mapstructure:"cron,required"`
+	SysCoreConfig Config `yaml:"sysCoreConfig" mapstructure:"sysCoreConfig"`
+}
+
+func (s *SysCoreConfig) Validate() error {
+	return s.SysCoreConfig.validate()
+}
+
+type DbConfig struct {
+	Name             string `json:"name" yaml:"name" mapstructure:"name"`
+	EncryptKey       string `json:"encryptKey" yaml:"encryptKey" mapstructure:"encryptKey"`
+	RotationDuration int    `json:"rotationDuration" yaml:"rotationDuration" mapstructure:"rotationDuration"`
+	DbDir            string `json:"dbDir" yaml:"dbDir" mapstructure:"dbDir"`
+}
+
+func (d DbConfig) validate() error {
+	if d.Name == "" {
+		return fmt.Errorf(errDbNameEmpty)
+	}
+	if d.RotationDuration < 1 {
+		return fmt.Errorf(errDbRotation)
+	}
+	if d.EncryptKey == "" {
+		encKey, err := sharedConfig.GenRandomByteSlice(32)
+		if err != nil {
+			return err
+		}
+		d.EncryptKey = string(encKey)
+	}
+	exists, err := sharedConfig.PathExists(d.DbDir)
+	if err != nil || !exists {
+		return os.MkdirAll(d.DbDir, defaultDirPerm)
+	}
+	return nil
+}
+
+type CronConfig struct {
+	BackupSchedule string `json:"backupSchedule" yaml:"backupSchedule" mapstructure:"backupSchedule"`
+	RotateSchedule string `json:"rotateSchedule" yaml:"rotateSchedule" mapstructure:"rotateSchedule"`
+	BackupDir      string `json:"backupDir" yaml:"backupDir" mapstructure:"backupDir"`
+}
+
+func (c CronConfig) validate() error {
+	if c.BackupSchedule == "" || c.RotateSchedule == "" {
+		return fmt.Errorf(errCronSchedule)
+	}
+	if exists, err := sharedConfig.PathExists(c.BackupDir); err != nil || !exists {
+		return os.MkdirAll(c.BackupDir, defaultDirPerm)
+	}
+	return nil
+}
+
+type Config struct {
+	DbConfig   DbConfig   `json:"db" yaml:"db" mapstructure:"db"`
+	CronConfig CronConfig `json:"cron" yaml:"cron" mapstructure:"cron"`
+}
+
+func (c Config) validate() error {
+	if err := c.DbConfig.validate(); err != nil {
+		return err
+	}
+	if err := c.CronConfig.validate(); err != nil {
+		return err
+	}
+	return nil
+
 }

@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
@@ -39,23 +38,15 @@ type DbModel interface {
 func InitDatabase(cfg *service.SysCoreConfig) error {
 	config = cfg
 
-	if exists, _ := PathExists(cfg.DbConfig.DbDir); !exists {
-		_ = os.MkdirAll(cfg.DbConfig.DbDir, os.ModePerm)
-	}
-
-	if exists, _ := PathExists(cfg.CronConfig.BackupDir); !exists {
-		_ = os.MkdirAll(cfg.CronConfig.BackupDir, os.ModePerm)
-	}
-
 	if database != nil {
 		return fmt.Errorf("The database has been initialized")
 	}
 
-	dbName := config.DbConfig.Name
-	dbPath := cfg.DbConfig.DbDir + "/" + dbName
+	dbName := config.SysCoreConfig.DbConfig.Name
+	dbPath := cfg.SysCoreConfig.DbConfig.DbDir + "/" + dbName
 	log.Print("Db " + dbPath + "Open .....")
 	var err error
-	database, err = makeDb(dbPath, config.DbConfig.EncryptKey)
+	database, err = makeDb(dbPath, config.SysCoreConfig.DbConfig.EncryptKey)
 	if err != nil {
 		log.Fatalf("Db "+dbPath+"Open failed: %v", err)
 		return err
