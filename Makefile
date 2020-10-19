@@ -1,5 +1,7 @@
 
 SHARED_FSPATH=./../shared
+#SHARED_FSPATH=./
+
 BOILERPLATE_FSPATH=$(SHARED_FSPATH)/boilerplate
 
 include $(BOILERPLATE_FSPATH)/help.mk
@@ -52,6 +54,11 @@ this-print-end:
 
 this-dep:
 	cd $(SHARED_FSPATH) && $(MAKE) this-all
+
+this-dev-dep:
+	## TODO Add to boot and version it
+	GO111MODULE="on" go get github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
+	brew install jsonnet
 
 ### BUILD
 
