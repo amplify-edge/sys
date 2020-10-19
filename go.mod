@@ -5,8 +5,6 @@ go 1.15
 require (
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/Masterminds/squirrel v1.4.0
-	github.com/bojand/ghz v0.61.0
-	github.com/brianvoe/gofakeit/v5 v5.9.3
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/badger/v2 v2.2007.2
@@ -15,7 +13,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/sys-share v0.0.0-20201009120557-4ee9fe8212a8
+	github.com/getcouragenow/sys-share v0.0.0-20201019065332-3ae732e3de93
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/improbable-eng/grpc-web v0.13.0
@@ -33,5 +31,3 @@ require (
 	google.golang.org/grpc/examples v0.0.0-20200925170654-e6c98a478e62 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
-
-replace github.com/getcouragenow/sys-share => ../sys-share/
