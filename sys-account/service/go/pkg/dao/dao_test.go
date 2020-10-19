@@ -73,18 +73,9 @@ var (
 )
 
 func init() {
-	csc := &corecfg.SysCoreConfig{
-		DbConfig: corecfg.DbConfig{
-			Name:             defaultDbName,
-			EncryptKey:       defaultDbEncryptionKey,
-			RotationDuration: 1,
-			DbDir:            defaultDbDir,
-		},
-		CronConfig: corecfg.CronConfig{
-			BackupSchedule: defaultDbBackupSchedulSpec,
-			RotateSchedule: defaultDbRotateSchedulSpec,
-			BackupDir:      defaultDbBackupDir,
-		},
+	csc, err := corecfg.NewConfig("./testdata/syscore.yml")
+	if err != nil {
+		log.Fatalf("error initializing db: %v", err)
 	}
 
 	if err := db.InitDatabase(csc); err != nil {
@@ -142,11 +133,13 @@ func testQueryAccounts(t *testing.T) {
 		accs = append(accs, acc)
 	}
 	assert.NotEqual(t, accs[0], accs[1])
+	var next int64
 
 	for _, qp := range queryParams {
-		accs, err = accdb.ListAccount(qp)
+		accs, next, err = accdb.ListAccount(qp, "email", 1, 0)
 		assert.NoError(t, err)
 	}
+	assert.NotEqual(t, 0, next)
 }
 
 func testUpdateAccounts(t *testing.T) {

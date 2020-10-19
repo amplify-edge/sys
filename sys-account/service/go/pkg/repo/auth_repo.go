@@ -99,6 +99,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		RoleId:            roleId,
 		CreatedAt:         now,
 		UserDefinedFields: map[string]interface{}{},
+		Survey:            map[string]interface{}{},
 		Disabled:          false,
 	})
 	if err != nil {

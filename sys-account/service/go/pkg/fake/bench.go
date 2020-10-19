@@ -2,20 +2,25 @@
 package fake
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	sharePkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	benchPkg "github.com/getcouragenow/sys-share/sys-core/service/bench"
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 const (
-	defaultJSONOutputPath = "./bench/fake-register-data.json"
-	defaultHost           = "127.0.0.1:8888"
-	defaultProtoPath      = "../sys-share/sys-account/proto/v2/sys_account_services.proto"
-	defaultSvcName        = "v2.sys_account.services.AuthService.Register"
+	defaultJSONOutputPath  = "./bench/fake-register-data.json"
+	defaultHost            = "127.0.0.1:8888"
+	defaultProtoPath       = "../sys-share/sys-account/proto/v2/sys_account_services.proto"
+	defaultSvcName         = "v2.sys_account.services.AuthService.Register"
+	defaultNumberOfRecords = 100
+	defaultConcurrency     = 10
 )
 
 var (
@@ -23,10 +28,12 @@ var (
 		Use:   "sys-bench",
 		Short: "running sys-account bench",
 	}
-	jsonOutPath string
-	hostAddr    string
-	protoPath   string
-	svcName     string
+	jsonOutPath       string
+	hostAddr          string
+	protoPath         string
+	svcName           string
+	recordNumber      uint
+	concurrentRequest uint
 )
 
 func SysAccountBench() *cobra.Command {
@@ -34,6 +41,8 @@ func SysAccountBench() *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&hostAddr, "host-address", "s", defaultHost, "host address to connect: ex 127.0.0.1:8888")
 	rootCmd.PersistentFlags().StringVarP(&protoPath, "protobuf-service-path", "p", defaultProtoPath, "protobuf service definition path in filesystem")
 	rootCmd.PersistentFlags().StringVarP(&svcName, "service-name", "n", defaultSvcName, "service name to call: ex: "+defaultSvcName)
+	rootCmd.PersistentFlags().UintVarP(&recordNumber, "number-of-records", "r", defaultNumberOfRecords, fmt.Sprintf("number of records to test, default: %d", defaultNumberOfRecords))
+	rootCmd.PersistentFlags().UintVarP(&concurrentRequest, "concurrent-requests", "c", defaultConcurrency, fmt.Sprintf("number of concurrent requests, default: %d", defaultConcurrency))
 
 	l := logrus.New().WithField("svc", "sys-bench")
 
@@ -53,8 +62,8 @@ func SysAccountBench() *cobra.Command {
 			defaultHost,
 			jsonOutPath,
 			protoPath,
-			1000,
-			100,
+			recordNumber,
+			concurrentRequest,
 		); err != nil {
 			l.Errorf("error running benchmark data: %v", err)
 			return err
