@@ -12,7 +12,8 @@ import (
 const (
 	defaultJSONOutputPath = "./bench/fake-register-data.json"
 	defaultHost           = "127.0.0.1:8888"
-	defaultProtoPath      = "../sys-share/sys-account/proto/v2/services.proto"
+	defaultProtoPath      = "../sys-share/sys-account/proto/v2/sys_account_services.proto"
+	defaultSvcName        = "v2.sys_account.services.AuthService.Register"
 )
 
 var (
@@ -23,12 +24,14 @@ var (
 	jsonOutPath string
 	hostAddr    string
 	protoPath   string
+	svcName     string
 )
 
 func SysAccountBench() *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&jsonOutPath, "json-out-path", "j", defaultJSONOutputPath, "default output path for generated fake json data")
 	rootCmd.PersistentFlags().StringVarP(&hostAddr, "host-address", "s", defaultHost, "host address to connect: ex 127.0.0.1:8888")
 	rootCmd.PersistentFlags().StringVarP(&protoPath, "protobuf-service-path", "p", defaultProtoPath, "protobuf service definition path in filesystem")
+	rootCmd.PersistentFlags().StringVarP(&svcName, "service-name", "n", defaultSvcName, "service name to call: ex: "+defaultSvcName)
 
 	l := logrus.New().WithField("svc", "sys-bench")
 
@@ -39,7 +42,7 @@ func SysAccountBench() *cobra.Command {
 			return err
 		}
 		if err := benchPkg.RunBench(
-			"v2.services.AuthService.Register",
+			svcName,
 			defaultHost,
 			jsonOutPath,
 			protoPath,

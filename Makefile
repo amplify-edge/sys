@@ -110,4 +110,4 @@ this-example-sdk-accounts-list:
 
 this-ex-sdk-bench:
 	@echo Running Example SDK Benchmark, Run server first!
-	$(SDK_BIN) sys-bench -s $(EXAMPLE_SERVER_ADDRESS) -j "./bench/fake-register-data.json" -p "../sys-share/sys-account/proto/v2/services.proto"
+	$(SDK_BIN) sys-bench -s $(EXAMPLE_SERVER_ADDRESS) -j "./bench/fake-register-data.json" -p "../sys-share/sys-account/proto/v2/sys_account_services.proto" -n "v2.sys_account.services.AuthService.Register"

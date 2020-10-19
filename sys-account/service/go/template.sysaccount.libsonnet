@@ -1,11 +1,11 @@
 {
     local cfg = self,
     UnauthenticatedRoutes:: [
-    	"/v2.services.AuthService/Login",
-    	"/v2.services.AuthService/Register",
-    	"/v2.services.AuthService/ResetPassword",
-    	"/v2.services.AuthService/ForgotPassword",
-    	"/v2.services.AuthService/RefreshAccessToken",
+    	"/v2.sys_account.services.AuthService/Login",
+    	"/v2.sys_account.services.AuthService/Register",
+    	"/v2.sys_account.services.AuthService/ResetPassword",
+    	"/v2.sys_account.services.AuthService/ForgotPassword",
+    	"/v2.sys_account.services.AuthService/RefreshAccessToken",
     	"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
     ],
     AccessToken:: {
