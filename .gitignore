@@ -10,3 +10,9 @@ db
 
 # dev config
 config/**
+
+# fake data
+fake*.json
+
+# benchmark binaries
+bench

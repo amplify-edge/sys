@@ -108,3 +108,6 @@ this-example-sdk-accounts-list:
 	#$(SDK_BIN) sys-account account-service list-accounts --jwt-access-token $(EXAMPLE_TOKEN) --server-addr $(SERVER_ADDRESS) --tls-insecure-skip-verify
 	$(SDK_BIN) sys-account account-service list-accounts --server-addr $(EXAMPLE_SERVER_ADDRESS)
 
+this-ex-sdk-bench:
+	@echo Running Example SDK Benchmark, Run server first!
+	$(SDK_BIN) sys-bench -s $(EXAMPLE_SERVER_ADDRESS) -j "./bench/fake-register-data.json" -p "../sys-share/sys-account/proto/v2/services.proto"
