@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/spf13/cobra"
-	//"github.com/getcouragenow/sys-share/sys-account/service/rpc/v2"
+	// "github.com/getcouragenow/sys-share/sys-account/service/rpc/v2"
 )
 
 var rootCmd = &cobra.Command{

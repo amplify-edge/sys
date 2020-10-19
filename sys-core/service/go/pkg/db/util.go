@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-//FileExists checks if a file exists and is not a directory before we
+// FileExists checks if a file exists and is not a directory before we
 // try using it to prevent further errors.
 func FileExists(filename string) bool {
 	info, err := os.Stat(filename)
@@ -15,7 +15,7 @@ func FileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-//PathExists checks if a directory exists.
+// PathExists checks if a directory exists.
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {

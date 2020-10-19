@@ -1,4 +1,4 @@
-sys-account:
+sysAccountConfig:
   unauthenticatedRoutes:
     - /v2.AuthService/Login
     - /v2.AuthService/Register
