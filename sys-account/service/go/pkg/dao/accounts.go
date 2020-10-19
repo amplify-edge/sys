@@ -20,6 +20,7 @@ type Account struct {
 	Password          string                 `genji:"password"`
 	RoleId            string                 `genji:"role_id"`
 	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
+	Survey            map[string]interface{} `genji:"survey"`
 	CreatedAt         int64                  `genji:"created_at"`
 	UpdatedAt         int64                  `genji:"updated_at"`
 	LastLogin         int64                  `genji:"last_login"`
@@ -36,6 +37,7 @@ func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
 		Email:             account.Email,
 		Password:          account.Password,
 		UserDefinedFields: account.Fields.Fields,
+		Survey:            account.Survey.Fields,
 		CreatedAt:         account.CreatedAt,
 		UpdatedAt:         account.UpdatedAt,
 		LastLogin:         account.LastLogin,
@@ -58,6 +60,7 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 		LastLogin: lastLogin.Unix(),
 		Disabled:  a.Disabled,
 		Fields:    &pkg.UserDefinedFields{Fields: a.UserDefinedFields},
+		Survey:    &pkg.UserDefinedFields{Fields: a.Survey},
 	}, nil
 }
 

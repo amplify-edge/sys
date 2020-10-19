@@ -16,8 +16,8 @@ const (
 	TableSeparator   = "_"
 	AccTableName     = "accounts"
 	RolesTableName   = "roles"
-	AccColumns       = `id, email, password, role_id, user_defined_fields, created_at, updated_at, last_login, disabled`
-	AccColumnsType   = `TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
+	AccColumns       = `id, email, password, role_id, user_defined_fields, survey, created_at, updated_at, last_login, disabled`
+	AccColumnsType   = `TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
 	AccCursor        = `created_at`
 	RolesColumns     = `id, account_id, role, project_id, org_id, created_at, updated_at`
 	RolesColumnsType = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
