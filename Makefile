@@ -69,11 +69,14 @@ this-build: this-build-delete this-config-gen
 	go build -o $(SDK_BIN) $(EXAMPLE_SDK_DIR)/main.go
 	go build -o $(SERVER_BIN) $(EXAMPLE_SERVER_DIR)/main.go
 
-this-config-gen: this-config-delete
+this-config-gen: this-config-delete this-config-dep
 	@echo Generating Config
 	@mkdir -p ./config
 	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysaccount.jsonnet > $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
 	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet -V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_CORE_CFG_PATH)
+
+this-config-dep:
+	cd $(EXAMPLE_SERVER_DIR) && jb install
 
 this-config-delete:
 	@echo Deleting previously generated config
@@ -89,6 +92,7 @@ this-sdk-run:
 	$(SDK_BIN)
 
 this-server-run:
+	mkdir -p db
 	rm -rf ./db/gcn.db && $(SERVER_BIN) -p $(EXAMPLE_SERVER_PORT) -a $(EXAMPLE_SYS_ACCOUNT_CFG_PATH) -c $(EXAMPLE_SYS_CORE_CFG_PATH)
 
 this-example-sdk-auth-signup:

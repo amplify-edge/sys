@@ -2,11 +2,13 @@
 package fake
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-
 	sharePkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	benchPkg "github.com/getcouragenow/sys-share/sys-core/service/bench"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"os"
+	"path/filepath"
 )
 
 const (
@@ -40,6 +42,11 @@ func SysAccountBench() *cobra.Command {
 		if err := fakeRegistersReqs.ToJSON(jsonOutPath); err != nil {
 			l.Errorf("error generating fake json data: %v", err)
 			return err
+		}
+		dirPath := filepath.Dir(jsonOutPath)
+		exists, _ := sharedConfig.PathExists(dirPath)
+		if !exists {
+			os.MkdirAll(dirPath, 0755)
 		}
 		if err := benchPkg.RunBench(
 			svcName,
