@@ -69,6 +69,7 @@ this-prebuild:
 this-build: this-build-delete this-config-gen
 
 	mkdir -p ./bin-all
+	mkdir -p ./bench
 
 	cd sys-account && $(MAKE) this-all
 	cd sys-core && $(MAKE) this-all
@@ -119,6 +120,28 @@ this-example-sdk-accounts-list:
 	#$(SDK_BIN) sys-account account-service list-accounts --jwt-access-token $(EXAMPLE_TOKEN) --server-addr $(SERVER_ADDRESS) --tls-insecure-skip-verify
 	$(SDK_BIN) sys-account account-service list-accounts --server-addr $(EXAMPLE_SERVER_ADDRESS)
 
-this-ex-sdk-bench:
+this-ex-sdk-bench: this-ex-sdk-bench-start this-ex-sdk-bench-01 this-ex-sdk-bench-02
+	@echo -- Example SDK Benchmark: End --
+
+this-ex-sdk-bench-start: 
+	@echo -- Example SDK Benchmark: Start --
+
 	@echo Running Example SDK Benchmark, Run server first!
+	
+this-ex-sdk-bench-01:
+	# Small
+	#@echo USERS: 1000 ( 10 )
+	#@echo DB CONNECTIONS: 10 ( 1 )
+
 	$(SDK_BIN) sys-bench -s $(EXAMPLE_SERVER_ADDRESS) -j "./bench/fake-register-data.json" -p "../sys-share/sys-account/proto/v2/sys_account_services.proto" -n "v2.sys_account.services.AuthService.Register"
+
+
+this-ex-sdk-bench-02:
+	# Medium
+	@echo USERS: 100
+	@echo DB CONNECTIONS: 10
+
+this-ex-sdk-bench-03:
+	# Medium
+	@echo USERS: 1000
+	@echo DB CONNECTIONS: 100
