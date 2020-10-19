@@ -1,6 +1,6 @@
 
-#SHARED_FSPATH=./../shared
-SHARED_FSPATH=./
+SHARED_FSPATH=./../shared
+#SHARED_FSPATH=./
 
 BOILERPLATE_FSPATH=$(SHARED_FSPATH)/boilerplate
 
