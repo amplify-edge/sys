@@ -1,5 +1,5 @@
 local coreMixin = import "../../sys-core/service/go/template.syscore.libsonnet";
-local loadVar = import "../../sys-core/service/go/mixin.loadfn.libsonnet";
+local loadVar = import "vendor/config/mixin.loadfn.libsonnet";
 
 local cfg = {
     sysCoreConfig: {
