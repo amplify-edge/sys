@@ -85,6 +85,7 @@ this-config-gen: this-config-delete this-config-dep
 
 this-config-dep:
 	cd $(EXAMPLE_SERVER_DIR) && jb install
+	cd sys-core/service/go && jb install
 
 this-config-delete:
 	@echo Deleting previously generated config
