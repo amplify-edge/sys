@@ -12,36 +12,49 @@ override FLU_SAMPLE_NAME =example
 override FLU_LIB_NAME =client
 override FLU_SAMPLE_FSPATH = $(PWD)/example/client
 
+BIN_FOLDER=./bin-all
+EXAMPLE_SERVER_BIN=$(BIN_FOLDER)/server
+EXAMPLE_CLI_BIN=$(BIN_FOLDER)/cli
+
 EXAMPLE_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_PASSWORD = superadmin
 EXAMPLE_SERVER_ADDRESS = 127.0.0.1:8888
 
-this-all: this-print this-build this-print-end
+this-all: this-print this-gen this-build this-print-end
 	
 ## Print all settings
 this-print: 
 	@echo
-	@echo "-- sys: start --"
-	@echo SDK_BIN: $(SDK_BIN)
+	@echo "-- SYS:SYS-ACCOUNT: start --"
+	@echo EXAMPLE_SERVER_BIN: $(EXAMPLE_SERVER_BIN)
+	@echo EXAMPLE_CLI_BIN: $(EXAMPLE_CLI_BIN)
 	@echo
 
 this-print-end:
 	@echo
-	@echo "-- sys: end --"
+	@echo "-- SYS:SYS-ACCOUNT: end --"
 	@echo
 	@echo
 	
 
+## Builds everything
+this-build: this-build-clean
+	@echo "Building example golang binaries (CLI and Server)"
+	#mkdir -p $(EXAMPLE_SERVER_BIN)
+	#mkdir -p $(EXAMPLE_CLI_BIN)
 
-## This builds everything
-this-build:
-	@echo "Build & Flutter"
+	go build -v -o $(EXAMPLE_SERVER_BIN) ./example/server/go/main.go
+	go build -v -o $(EXAMPLE_CLI_BIN) ./example/cli/go/main.go
+this-build-clean:
+	rm -rf $(BIN_FOLDER)
 
-	# Flutter
-	#@mkdir -p flu/lib/api/v2
+this-gen:this-gen-clean
 
 	# Go
 	@go generate
+this-gen-clean:
+	# none
+
 
 ## Build and Run Server Example (Temporary until structure/stack is fixed)
 this-ex-server-run:
