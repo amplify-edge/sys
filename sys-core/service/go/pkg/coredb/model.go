@@ -23,12 +23,13 @@ const (
 
 // CoreDB is the exported struct
 type CoreDB struct {
-	logger *log.Entry
-	store  *genji.DB
-	engine *badgerengine.Engine
-	models map[string]DbModel
-	config *corecfg.SysCoreConfig
-	crony  *cron.Cron
+	logger    *log.Entry
+	store     *genji.DB
+	engine    *badgerengine.Engine
+	models    map[string]DbModel
+	config    *corecfg.SysCoreConfig
+	crony     *cron.Cron
+	cronFuncs map[string]func()
 }
 
 // NewCoreDB facilitates creation of (wrapped) genji database alongside badger DB engine

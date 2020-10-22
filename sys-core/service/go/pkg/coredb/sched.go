@@ -16,6 +16,8 @@ const (
 
 func (c *CoreDB) scheduleBackup() error {
 	crony := cron.New()
+
+	// default backup schedule
 	errChan := make(chan error, 1)
 	_, err := crony.AddFunc(c.config.SysCoreConfig.CronConfig.BackupSchedule, func() {
 		c.logger.Debug("creating backup schedule")
@@ -44,6 +46,20 @@ func (c *CoreDB) scheduleBackup() error {
 		return err
 	}
 
+	// custom cron functions from each module
+	if len(c.cronFuncs) > 0 {
+		for funcSpec, fun := range c.cronFuncs {
+			errChan := make(chan error, 1)
+			_, err := crony.AddFunc(funcSpec, fun)
+			close(errChan)
+			if errFromChan := <-errChan; errFromChan != nil {
+				return errFromChan
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
 	// TODO: rotate encryption key
 	// Find a way to do streaming backup while re-encrypting the key perhaps?
 	c.crony = crony
