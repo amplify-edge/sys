@@ -3,14 +3,9 @@ package auth_test
 import (
 	"testing"
 
-	//pkg "github.com/getcouragenow/sys-share/pkg"
-
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
 	pkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/utilities"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,7 +2,9 @@ package coredb
 
 import (
 	"fmt"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -47,7 +49,7 @@ func (c *CoreDB) scheduleBackup() error {
 	}
 
 	// custom cron functions from each module
-	if len(c.cronFuncs) > 0 {
+	if c.cronFuncs != nil && len(c.cronFuncs) > 0 {
 		for funcSpec, fun := range c.cronFuncs {
 			errChan := make(chan error, 1)
 			_, err := crony.AddFunc(funcSpec, fun)
@@ -66,6 +68,28 @@ func (c *CoreDB) scheduleBackup() error {
 	return nil
 }
 
+func (c *CoreDB) RestoreDB(filepath string) error {
+	badgerDB := c.engine.DB
+	f, err := openFile(filepath)
+	if err != nil {
+		return err
+	}
+	return badgerDB.Load(f, 100)
+}
+
+func (c *CoreDB) ListBackups() ([]string, error) {
+	backupDir := c.config.SysCoreConfig.CronConfig.BackupDir
+	files, err := ioutil.ReadDir(backupDir)
+	if err != nil {
+		return nil, err
+	}
+	var fileInfos []string
+	for _, f := range files {
+		fileInfos = append(fileInfos, f.Name())
+	}
+	return fileInfos, nil
+}
+
 func (c *CoreDB) createBackupFile() (io.WriteCloser, error) {
 	currentTime := time.Now().Format("200601021859")
 	backupFileName := filepath.Join(
@@ -78,4 +102,12 @@ func (c *CoreDB) createBackupFile() (io.WriteCloser, error) {
 func createFile(fileName string) (io.WriteCloser, error) {
 	f, err := os.Create(fileName)
 	return f, err
+}
+
+func openFile(filepath string) (io.ReadCloser, error) {
+	exists := sharedConfig.FileExists(filepath)
+	if !exists {
+		return nil, fmt.Errorf("cannot find %s", filepath)
+	}
+	return os.Open(filepath)
 }
