@@ -30,7 +30,7 @@ func testNewSysCoreConfig(t *testing.T) {
 			},
 			CronConfig: corecfg.CronConfig{
 				BackupSchedule: "@daily",
-				RotateSchedule: "@every 24h",
+				RotateSchedule: "@every 3s",
 				BackupDir:      "./db/backups",
 			},
 		},

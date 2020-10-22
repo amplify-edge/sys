@@ -8,5 +8,5 @@ sysCoreConfig:
   cron:
     # Refer here to write rules: https://godoc.org/github.com/robfig/cron
     backupSchedule: "@daily" # @daily - Every day, @hourly - Every hour, @every 1h30m - Every hour thirty.
-    rotateSchedule: "@every 24h"
+    rotateSchedule: "@every 3s"
     backupDir: "./db/backups"

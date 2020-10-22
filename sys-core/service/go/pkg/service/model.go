@@ -42,13 +42,19 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &CoreDB{
+	cdb := &CoreDB{
 		logger: l,
 		store:  store,
 		engine: engine,
 		models: map[string]DbModel{},
 		config: cfg,
-	}, nil
+	}
+	err = cdb.scheduleBackup()
+	if err != nil {
+		return nil, err
+	}
+	cdb.crony.Start()
+	return cdb, nil
 }
 
 // helper function to create genji.DB
@@ -127,4 +133,3 @@ func (d *DocumentResult) StructScan(dest interface{}) error {
 func NewID() string {
 	return ksuid.New().String()
 }
-

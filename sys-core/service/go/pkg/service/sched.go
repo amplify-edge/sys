@@ -46,6 +46,7 @@ func (c *CoreDB) scheduleBackup() error {
 
 	// TODO: rotate encryption key
 	// Find a way to do streaming backup while re-encrypting the key perhaps?
+	c.crony = crony
 	return nil
 }
 
