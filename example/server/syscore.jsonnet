@@ -7,6 +7,7 @@ local cfg = {
            name: "gcn.db",
            encryptKey: loadVar(prefixName="SYS_CORE", env="DB_ENCRYPT_KEY").val,
            dbDir: "./db",
+           deletePrevious: true,
        },
        cron: coreTpl.CoreCron {
            backupSchedule: "@daily",

@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"gopkg.in/yaml.v2"
@@ -45,6 +46,7 @@ type DbConfig struct {
 	EncryptKey       string `json:"encryptKey" yaml:"encryptKey" mapstructure:"encryptKey"`
 	RotationDuration int    `json:"rotationDuration" yaml:"rotationDuration" mapstructure:"rotationDuration"`
 	DbDir            string `json:"dbDir" yaml:"dbDir" mapstructure:"dbDir"`
+	DeletePrevious   bool   `json:"deletePrevious" yaml:"deletePrevious" mapstructure:"deletePrevious"`
 }
 
 func (d DbConfig) validate() error {
@@ -61,14 +63,19 @@ func (d DbConfig) validate() error {
 		}
 		d.EncryptKey = string(encKey)
 	}
-	exists, err := sharedConfig.PathExists(d.DbDir)
+	abspath, err := filepath.Abs(d.DbDir)
+	if err != nil {
+		return err
+	}
+	exists, err := sharedConfig.PathExists(abspath)
 	if err != nil || !exists {
-		return os.MkdirAll(d.DbDir, defaultDirPerm)
+		return os.MkdirAll(abspath, defaultDirPerm)
 	}
-	fileExists := sharedConfig.FileExists(d.Name)
-	if fileExists {
-		return os.RemoveAll(d.Name)
+
+	if d.DeletePrevious {
+		return os.RemoveAll(abspath + "/" + d.Name)
 	}
+
 	return nil
 }
 

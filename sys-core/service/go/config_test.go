@@ -24,6 +24,7 @@ func TestNewSysCoreConfig(t *testing.T) {
 				EncryptKey:       "testkey!@",
 				RotationDuration: 1,
 				DbDir:            "./db",
+				DeletePrevious: true,
 			},
 			CronConfig: corecfg.CronConfig{
 				BackupSchedule: "@daily",

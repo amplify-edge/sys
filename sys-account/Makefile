@@ -56,7 +56,7 @@ this-build: this-build-clean
 	go build -v -o $(CLI_BIN) $(CLI_DIR)/main.go
 
 this-build-clean:
-	rm -rf $(EXAMPLE_BIN_DIR)
+	rm -rf $(SERVER_BIN) $(CLI_BIN)
 
 this-gen:this-gen-clean this-config-gen
 	# Go

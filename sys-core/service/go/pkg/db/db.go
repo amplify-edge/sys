@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
@@ -37,13 +38,14 @@ type DbModel interface {
 // InitDatabase Must be initialized before using database.
 func InitDatabase(cfg *service.SysCoreConfig) error {
 	config = cfg
+	dbName := config.SysCoreConfig.DbConfig.Name
+	absPath, _ := filepath.Abs(cfg.SysCoreConfig.DbConfig.DbDir)
+	dbPath := absPath + "/" + dbName
 
 	if database != nil {
-		return fmt.Errorf("The database has been initialized")
+		return fmt.Errorf("the database has been initialized")
 	}
 
-	dbName := config.SysCoreConfig.DbConfig.Name
-	dbPath := cfg.SysCoreConfig.DbConfig.DbDir + "/" + dbName
 	log.Print("Db " + dbPath + "Open .....")
 	var err error
 	database, err = makeDb(dbPath, config.SysCoreConfig.DbConfig.EncryptKey)
@@ -77,7 +79,7 @@ func makeDb(name string, key string) (*genji.DB, error) {
 	options.EncryptionKey = MD5(key)
 	// Set to 180 days or something else?
 	options.EncryptionKeyRotationDuration = 180 * 24 * time.Hour
-	ng, err := badgerengine.NewEngine(badger.DefaultOptions(name))
+	ng, err := badgerengine.NewEngine(options)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
