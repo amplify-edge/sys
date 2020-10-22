@@ -4,37 +4,28 @@ import (
 	"testing"
 	"time"
 
-	"github.com/genjidb/genji"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
 )
 
 var (
-	testDb     *genji.DB
+	testDb     *coresvc.CoreDB
 	accdb      *dao.AccountDB
 	err        error
-	role1ID    = db.UID()
-	role2ID    = db.UID()
-	account0ID = db.UID()
-
-	defaultDbName          = "getcouragenow.db"
-	defaultDbEncryptionKey = "testkey@!" // for test only.
-	// TODO: Make config
-	defaultDbDir               = "./db"
-	defaultDbBackupDir         = "./db/backups"
-	defaultDbBackupSchedulSpec = "@every 15s"
-	defaultDbRotateSchedulSpec = "@every 1h"
-
-	accs = []dao.Account{
+	role1ID    = coresvc.NewID()
+	role2ID    = coresvc.NewID()
+	account0ID = coresvc.NewID()
+	accs       = []dao.Account{
 		{
 			ID:       account0ID,
 			Email:    "2pac@example.com",
 			Password: "no_biggie",
 			RoleId:   role1ID,
+			Survey:   map[string]interface{}{},
 			UserDefinedFields: map[string]interface{}{
 				"City": "Compton",
 			},
@@ -44,10 +35,11 @@ var (
 			Disabled:  false,
 		},
 		{
-			ID:       db.UID(),
+			ID:       coresvc.NewID(),
 			Email:    "bigg@example.com",
 			Password: "two_packs",
 			RoleId:   role2ID,
+			Survey:   map[string]interface{}{},
 			UserDefinedFields: map[string]interface{}{
 				"City": "NY",
 			},
@@ -57,10 +49,11 @@ var (
 			Disabled:  false,
 		},
 		{
-			ID:       db.UID(),
+			ID:       coresvc.NewID(),
 			Email:    "shakur@example.com",
 			Password: "no_biggie",
 			RoleId:   role1ID,
+			Survey:   map[string]interface{}{},
 			UserDefinedFields: map[string]interface{}{
 				"City": "Compton LA",
 			},
@@ -73,17 +66,18 @@ var (
 )
 
 func init() {
-	csc, err := corecfg.NewConfig("./testdata/syscore.yml")
+	var csc *corecfg.SysCoreConfig
+	csc, err = corecfg.NewConfig("./testdata/syscore.yml")
 	if err != nil {
 		log.Fatalf("error initializing db: %v", err)
 	}
-
-	if err := db.InitDatabase(csc); err != nil {
-		log.Fatalf("error initializing db: %v", err)
+	logger := log.New().WithField("test", "sys-account")
+	logger.Level = log.DebugLevel
+	testDb, err = coresvc.NewCoreDB(logger, csc)
+	if err != nil {
+		log.Fatalf("error creating CoreDB: %v", err)
 	}
-
-	testDb, _ = db.SharedDatabase()
-	log.Println("MakeSchema testing .....")
+	log.Debug("MakeSchema testing .....")
 	accdb, err = dao.NewAccountDB(testDb)
 	if err != nil {
 		log.Fatal(err)
@@ -108,12 +102,12 @@ func testAccountInsert(t *testing.T) {
 		err = accdb.InsertAccount(&acc)
 		assert.NoError(t, err)
 	}
-	t.Log("successfully inserted accounts")
+
 }
 
 func testQueryAccounts(t *testing.T) {
 	t.Logf("on querying accounts")
-	queryParams := []*dao.QueryParams{
+	queryParams := []*coresvc.QueryParams{
 		{
 			Params: map[string]interface{}{
 				"email": "bigg@example.com",

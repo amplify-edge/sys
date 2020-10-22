@@ -1,56 +1,34 @@
 package dao
 
 import (
-	"github.com/genjidb/genji"
-	"github.com/genjidb/genji/document"
-	"github.com/genjidb/genji/sql/query"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
 
-var (
+const (
 	tablePrefix = "sys_accounts"
 	modName     = "accounts"
 )
 
 type AccountDB struct {
-	db  *genji.DB
+	db  *coresvc.CoreDB
 	log *logrus.Logger
 }
 
-func NewAccountDB(db *genji.DB) (*AccountDB, error) {
-	tables := []coredb.DbModel{
-		Account{},
-		Role{},
+func NewAccountDB(db *coresvc.CoreDB) (*AccountDB, error) {
+	err := db.RegisterModels(map[string]coresvc.DbModel{
+		AccTableName: Account{},
+		RolesTableName: Role{},
+	})
+	if err != nil {
+		return nil, err
 	}
-	coredb.RegisterModels(modName, tables)
-	if err := coredb.MakeSchema(db); err != nil {
+	if err := db.MakeSchema(); err != nil {
 		return nil, err
 	}
 	log := logrus.New()
 	return &AccountDB{db, log}, nil
-}
-
-func (a *AccountDB) Exec(stmt string, argSlices []interface{}) error {
-	tx, err := a.db.Begin(true)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if err := tx.Exec(stmt, argSlices...); err != nil {
-		return err
-	}
-	return tx.Commit()
-}
-
-func (a *AccountDB) Query(stmt string, args ...interface{}) (*query.Result, error) {
-	return a.db.Query(stmt, args...)
-}
-
-func (a *AccountDB) QueryOne(stmt string, args ...interface{}) (document.Document, error) {
-	return a.db.QueryDocument(stmt, args...)
 }
 
 func (a *AccountDB) BuildSearchQuery(qs string) string {
