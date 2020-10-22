@@ -107,9 +107,6 @@ this-ex-server-run:
 	mkdir -p db
 	$(SERVER_BIN) -p $(EXAMPLE_SERVER_PORT) -a $(EXAMPLE_SYS_ACCOUNT_CFG_PATH) -c $(EXAMPLE_SYS_CORE_CFG_PATH)
 
-this-ex-server-clean:
-	rm -rf db/gcn.db
-
 this-ex-sdk-auth-signup:
 	@echo Running Example Register Client
 	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS)

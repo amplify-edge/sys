@@ -80,13 +80,9 @@ this-config-dep:
 	cd $(SERVER_DIR) && jb install && jb update
 
 ## Build and Run Server Example (Temporary until structure/stack is fixed)
-this-ex-server-run: this-ex-server-clean
+this-ex-server-run:
 	@echo Running Example Server
-	mkdir -p $(EXAMPLE_BIN_DIR)/db
 	$(SERVER_BIN) -c $(EXAMPLE_SYS_CORE_CFG_PATH) -a $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
-
-this-ex-server-clean:
-	rm -rf $(EXAMPLE_BIN_DIR)/db/gcn.db
 
 this-ex-auth-signup:
 	@echo Running Example Register Client
