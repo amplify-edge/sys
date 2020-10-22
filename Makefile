@@ -22,9 +22,9 @@ override FLU_LIB_NAME =client
 CI_DEP=github.com/getcouragenow/sys
 CI_DEP_FORK=github.com/joe-getcouragenow/sys
 
-
-SDK_BIN=$(PWD)/bin-all/sdk-cli
-SERVER_BIN=$(PWD)/bin-all/sys-main
+BIN_FOLDER=./bin-all
+SDK_BIN=$(BIN_FOLDER)/sdk-cli
+SERVER_BIN=$(BIN_FOLDER)/sys-main
 
 EXAMPLE_SERVER_PORT=8888
 EXAMPLE_SERVER_ADDRESS=127.0.0.1:$(EXAMPLE_SERVER_PORT)
@@ -42,7 +42,9 @@ this-all: this-print this-dep this-build this-print-end
 this-print: 
 	@echo
 	@echo "-- SYS: start --"
+	@echo BIN_FOLDER: $(BIN_FOLDER)
 	@echo SDK_BIN: $(SDK_BIN)
+	@echo SERVER_BIN: $(SERVER_BIN)
 	@echo
 
 this-print-end:
@@ -56,7 +58,7 @@ this-dep:
 	cd $(SHARED_FSPATH) && $(MAKE) this-all
 
 this-dev-dep:
-	## TODO Add to boot and version it
+	## TODO Add to boot and version it.
 	GO111MODULE="on" go get github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 	brew install jsonnet
 
@@ -77,6 +79,9 @@ this-build: this-build-delete this-config-gen
 	go build -o $(SDK_BIN) $(EXAMPLE_SDK_DIR)/main.go
 	go build -o $(SERVER_BIN) $(EXAMPLE_SERVER_DIR)/main.go
 
+this-build-delete:
+	rm -rf $(BIN_FOLDER)
+
 this-config-gen: this-config-delete this-config-dep
 	@echo Generating Config
 	@mkdir -p ./config
@@ -92,8 +97,7 @@ this-config-delete:
 	rm -rf $(EXAMPLE_SYS_CORE_CFG_PATH)
 	rm -rf $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
 
-this-build-delete:
-	rm -rf ./bin-all
+
 
 ### RUN
 
