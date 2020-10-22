@@ -9,31 +9,36 @@ import (
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
 )
 
+const (
+	addForeignIdx = "CREATE UNIQUE INDEX IF NOT EXISTS idx_some_datas_foreign_id ON some_datas(foreign_id)"
+	tableName = "some_datas"
+)
+
 type SomeData struct {
 	ID        string `genji:"id"`
 	ForeignID string `genji:"foreign_id"`
-	Bleh      string `genji:"bleh"`
+	Blah      string `genji:"blah"`
 }
 
 func (s *SomeData) CreateSQL() []string {
-	return coresvc.NewTable("some_data", map[string]string{
+	return coresvc.NewTable(tableName, map[string]string{
 		"id":         "TEXT",
 		"foreign_id": "TEXT",
-		"bleh":       "TEXT",
-	}, []string{"CREATE UNIQUE INDEX IF NOT EXISTS idx_some_datas_foreign_id ON some_datas(foreign_id)"}).CreateTable()
+		"blah":       "TEXT",
+	}, []string{addForeignIdx}).CreateTable()
 }
 
-func (s *SomeData) Insert(id, foreignId, bleh string) error {
-	return sysCoreSvc.Exec("INSERT INTO some_datas VALUES(?, ?, ?)", id, foreignId, bleh)
+func insertSomeDatas(id, foreignId, blah string) error {
+	return sysCoreSvc.Exec("INSERT INTO some_datas(id, foreign_id, blah) VALUES(?, ?, ?)", id, foreignId, blah)
 }
 
-func (s *SomeData) Get(id string) (*SomeData, error) {
+func get(id string) (*SomeData, error) {
 	var sd SomeData
-	resp, err := sysCoreSvc.QueryOne("SELECT id, foreign_id, bleh FROM some_datas WHERE id = ?", id)
+	resp, err := sysCoreSvc.QueryOne("SELECT id, foreign_id, blah FROM some_datas WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
-	err = resp.StructScan(sd)
+	err = resp.StructScan(&sd)
 	if err != nil {
 		return nil, err
 	}
@@ -59,5 +64,11 @@ func testTableCreation(t *testing.T) {
 }
 
 func testTableInsert(t *testing.T) {
-
+	id := coresvc.NewID()
+	foreignID := coresvc.NewID()
+	err := insertSomeDatas(id, foreignID, "blahblah")
+	assert.NoError(t, err)
+	sd, err := get(id)
+	assert.NoError(t,err)
+	assert.Equal(t, id, sd.ID)
 }

@@ -15,4 +15,5 @@ func TestDBService(t *testing.T) {
 	t.Run("Test Config Creation", testNewSysCoreConfig)
 	t.Run("Test Service Creation", testCoreDBService)
 	t.Run("Test Table Creation", testTableCreation)
+	t.Run("Test Table Insertion", testTableInsert)
 }

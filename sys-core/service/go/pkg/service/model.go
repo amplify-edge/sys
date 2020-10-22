@@ -8,6 +8,7 @@ import (
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/genjidb/genji/sql/query"
 	"github.com/robfig/cron/v3"
+	"github.com/segmentio/ksuid"
 	log "github.com/sirupsen/logrus"
 	"text/template"
 	"time"
@@ -53,8 +54,9 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
 // helper function to create genji.DB
 func newGenjiStore(path string, encKey string, keyRotationSchedule int) (*genji.DB, *badgerengine.Engine, error) {
 	// badgerengine options with encryption and encryption key rotation
-	options := badger.DefaultOptions(path).
-		WithEncryptionKey(helper.MD5(encKey)) // .
+	options := badger.DefaultOptions(path)
+	//.
+	//	WithEncryptionKey(helper.MD5(encKey)) // .
 	// TODO: encryption key rotation is currently disabled, which is not great
 	// WithEncryptionKeyRotationDuration(time.Duration(keyRotationSchedule) * day)
 	engine, err := badgerengine.NewEngine(options)
@@ -97,7 +99,9 @@ func (t *Table) CreateTable() []string {
 	tpl := template.Must(template.New("createTable").
 		Funcs(funcMap).Parse(createTableTpl))
 	var bf bytes.Buffer
-	tpl.Execute(&bf, t)
+	if err := tpl.Execute(&bf, t); err != nil {
+		log.Fatal(err)
+	}
 	tblInitStatements = append(tblInitStatements, bf.String())
 	tblInitStatements = append(tblInitStatements, t.IndexStatements...)
 	return tblInitStatements
@@ -113,9 +117,14 @@ type QueryResult struct {
 }
 
 type DocumentResult struct {
-	document.Document
+	doc document.Document
 }
 
 func (d *DocumentResult) StructScan(dest interface{}) error {
-	return d.StructScan(dest)
+	return document.StructScan(d.doc, dest)
 }
+
+func NewID() string {
+	return ksuid.New().String()
+}
+
