@@ -5,9 +5,6 @@ vendor
 # dev builds
 bin-all
 
-# dev db
-db
-
 # dev config
 config/**
 
@@ -16,3 +13,6 @@ fake*.json
 
 # benchmark binaries
 bench
+
+# db
+db

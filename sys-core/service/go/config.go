@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"gopkg.in/yaml.v2"
@@ -25,6 +26,9 @@ func NewConfig(filepath string) (*SysCoreConfig, error) {
 	if err := yaml.UnmarshalStrict(f, &sysCfg); err != nil {
 		return nil, fmt.Errorf(errParsingConfig, filepath, err)
 	}
+	if err := sysCfg.Validate(); err != nil {
+		return nil, err
+	}
 
 	return sysCfg, nil
 }
@@ -42,6 +46,7 @@ type DbConfig struct {
 	EncryptKey       string `json:"encryptKey" yaml:"encryptKey" mapstructure:"encryptKey"`
 	RotationDuration int    `json:"rotationDuration" yaml:"rotationDuration" mapstructure:"rotationDuration"`
 	DbDir            string `json:"dbDir" yaml:"dbDir" mapstructure:"dbDir"`
+	DeletePrevious   bool   `json:"deletePrevious" yaml:"deletePrevious" mapstructure:"deletePrevious"`
 }
 
 func (d DbConfig) validate() error {
@@ -58,10 +63,20 @@ func (d DbConfig) validate() error {
 		}
 		d.EncryptKey = string(encKey)
 	}
-	exists, err := sharedConfig.PathExists(d.DbDir)
-	if err != nil || !exists {
-		return os.MkdirAll(d.DbDir, defaultDirPerm)
+	abspath, err := filepath.Abs(d.DbDir)
+	if err != nil {
+		return err
 	}
+	exists, err := sharedConfig.PathExists(abspath)
+	if err != nil || !exists {
+		return os.MkdirAll(abspath, defaultDirPerm)
+	}
+	d.DbDir = abspath
+
+	if d.DeletePrevious {
+		return os.RemoveAll(abspath + "/" + d.Name)
+	}
+
 	return nil
 }
 
@@ -78,6 +93,7 @@ func (c CronConfig) validate() error {
 	if exists, err := sharedConfig.PathExists(c.BackupDir); err != nil || !exists {
 		return os.MkdirAll(c.BackupDir, defaultDirPerm)
 	}
+	c.BackupDir, _ = filepath.Abs(c.BackupDir)
 	return nil
 }
 

@@ -25,7 +25,7 @@ func NewBackupCron(config *service.SysCoreConfig) *BackupCron {
 
 func (bc *BackupCron) Start() {
 	bc.cron.AddFunc(bc.backupSpec, func() {
-		fmt.Println("Do bakcup schedule!")
+		fmt.Println("Do backup schedule!")
 		currentTime := time.Now().Format("200601021859")
 		backupFile := config.SysCoreConfig.CronConfig.BackupDir + "/" + "db_" + currentTime + ".bak"
 		dbPath := config.SysCoreConfig.DbConfig.DbDir + "/" + config.SysCoreConfig.DbConfig.Name

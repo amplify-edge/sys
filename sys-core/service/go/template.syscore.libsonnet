@@ -1,19 +1,13 @@
+local dbcfg = import "vendor/config/mixin.db.libsonnet";
+
 {
     local cfg = self,
-    CoreDb:: {
-      name: "getcouragenow.db",
-      encryptKey: "testkey!@",
-      rotationDuration: 1,
-      dbDir: "./db"
+    CoreDB:: dbcfg.DB {
+      name: "core.db",
     },
-    CoreCron:: {
-      backupSchedule: "@daily",
-      rotateSchedule: "@every 24h",
-      backupDir: cfg.CoreDb.dbDir + "/backup"
-    },
+    CoreCron:: dbcfg.Cron,
     sysCoreConfig: {
-        db: self.CoreDb,
+        db: self.CoreDB,
         cron: self.CoreCron,
     }
 }
-
