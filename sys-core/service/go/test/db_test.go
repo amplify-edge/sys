@@ -1,5 +1,5 @@
 // TODO @gutterbacon Should be moved to sys-account, can i do it?
-package test_db
+package db_test
 
 // import (
 // 	"fmt"

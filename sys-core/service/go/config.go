@@ -71,6 +71,7 @@ func (d DbConfig) validate() error {
 	if err != nil || !exists {
 		return os.MkdirAll(abspath, defaultDirPerm)
 	}
+	d.DbDir = abspath
 
 	if d.DeletePrevious {
 		return os.RemoveAll(abspath + "/" + d.Name)
@@ -92,6 +93,7 @@ func (c CronConfig) validate() error {
 	if exists, err := sharedConfig.PathExists(c.BackupDir); err != nil || !exists {
 		return os.MkdirAll(c.BackupDir, defaultDirPerm)
 	}
+	c.BackupDir, _ = filepath.Abs(c.BackupDir)
 	return nil
 }
 
