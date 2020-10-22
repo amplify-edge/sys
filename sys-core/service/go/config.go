@@ -25,6 +25,9 @@ func NewConfig(filepath string) (*SysCoreConfig, error) {
 	if err := yaml.UnmarshalStrict(f, &sysCfg); err != nil {
 		return nil, fmt.Errorf(errParsingConfig, filepath, err)
 	}
+	if err := sysCfg.Validate(); err != nil {
+		return nil, err
+	}
 
 	return sysCfg, nil
 }
@@ -61,6 +64,10 @@ func (d DbConfig) validate() error {
 	exists, err := sharedConfig.PathExists(d.DbDir)
 	if err != nil || !exists {
 		return os.MkdirAll(d.DbDir, defaultDirPerm)
+	}
+	fileExists := sharedConfig.FileExists(d.Name)
+	if fileExists {
+		return os.RemoveAll(d.Name)
 	}
 	return nil
 }
