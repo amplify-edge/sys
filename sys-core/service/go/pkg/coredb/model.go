@@ -1,4 +1,4 @@
-package service
+package coredb
 
 import (
 	"bytes"
@@ -23,12 +23,13 @@ const (
 
 // CoreDB is the exported struct
 type CoreDB struct {
-	logger *log.Entry
-	store  *genji.DB
-	engine *badgerengine.Engine
-	models map[string]DbModel
-	config *corecfg.SysCoreConfig
-	crony  *cron.Cron
+	logger    *log.Entry
+	store     *genji.DB
+	engine    *badgerengine.Engine
+	models    map[string]DbModel
+	config    *corecfg.SysCoreConfig
+	crony     *cron.Cron
+	cronFuncs map[string]func()
 }
 
 // NewCoreDB facilitates creation of (wrapped) genji database alongside badger DB engine
@@ -61,7 +62,7 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
 func newGenjiStore(path string, encKey string, keyRotationSchedule int) (*genji.DB, *badgerengine.Engine, error) {
 	// badgerengine options with encryption and encryption key rotation
 	options := badger.DefaultOptions(path)
-	//.
+	// .
 	//	WithEncryptionKey(helper.MD5(encKey)) // .
 	// TODO: encryption key rotation is currently disabled, which is not great
 	// WithEncryptionKeyRotationDuration(time.Duration(keyRotationSchedule) * day)
@@ -128,6 +129,20 @@ type DocumentResult struct {
 
 func (d *DocumentResult) StructScan(dest interface{}) error {
 	return document.StructScan(d.doc, dest)
+}
+
+type QueryParams struct {
+	Params map[string]interface{}
+}
+
+func (qp *QueryParams) ColumnsAndValues() ([]string, []interface{}) {
+	var columns []string
+	var values []interface{}
+	for k, v := range qp.Params {
+		columns = append(columns, helper.ToSnakeCase(k))
+		values = append(values, v)
+	}
+	return columns, values
 }
 
 func NewID() string {

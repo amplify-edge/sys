@@ -1,4 +1,4 @@
-package service
+package coredb
 
 import (
 	"github.com/genjidb/genji"

@@ -1,11 +1,10 @@
 package repo
 
 import (
-	"github.com/genjidb/genji"
-
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	l "github.com/sirupsen/logrus"
 )
 
@@ -33,7 +32,7 @@ func (c ContextKey) String() string {
 	return "sys_account.repo.grpc context key " + string(c)
 }
 
-func NewAuthRepo(l *l.Entry, db *genji.DB, cfg *service.SysAccountConfig) (*SysAccountRepo, error) {
+func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)

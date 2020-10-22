@@ -1,4 +1,4 @@
-package service
+package coredb
 
 // Register dao models for db
 func (c *CoreDB) RegisterModels(modelsMap map[string]DbModel) error {

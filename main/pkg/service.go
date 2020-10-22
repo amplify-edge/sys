@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"fmt"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	"net/http"
 
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -13,9 +12,9 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	"github.com/genjidb/genji"
 	accountpkg "github.com/getcouragenow/sys/sys-account/service/go/pkg"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (
@@ -58,14 +57,14 @@ type serviceConfigs struct {
 // load up and provide sub grpc services.
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
-	store  *genji.DB // sys-core
+	store  *coredb.CoreDB // sys-core
 	port   int
 	logger *logrus.Entry
 	cfg    *serviceConfigs
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
-func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, servicePaths *ServiceConfigPaths, port int) (*SysServiceConfig, error) {
+func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int) (*SysServiceConfig, error) {
 	var err error
 	var csc *corecfg.SysCoreConfig
 	if db == nil {
@@ -76,10 +75,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *genji.DB, servicePaths *ServiceCon
 		if err != nil {
 			return nil, err
 		}
-		if err := coredb.InitDatabase(csc); err != nil {
-			return nil, err
-		}
-		db, err = coredb.SharedDatabase()
+		db, err = coredb.NewCoreDB(l, csc)
 		if err != nil {
 			return nil, err
 		}

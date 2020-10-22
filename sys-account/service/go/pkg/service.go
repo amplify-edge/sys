@@ -2,15 +2,16 @@ package accountpkg
 
 import (
 	"context"
-	"github.com/genjidb/genji"
-	"github.com/getcouragenow/sys/sys-account/service/go"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	"fmt"
+
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	"github.com/getcouragenow/sys/sys-account/service/go"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (
@@ -24,18 +25,15 @@ type SysAccountService struct {
 }
 
 type SysAccountServiceConfig struct {
-	store  *genji.DB
+	store  *coredb.CoreDB
 	Cfg    *service.SysAccountConfig
 	logger *logrus.Entry
 }
 
-func NewSysAccountServiceConfig(l *logrus.Entry, db *genji.DB, filepath string) (*SysAccountServiceConfig, error) {
+func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath string) (*SysAccountServiceConfig, error) {
 	var err error
 	if db == nil {
-		db, err = coredb.SharedDatabase()
-		if err != nil {
-			return nil, err
-		}
+		return nil, fmt.Errorf("error creating sys account service: database is null")
 	}
 	sysAccountLogger := l.WithFields(logrus.Fields{
 		"sys": "sys-account",

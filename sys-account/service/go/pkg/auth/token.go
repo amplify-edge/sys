@@ -5,11 +5,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	//"github.com/getcouragenow/sys/main/pkg"
-	// FIX IS:
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 var (
@@ -75,8 +73,8 @@ func (tc *TokenConfig) NewTokenPairs(claimant Claimant) (*TokenPairDetails, erro
 	tpd.RefreshToken = refreshToken
 	tpd.ATExpiry = time.Now().Unix() + tc.AccessExpiration.Milliseconds()
 	tpd.RTExpiry = time.Now().Unix() + tc.RefreshExpiration.Milliseconds()
-	tpd.ATId = db.UID()
-	tpd.RTId = db.UID()
+	tpd.ATId = coredb.NewID()
+	tpd.RTId = coredb.NewID()
 
 	return &tpd, nil
 }

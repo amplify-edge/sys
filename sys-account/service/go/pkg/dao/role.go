@@ -7,10 +7,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 )
 
 type Role struct {
@@ -23,8 +23,12 @@ type Role struct {
 	UpdatedAt int64  `genji:"updated_at"`
 }
 
+var (
+	rolesUniqueIndex = fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_account_id ON %s(account_id)`, RolesTableName)
+)
+
 func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Role, error) {
-	queryParam := &QueryParams{Params: map[string]interface{}{
+	queryParam := &coresvc.QueryParams{Params: map[string]interface{}{
 		"account_id": accountId,
 	}}
 	if role.Role > 0 && role.Role <= 4 { // Guest, Member, Admin, or SuperAdmin
@@ -63,13 +67,13 @@ func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 }
 
 func (p Role) TableName() string {
-	return tableName(RolesTableName, "_")
+	return RolesTableName
 }
 
-func permissionToQueryParam(acc *Role) (res QueryParams, err error) {
+func roleToQueryParam(acc *Role) (res coresvc.QueryParams, err error) {
 	jstring, err := json.Marshal(acc)
 	if err != nil {
-		return QueryParams{}, err
+		return coresvc.QueryParams{}, err
 	}
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
@@ -80,24 +84,23 @@ func permissionToQueryParam(acc *Role) (res QueryParams, err error) {
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (p Role) CreateSQL() []string {
 	fields := initFields(RolesColumns, RolesColumnsType)
-	tbl := crud.NewTable(p.TableName(), fields)
-	return []string{tbl.CreateTable(),
-		fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_account_id ON %s(account_id)`, p.TableName())}
+	tbl := coresvc.NewTable(RolesTableName, fields, []string{rolesUniqueIndex})
+	return tbl.CreateTable()
 }
 
-func (a *AccountDB) getRolesSelectStatements(aqp *QueryParams) (string, []interface{}, error) {
-	baseStmt := sq.Select(RolesColumns).From(tableName(RolesTableName, "_"))
-	if aqp != nil && aqp.Params != nil {
-		for k, v := range aqp.Params {
+func (a *AccountDB) getRolesSelectStatements(filterParam *coresvc.QueryParams) (string, []interface{}, error) {
+	baseStmt := sq.Select(RolesColumns).From(RolesTableName)
+	if filterParam != nil && filterParam.Params != nil {
+		for k, v := range filterParam.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
 		}
 	}
 	return baseStmt.ToSql()
 }
 
-func (a *AccountDB) GetRole(aqp *QueryParams) (*Role, error) {
+func (a *AccountDB) GetRole(filterParam *coresvc.QueryParams) (*Role, error) {
 	var p Role
-	selectStmt, args, err := a.getRolesSelectStatements(aqp)
+	selectStmt, args, err := a.getRolesSelectStatements(filterParam)
 	if err != nil {
 		return nil, err
 	}
@@ -105,21 +108,21 @@ func (a *AccountDB) GetRole(aqp *QueryParams) (*Role, error) {
 		"queryStatement": selectStmt,
 		"arguments":      args,
 	}).Debug("Querying roles")
-	doc, err := a.QueryOne(selectStmt, args...)
+	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err
 	}
-	err = document.StructScan(doc, &p)
+	err = doc.StructScan(&p)
 	return &p, err
 }
 
-func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Role, error) {
+func (a *AccountDB) ListRole(filterParam *coresvc.QueryParams) ([]*Role, error) {
 	var perms []*Role
-	selectStmt, args, err := a.getRolesSelectStatements(aqp)
+	selectStmt, args, err := a.getRolesSelectStatements(filterParam)
 	if err != nil {
 		return nil, err
 	}
-	res, err := a.Query(selectStmt, args...)
+	res, err := a.db.Query(selectStmt, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,43 +141,44 @@ func (a *AccountDB) ListRole(aqp *QueryParams) ([]*Role, error) {
 }
 
 func (a *AccountDB) InsertRole(p *Role) error {
-	aqp, err := permissionToQueryParam(p)
+	filterParam, err := roleToQueryParam(p)
 	if err != nil {
 		return err
 	}
-	columns, values := aqp.ColumnsAndValues()
-	stmt, args, err := sq.Insert(tableName(RolesTableName, "_")).
+	columns, values := filterParam.ColumnsAndValues()
+	if len(columns) != len(values) {
+		return fmt.Errorf("error: length mismatch: cols: %d, vals: %d", len(columns), len(values))
+	}
+	stmt, args, err := sq.Insert(RolesTableName).
 		Columns(columns...).
 		Values(values...).
 		ToSql()
 	a.log.WithFields(log.Fields{
 		"statement": stmt,
 		"args":      args,
-	}).Info("INSERT to permissions table")
+	}).Debug("insert to roles table")
 	if err != nil {
 		return err
 	}
-	return a.Exec(stmt, args)
+	return a.db.Exec(stmt, args...)
 }
 
 func (a *AccountDB) UpdateRole(p *Role) error {
-	aqp, err := permissionToQueryParam(p)
+	filterParam, err := roleToQueryParam(p)
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(tableName(RolesTableName, "_")).SetMap(aqp.Params).ToSql()
+	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).ToSql()
 	if err != nil {
 		return err
 	}
-	return a.Exec(stmt, args)
+	return a.db.Exec(stmt, args...)
 }
 
 func (a *AccountDB) DeleteRole(id string) error {
-	var values [][]interface{}
-	stmt, args, err := sq.Delete(tableName(RolesTableName, "_")).Where("id = ?", id).ToSql()
+	stmt, args, err := sq.Delete(RolesTableName).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}
-	values = append(values, args)
-	return a.Exec(stmt, args)
+	return a.db.Exec(stmt, args...)
 }

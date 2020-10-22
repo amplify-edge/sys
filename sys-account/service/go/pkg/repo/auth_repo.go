@@ -14,7 +14,7 @@ import (
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
@@ -23,7 +23,7 @@ import (
 // for now we hardcode the user first
 // later we'll use Genji from getcouragenow/sys-core/service/db
 func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
-	qp := &dao.QueryParams{Params: map[string]interface{}{
+	qp := &coredb.QueryParams{Params: map[string]interface{}{
 		"email": req.Email,
 	}}
 	acc, err := ad.store.GetAccount(qp)
@@ -44,7 +44,7 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 		"account_id": acc.ID,
 		"role_id":    acc.RoleId,
 	}).Info("querying user")
-	qp = &dao.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}}
+	qp = &coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}}
 	role, err := ad.store.GetRole(qp)
 	if err != nil {
 		ad.log.Warnf(auth.Error{Reason: auth.ErrQueryAccount, Err: err}.Error())
@@ -89,8 +89,8 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	}
 	// New user will be assigned GUEST role and no Org / Project for now.
 	// TODO @gutterbacon: subject to change.
-	roleId := coredb.UID()
-	accountId := coredb.UID()
+	roleId := coredb.NewID()
+	accountId := coredb.NewID()
 	now := timestampNow()
 	err := ad.store.InsertAccount(&dao.Account{
 		ID:                accountId,

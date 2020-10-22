@@ -3,15 +3,19 @@ package dao
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/genjidb/genji/document"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/genjidb/genji/document"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/crud"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+)
+
+var (
+	accountsUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON %s(email)", AccTableName)
 )
 
 type Account struct {
@@ -64,14 +68,10 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 	}, nil
 }
 
-func (a Account) TableName() string {
-	return tableName(AccTableName, "_")
-}
-
-func accountToQueryParams(acc *Account) (res QueryParams, err error) {
+func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
 	jstring, err := json.Marshal(acc)
 	if err != nil {
-		return QueryParams{}, err
+		return coresvc.QueryParams{}, err
 	}
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
@@ -82,15 +82,12 @@ func accountToQueryParams(acc *Account) (res QueryParams, err error) {
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (a Account) CreateSQL() []string {
 	fields := initFields(AccColumns, AccColumnsType)
-	tbl := crud.NewTable(a.TableName(), fields)
-	return []string{
-		tbl.CreateTable(),
-		fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON %s(email)", a.TableName()),
-	}
+	tbl := coresvc.NewTable(AccTableName, fields, []string{accountsUniqueIdx})
+	return tbl.CreateTable()
 }
 
-func (a *AccountDB) queryFilter(filter *QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(AccColumns).From(tableName(AccTableName, "_"))
+func (a *AccountDB) queryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
+	baseStmt := sq.Select(AccColumns).From(AccTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
@@ -99,12 +96,12 @@ func (a *AccountDB) queryFilter(filter *QueryParams) sq.SelectBuilder {
 	return baseStmt
 }
 
-func (a *AccountDB) getAccountSelectStatement(aqp *QueryParams) (string, []interface{}, error) {
-	baseStmt := a.queryFilter(aqp)
+func (a *AccountDB) getAccountSelectStatement(filterParams *coresvc.QueryParams) (string, []interface{}, error) {
+	baseStmt := a.queryFilter(filterParams)
 	return baseStmt.ToSql()
 }
 
-func (a *AccountDB) listAccountSelectStatement(filter *QueryParams, orderBy string, limit int64, cursor *int64) (string, []interface{}, error) {
+func (a *AccountDB) listAccountSelectStatement(filter *coresvc.QueryParams, orderBy string, limit int64, cursor *int64) (string, []interface{}, error) {
 	var csr int
 	baseStmt := a.queryFilter(filter)
 	if cursor == nil {
@@ -116,27 +113,27 @@ func (a *AccountDB) listAccountSelectStatement(filter *QueryParams, orderBy stri
 	return baseStmt.ToSql()
 }
 
-func (a *AccountDB) GetAccount(aqp *QueryParams) (*Account, error) {
+func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, error) {
 	var acc Account
-	selectStmt, args, err := a.getAccountSelectStatement(aqp)
+	selectStmt, args, err := a.getAccountSelectStatement(filterParams)
 	if err != nil {
 		return nil, err
 	}
-	doc, err := a.QueryOne(selectStmt, args...)
+	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err
 	}
-	err = document.StructScan(doc, &acc)
+	err = doc.StructScan(&acc)
 	return &acc, err
 }
 
-func (a *AccountDB) ListAccount(aqp *QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
+func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
 	var accs []*Account
-	selectStmt, args, err := a.listAccountSelectStatement(aqp, orderBy, limit, &cursor)
+	selectStmt, args, err := a.listAccountSelectStatement(filterParams, orderBy, limit, &cursor)
 	if err != nil {
 		return nil, 0, err
 	}
-	res, err := a.Query(selectStmt, args...)
+	res, err := a.db.Query(selectStmt, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -160,42 +157,42 @@ func (a *AccountDB) InsertAccount(acc *Account) error {
 		return err
 	}
 	acc.Password = passwd
-	aqp, err := accountToQueryParams(acc)
+	filterParams, err := accountToQueryParams(acc)
 	if err != nil {
 		return err
 	}
-	log.Printf("query params: %v", aqp)
-	columns, values := aqp.ColumnsAndValues()
-	stmt, args, err := sq.Insert(tableName(AccTableName, "_")).
+	log.Debugf("query params: %v", filterParams)
+	columns, values := filterParams.ColumnsAndValues()
+	stmt, args, err := sq.Insert(AccTableName).
 		Columns(columns...).
 		Values(values...).
 		ToSql()
 	a.log.WithFields(log.Fields{
 		"statement": stmt,
 		"args":      args,
-	}).Info("INSERT to accounts table")
+	}).Debug("insert to accounts table")
 	if err != nil {
 		return err
 	}
-	return a.Exec(stmt, values)
+	return a.db.Exec(stmt, args...)
 }
 
 func (a *AccountDB) UpdateAccount(acc *Account) error {
-	aqp, err := accountToQueryParams(acc)
+	filterParams, err := accountToQueryParams(acc)
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(tableName(AccTableName, "_")).SetMap(aqp.Params).ToSql()
+	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).ToSql()
 	if err != nil {
 		return err
 	}
-	return a.Exec(stmt, args)
+	return a.db.Exec(stmt, args...)
 }
 
 func (a *AccountDB) DeleteAccount(id string) error {
-	stmt, args, err := sq.Delete(tableName(AccTableName, "_")).Where("id = ?", id).ToSql()
+	stmt, args, err := sq.Delete(AccTableName).Where("id = ?", id).ToSql()
 	if err != nil {
 		return err
 	}
-	return a.Exec(stmt, args)
+	return a.db.Exec(stmt, args...)
 }
