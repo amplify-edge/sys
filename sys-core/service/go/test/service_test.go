@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (

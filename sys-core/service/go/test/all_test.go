@@ -2,7 +2,7 @@ package db_test
 
 import (
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"testing"
 )
 

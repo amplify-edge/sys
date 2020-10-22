@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 var (

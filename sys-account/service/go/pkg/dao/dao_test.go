@@ -9,7 +9,7 @@ import (
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 var (

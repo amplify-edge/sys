@@ -20,7 +20,7 @@ import (
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (
@@ -58,10 +58,8 @@ func main() {
 		if err != nil {
 			log.Fatalf(errSourcingConfig, err)
 		}
-		if err := coredb.InitDatabase(csc); err != nil {
-			log.Fatalf(errSourcingConfig, err)
-		}
-		gdb, err := coredb.SharedDatabase()
+
+		gdb, err := coredb.NewCoreDB(log, csc)
 		if err != nil {
 			log.Fatalf(errSourcingConfig, err)
 		}

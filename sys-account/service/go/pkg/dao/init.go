@@ -1,7 +1,7 @@
 package dao
 
 import (
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/service"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"github.com/sirupsen/logrus"
 	"strings"
 )

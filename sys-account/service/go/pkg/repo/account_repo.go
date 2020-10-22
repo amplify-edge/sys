@@ -12,12 +12,12 @@ import (
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/db"
+	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
 	now := timestampNow()
-	roleId := coredb.UID()
+	roleId := coredb.NewID()
 	if err := ad.store.InsertRole(&dao.Role{
 		ID:        roleId,
 		AccountId: in.Id, // TODO @gutterbacon check for uniqueness
@@ -41,11 +41,11 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg
 	}); err != nil {
 		return nil, err
 	}
-	acc, err := ad.store.GetAccount(&dao.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.Id}})
 	if err != nil {
 		return nil, err
 	}
-	role, err := ad.store.GetRole(&dao.QueryParams{Params: map[string]interface{}{"id": acc.RoleId}})
+	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"id": acc.RoleId}})
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +63,13 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequ
 	}
 
 	// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-	acc, err := ad.store.GetAccount(&dao.QueryParams{Params: map[string]interface{}{
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{
 		"id": in.Id,
 	}})
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", auth.Error{Reason: auth.ErrAccountNotFound})
 	}
-	role, err := ad.store.GetRole(&dao.QueryParams{Params: map[string]interface{}{
+	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{
 		"id": acc.RoleId,
 	}})
 	if err != nil {
@@ -90,7 +90,7 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 	if in == nil {
 		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
-	filter := &dao.QueryParams{Params: map[string]interface{}{}}
+	filter := &coredb.QueryParams{Params: map[string]interface{}{}}
 	orderBy := in.OrderBy + " ASC"
 	if in.CurrentPageId != "" {
 		cursor, err = strconv.ParseInt(in.CurrentPageId, 10, 64)
@@ -110,7 +110,7 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 	var accounts []*pkg.Account
 
 	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&dao.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
+		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +137,7 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 	if in == nil {
 		return &pkg.SearchAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot search user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
-	filter := &dao.QueryParams{Params: map[string]interface{}{}}
+	filter := &coredb.QueryParams{Params: map[string]interface{}{}}
 	for k, v := range in.Query {
 		filter.Params[k] = v
 	}
@@ -160,7 +160,7 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 	var accounts []*pkg.Account
 
 	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&dao.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
+		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
 		if err != nil {
 			return nil, err
 		}
