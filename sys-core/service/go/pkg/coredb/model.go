@@ -60,11 +60,9 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig, cronFuncs map[string]fu
 }
 
 // helper function to create genji.DB
-func newGenjiStore(path string, encKey string, keyRotationSchedule int) (*genji.DB, *badgerengine.Engine, error) {
+func newGenjiStore(path, encKey string, keyRotationSchedule int) (*genji.DB, *badgerengine.Engine, error) {
 	// badgerengine options with encryption and encryption key rotation
-	options := badger.DefaultOptions(path)
-	// .
-	//	WithEncryptionKey(helper.MD5(encKey)) // .
+	options := createBadgerOpts(path, encKey, keyRotationSchedule)
 	// TODO: encryption key rotation is currently disabled, which is not great
 	// WithEncryptionKeyRotationDuration(time.Duration(keyRotationSchedule) * day)
 	engine, err := badgerengine.NewEngine(options)
@@ -76,6 +74,11 @@ func newGenjiStore(path string, encKey string, keyRotationSchedule int) (*genji.
 		return nil, nil, err
 	}
 	return store, engine, nil
+}
+
+func createBadgerOpts(path, encKey string, keyRotationSchedule int) badger.Options {
+	return badger.DefaultOptions(path).
+		WithEncryptionKey(helper.MD5(encKey))
 }
 
 const (

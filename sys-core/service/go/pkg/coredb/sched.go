@@ -89,7 +89,7 @@ func (c *CoreDB) backup() (string, error) {
 
 func (c *CoreDB) Restore(_ context.Context, in *sharedPkg.RestoreRequest) (*sharedPkg.RestoreResult, error) {
 	badgerDB := c.engine.DB
-	f, err := openFile(in.BackupFile)
+	f, err := c.openFile(in.BackupFile)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +114,7 @@ func (c *CoreDB) ListBackup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.
 
 func (c *CoreDB) listBackups() ([]string, error) {
 	backupDir := c.config.SysCoreConfig.CronConfig.BackupDir
+	c.logger.Info("backup dir: " + backupDir)
 	files, err := ioutil.ReadDir(backupDir)
 	if err != nil {
 		return nil, err
@@ -143,7 +144,7 @@ func createFile(fileName string) (io.WriteCloser, error) {
 	return f, err
 }
 
-func openFile(filepath string) (io.ReadCloser, error) {
+func (c *CoreDB) openFile(filepath string) (io.ReadCloser, error) {
 	exists := sharedConfig.FileExists(filepath)
 	if !exists {
 		return nil, fmt.Errorf("cannot find %s", filepath)

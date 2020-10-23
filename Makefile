@@ -35,6 +35,8 @@ EXAMPLE_SYS_CORE_CFG_PATH = ./config/syscore.yml
 EXAMPLE_SYS_ACCOUNT_CFG_PATH = ./config/sysaccount.yml
 EXAMPLE_SERVER_DIR = ./example/server
 EXAMPLE_SDK_DIR = ./example/sdk-cli
+# Please override this
+EXAMPLE_BACKUP_FILE = ./db/backup/gcn.db_20201023108589.bak
 
 this-all: this-print this-dep this-build this-print-end
 
@@ -151,3 +153,12 @@ this-ex-sdk-bench-03:
 	@echo USERS: 1000
 	@echo DB CONNECTIONS: 100
 	$(SDK_BIN) sys-bench -s $(EXAMPLE_SERVER_ADDRESS) -j "./bench/fake-register-data.json" -p "../sys-share/sys-account/proto/v2/sys_account_services.proto" -n "v2.sys_account.services.AuthService.Register" -r 1000 -c 100
+
+this-ex-sdk-backup:
+	$(SDK_BIN) db-admin-service backup -s $(EXAMPLE_SERVER_ADDRESS)
+
+this-ex-sdk-list-backup:
+	$(SDK_BIN) db-admin-service list-backup -s $(EXAMPLE_SERVER_ADDRESS)
+
+this-ex-sdk-restore:
+	$(SDK_BIN) db-admin-service restore --backup-file $(EXAMPLE_BACKUP_FILE) -s $(EXAMPLE_SERVER_ADDRESS)

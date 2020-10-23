@@ -184,6 +184,7 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
 func (ad *SysAccountRepo) AssignAccountToRole(context.Context, *pkg.AssignAccountToRoleRequest) (*pkg.Account, error) {
+
 	return &pkg.Account{}, nil
 }
 
