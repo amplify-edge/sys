@@ -3,8 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -61,26 +59,7 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequ
 		return &pkg.Account{},
 			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
-
-	// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{
-		"id": in.Id,
-	}})
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", auth.Error{Reason: auth.ErrAccountNotFound})
-	}
-	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{
-		"id": acc.RoleId,
-	}})
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
-	}
-	userRole, err := role.ToPkgRole()
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
-	}
-
-	return acc.ToPkgAccount(userRole)
+	return ad.getAccountAndRole(in.Id)
 }
 
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
@@ -92,38 +71,20 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 	}
 	filter := &coredb.QueryParams{Params: map[string]interface{}{}}
 	orderBy := in.OrderBy + " ASC"
-	if in.CurrentPageId != "" {
-		cursor, err = strconv.ParseInt(in.CurrentPageId, 10, 64)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
-		}
-	} else {
-		cursor = 0
-	}
-	if in.PerPageEntries == 0 {
-		limit = dao.DefaultLimit
-	}
-	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor)
+	cursor, err = ad.getCursor(in.CurrentPageId)
 	if err != nil {
 		return nil, err
 	}
-	var accounts []*pkg.Account
 
-	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
-		if err != nil {
-			return nil, err
-		}
-		role, err := r.ToPkgRole()
-		if err != nil {
-			return nil, err
-		}
-		account, err := acc.ToPkgAccount(role)
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
+	if in.PerPageEntries == 0 {
+		limit = dao.DefaultLimit
 	}
+
+	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pkg.ListAccountsResponse{
 		Accounts:   accounts,
 		NextPageId: fmt.Sprintf("%d", next),
@@ -142,37 +103,16 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 		filter.Params[k] = v
 	}
 	orderBy := in.SearchParam.OrderBy + " ASC"
-	if in.SearchParam.CurrentPageId != "" {
-		cursor, err = strconv.ParseInt(in.SearchParam.CurrentPageId, 10, 64)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
-		}
-	} else {
-		cursor = 0
+	cursor, err = ad.getCursor(in.SearchParam.CurrentPageId)
+	if err != nil {
+		return nil, err
 	}
 	if in.SearchParam.PerPageEntries == 0 {
 		limit = dao.DefaultLimit
 	}
-	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor)
+	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor)
 	if err != nil {
 		return nil, err
-	}
-	var accounts []*pkg.Account
-
-	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
-		if err != nil {
-			return nil, err
-		}
-		role, err := r.ToPkgRole()
-		if err != nil {
-			return nil, err
-		}
-		account, err := acc.ToPkgAccount(role)
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
 	}
 	return &pkg.SearchAccountsResponse{
 		SearchResponse: &pkg.ListAccountsResponse{
@@ -183,7 +123,14 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 }
 
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-func (ad *SysAccountRepo) AssignAccountToRole(context.Context, *pkg.AssignAccountToRoleRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.AssignAccountToRoleRequest) (*pkg.Account, error) {
+	if in == nil {
+		return &pkg.Account{}, status.Errorf(codes.InvalidArgument, "cannot assign user Account: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+	}
+	// acc, err := ad.getAccountAndRole(in.AssignedAccountId)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return &pkg.Account{}, nil
 }
