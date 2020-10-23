@@ -5,11 +5,11 @@
       "source": {
         "git": {
           "remote": "https://github.com/getcouragenow/sys-share.git",
-          "subdir": "sys-core/service/config"
+          "subdir": "sys-core/service/config/mixins"
         }
       },
       "version": "3d8c0942902f0c18eb48480e92299f0cc5e28439",
-      "sum": "TcPjE1OTLmXQWRYHITPUJuJEQadD/hYFSchZDW2YqW0="
+      "sum": "M2DO2dlElB3FBHjS2wB1dHjRO/DI2suj8TvU5BSjdkQ="
     }
   ],
   "legacyImports": false

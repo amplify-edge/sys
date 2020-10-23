@@ -1,8 +1,8 @@
 package coredb
 
 import (
+	"context"
 	"fmt"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"io"
 	"io/ioutil"
 	"os"
@@ -10,6 +10,10 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	sharedPkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 )
 
 const (
@@ -22,20 +26,8 @@ func (c *CoreDB) scheduleBackup() error {
 	// default backup schedule
 	errChan := make(chan error, 1)
 	_, err := crony.AddFunc(c.config.SysCoreConfig.CronConfig.BackupSchedule, func() {
-		c.logger.Debug("creating backup schedule")
-		fileWriter, err := c.createBackupFile()
-		defer fileWriter.Close()
+		_, err := c.backup()
 		if err != nil {
-			c.logger.Debugf("%s error while creating backup file: %v", moduleName, err)
-			errChan <- err
-			return
-		}
-		badgerDb := c.engine.DB
-		// full backup, no matter what
-		// TODO: provide incremental backup as well perhaps?
-		_, err = badgerDb.Backup(fileWriter, 0)
-		if err != nil {
-			c.logger.Debugf("%s error while doing streaming backup: %v", moduleName, err)
 			errChan <- err
 			return
 		}
@@ -68,16 +60,59 @@ func (c *CoreDB) scheduleBackup() error {
 	return nil
 }
 
-func (c *CoreDB) RestoreDB(filepath string) error {
-	badgerDB := c.engine.DB
-	f, err := openFile(filepath)
+func (c *CoreDB) Backup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.BackupResult, error) {
+	filename, err := c.backup()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return badgerDB.Load(f, 100)
+	return &sharedPkg.BackupResult{BackupFile: filename}, nil
 }
 
-func (c *CoreDB) ListBackups() ([]string, error) {
+func (c *CoreDB) backup() (string, error) {
+	c.logger.Debug("creating backup schedule")
+	fileWriter, filename, err := c.createBackupFile()
+	defer fileWriter.Close()
+	if err != nil {
+		c.logger.Debugf("%s error while creating backup file: %v", moduleName, err)
+		return "", err
+	}
+	badgerDb := c.engine.DB
+	// full backup, no matter what
+	// TODO: provide incremental backup as well perhaps?
+	_, err = badgerDb.Backup(fileWriter, 0)
+	if err != nil {
+		c.logger.Debugf("%s error while doing streaming backup: %v", moduleName, err)
+		return "", err
+	}
+	return filename, nil
+}
+
+func (c *CoreDB) RestoreDB(ctx context.Context, in *sharedPkg.RestoreRequest) (*sharedPkg.RestoreResult, error) {
+	badgerDB := c.engine.DB
+	f, err := openFile(in.BackupFile)
+	if err != nil {
+		return nil, err
+	}
+	err = badgerDB.Load(f, 100)
+	if err != nil {
+		return nil, err
+	}
+	return &sharedPkg.RestoreResult{Result: fmt.Sprintf("successfully restore db: %s", in.BackupFile)}, nil
+}
+
+func (c *CoreDB) ListBackups(ctx context.Context, in *emptypb.Empty) (*sharedPkg.ListBackupResult, error) {
+	var bfiles []*sharedPkg.BackupResult
+	listFiles, err := c.listBackups()
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range listFiles {
+		bfiles = append(bfiles, &sharedPkg.BackupResult{BackupFile: f})
+	}
+	return &sharedPkg.ListBackupResult{BackupFiles: bfiles}, nil
+}
+
+func (c *CoreDB) listBackups() ([]string, error) {
 	backupDir := c.config.SysCoreConfig.CronConfig.BackupDir
 	files, err := ioutil.ReadDir(backupDir)
 	if err != nil {
@@ -90,13 +125,17 @@ func (c *CoreDB) ListBackups() ([]string, error) {
 	return fileInfos, nil
 }
 
-func (c *CoreDB) createBackupFile() (io.WriteCloser, error) {
+func (c *CoreDB) createBackupFile() (io.WriteCloser, string, error) {
 	currentTime := time.Now().Format("200601021859")
 	backupFileName := filepath.Join(
 		c.config.SysCoreConfig.CronConfig.BackupDir,
 		fmt.Sprintf(backupFormat, c.config.SysCoreConfig.DbConfig.Name, currentTime),
 	)
-	return createFile(backupFileName)
+	f, err := createFile(backupFileName)
+	if err != nil {
+		return nil, "", err
+	}
+	return f, backupFileName, nil
 }
 
 func createFile(fileName string) (io.WriteCloser, error) {
