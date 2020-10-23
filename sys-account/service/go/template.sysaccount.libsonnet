@@ -1,3 +1,4 @@
+local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/service/config/mixins/mixin.jwt.libsonnet";
 {
     local cfg = self,
     UnauthenticatedRoutes:: [
@@ -8,11 +9,11 @@
     	"/v2.sys_account.services.AuthService/RefreshAccessToken",
     	"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
     ],
-    AccessToken:: {
+    AccessToken:: tokencfg.Token {
         secret: "some_jwt_access_secret",
         expiry: 3600,
     },
-    RefreshToken:: {
+    RefreshToken:: tokencfg.Token {
         secret: "some_jwt_refresh_secret",
         expiry: cfg.AccessToken.expiry * 100,
     },

@@ -12,7 +12,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/sys-share v0.0.0-20201019065332-3ae732e3de93
+	github.com/getcouragenow/sys-share v0.0.0-20201023030153-3d8c0942902f
 	github.com/go-playground/validator v9.30.0+incompatible
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2

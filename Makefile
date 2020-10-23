@@ -90,6 +90,7 @@ this-config-gen: this-config-delete this-config-dep
 
 this-config-dep:
 	cd $(EXAMPLE_SERVER_DIR) && jb install && jb update
+	cd sys-account/service/go && jb install && jb update
 	cd sys-core/service/go && jb install && jb update
 
 this-config-delete:
