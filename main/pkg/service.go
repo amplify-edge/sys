@@ -75,7 +75,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 		if err != nil {
 			return nil, err
 		}
-		db, err = coredb.NewCoreDB(l, csc)
+		db, err = coredb.NewCoreDB(l, csc, nil)
 		if err != nil {
 			return nil, err
 		}

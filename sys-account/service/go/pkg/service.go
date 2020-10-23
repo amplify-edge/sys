@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -22,6 +23,7 @@ const (
 type SysAccountService struct {
 	authInterceptorFunc func(context.Context) (context.Context, error)
 	proxyService        *pkg.SysAccountProxyService
+	dbProxyService      *coresvc.SysCoreProxyService
 }
 
 type SysAccountServiceConfig struct {
@@ -60,9 +62,11 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 		return nil, err
 	}
 	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo)
+	dbProxyService := coresvc.NewSysCoreProxyService(cfg.store)
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
 		proxyService:        sysAccountProxy,
+		dbProxyService:      dbProxyService,
 	}, nil
 }
 
@@ -74,4 +78,5 @@ func (sas *SysAccountService) InjectInterceptors(unaryItc []grpc.UnaryServerInte
 
 func (sas *SysAccountService) RegisterServices(srv *grpc.Server) {
 	sas.proxyService.RegisterSvc(srv)
+	sas.dbProxyService.RegisterSvc(srv)
 }

@@ -36,7 +36,7 @@ type CoreDB struct {
 // if one wants to use one or the other.
 // or if internally will use the underlying badger DB engine to create Stream for example
 // for backup, restore, or anything
-func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
+func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig, cronFuncs map[string]func()) (*CoreDB, error) {
 	dbName := cfg.SysCoreConfig.DbConfig.Name
 	dbPath := cfg.SysCoreConfig.DbConfig.DbDir + "/" + dbName
 	store, engine, err := newGenjiStore(dbPath, cfg.SysCoreConfig.DbConfig.EncryptKey, cfg.SysCoreConfig.DbConfig.RotationDuration)
@@ -44,11 +44,12 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
 		return nil, err
 	}
 	cdb := &CoreDB{
-		logger: l,
-		store:  store,
-		engine: engine,
-		models: map[string]DbModel{},
-		config: cfg,
+		logger:    l,
+		store:     store,
+		engine:    engine,
+		models:    map[string]DbModel{},
+		config:    cfg,
+		cronFuncs: cronFuncs,
 	}
 	err = cdb.scheduleBackup()
 	if err != nil {

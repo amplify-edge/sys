@@ -87,20 +87,20 @@ func (c *CoreDB) backup() (string, error) {
 	return filename, nil
 }
 
-func (c *CoreDB) RestoreDB(ctx context.Context, in *sharedPkg.RestoreRequest) (*sharedPkg.RestoreResult, error) {
+func (c *CoreDB) Restore(_ context.Context, in *sharedPkg.RestoreRequest) (*sharedPkg.RestoreResult, error) {
 	badgerDB := c.engine.DB
 	f, err := openFile(in.BackupFile)
 	if err != nil {
 		return nil, err
 	}
-	err = badgerDB.Load(f, 100)
+	err = badgerDB.Load(f, 10)
 	if err != nil {
 		return nil, err
 	}
 	return &sharedPkg.RestoreResult{Result: fmt.Sprintf("successfully restore db: %s", in.BackupFile)}, nil
 }
 
-func (c *CoreDB) ListBackups(ctx context.Context, in *emptypb.Empty) (*sharedPkg.ListBackupResult, error) {
+func (c *CoreDB) ListBackup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.ListBackupResult, error) {
 	var bfiles []*sharedPkg.BackupResult
 	listFiles, err := c.listBackups()
 	if err != nil {

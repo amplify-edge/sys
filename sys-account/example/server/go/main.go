@@ -59,7 +59,7 @@ func main() {
 			log.Fatalf(errSourcingConfig, err)
 		}
 
-		gdb, err := coredb.NewCoreDB(log, csc)
+		gdb, err := coredb.NewCoreDB(log, csc, nil)
 		if err != nil {
 			log.Fatalf(errSourcingConfig, err)
 		}
