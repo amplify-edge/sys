@@ -18,6 +18,7 @@ import (
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 
+	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -64,7 +65,7 @@ func main() {
 			log.Fatalf(errSourcingConfig, err)
 		}
 
-		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath)
+		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath, corebus.NewCoreBus())
 		if err != nil {
 			log.Fatalf("error creating config: %v", err)
 		}

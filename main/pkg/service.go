@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"fmt"
+	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
+	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"net/http"
 
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -32,6 +34,8 @@ type SysServices struct {
 	logger        *logrus.Entry
 	port          int
 	sysAccountSvc *accountpkg.SysAccountService
+	dbSvc         *coresvc.SysCoreProxyService
+	busSvc        *coresvc.SysBusProxyService
 }
 
 type ServiceConfigPaths struct {
@@ -80,7 +84,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 			return nil, err
 		}
 	}
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account)
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, corebus.NewCoreBus())
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +114,15 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// ========================================================================
 
 	return &SysServices{
 		logger:        cfg.logger,
 		port:          cfg.port,
 		sysAccountSvc: sysAccountSvc,
+		dbSvc:         sysAccountSvc.DbProxyService,
+		busSvc:        sysAccountSvc.BusProxyService,
 	}, nil
 }
 
@@ -146,6 +153,8 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.sysAccountSvc.RegisterServices(srv)
+	s.dbSvc.RegisterSvc(srv)
+	s.busSvc.RegisterSvc(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {

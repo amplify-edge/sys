@@ -13,8 +13,9 @@ func main() {
 	// load up sdk cli
 	spsc := pkg.NewSysShareProxyClient()
 	coreProxyCli := corepkg.NewSysCoreProxyClient()
+	busProxyCli := corepkg.NewSysBusProxyClient()
 	rootCmd := spsc.CobraCommand()
-	rootCmd.AddCommand(fake.SysAccountBench(), coreProxyCli.CobraCommand())
+	rootCmd.AddCommand(fake.SysAccountBench(), coreProxyCli.CobraCommand(), busProxyCli.CobraCommand())
 
 	// starts proxy
 	if err := rootCmd.Execute(); err != nil {
