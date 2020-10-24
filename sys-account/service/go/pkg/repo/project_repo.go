@@ -26,7 +26,7 @@ func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error
 	return req.ToPkgProject(pkgOrg)
 }
 
-func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.Project) (*pkg.Project, error) {
+func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
@@ -90,7 +90,7 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 	}, nil
 }
 
-func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.Project) (*pkg.Project, error) {
+func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
@@ -102,7 +102,7 @@ func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.Project) (*
 	if err != nil {
 		return nil, err
 	}
-	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
 	if err != nil {
 		return nil, err
 	}

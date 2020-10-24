@@ -22,22 +22,19 @@ type Project struct {
 	OrgId     string `genji:"org_id"`
 }
 
-func (a *AccountDB) FromPkgProject(p *pkg.Project) (*Project, error) {
+func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
 	var orgId string
-	if p.OrgId == "" || p.Org.Id == "" {
+	if p.OrgId == "" {
 		return nil, errors.New("project organization id required")
-	}
-	if p.Org.Id != "" {
-		orgId = p.Org.Id
 	}
 	if p.OrgId != "" {
 		orgId = p.OrgId
 	}
 	return &Project{
-		Id:        p.Id,
+		Id:        coresvc.NewID(),
 		Name:      p.Name,
 		LogoUrl:   p.LogoUrl,
-		CreatedAt: p.CreatedAt,
+		CreatedAt: coresvc.CurrentTimestamp(),
 		AccountId: p.CreatorId,
 		OrgId:     orgId,
 	}, nil

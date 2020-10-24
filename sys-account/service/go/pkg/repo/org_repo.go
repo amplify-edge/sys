@@ -13,7 +13,7 @@ import (
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
-func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.Org) (*pkg.Org, error) {
+func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
@@ -94,7 +94,7 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 	}, nil
 }
 
-func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.Org) (*pkg.Org, error) {
+func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
@@ -106,7 +106,7 @@ func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.Org) (*pkg.Org,
 	if err != nil {
 		return nil, err
 	}
-	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
 	if err != nil {
 		return nil, err
 	}

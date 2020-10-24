@@ -3,11 +3,13 @@ package dao
 import (
 	"encoding/json"
 	"fmt"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	log "github.com/sirupsen/logrus"
 )
 
 type Org struct {
@@ -19,13 +21,13 @@ type Org struct {
 	AccountId string `genji:"account_id"`
 }
 
-func (a *AccountDB) FromPkgOrg(org *pkg.Org) (*Org, error) {
+func (a *AccountDB) FromPkgOrg(org *pkg.OrgRequest) (*Org, error) {
 	return &Org{
-		Id:        org.Id,
+		Id:        coresvc.NewID(),
 		Name:      org.Name,
 		LogoUrl:   org.LogoUrl,
 		Contact:   org.Contact,
-		CreatedAt: org.CreatedAt,
+		CreatedAt: coresvc.CurrentTimestamp(),
 		AccountId: org.CreatorId,
 	}, nil
 }
@@ -38,7 +40,7 @@ func (o *Org) ToPkgOrg(projects []*pkg.Project) (*pkg.Org, error) {
 		Contact:   o.Contact,
 		CreatedAt: o.CreatedAt,
 		CreatorId: o.AccountId,
-		Projects: projects,
+		Projects:  projects,
 	}, nil
 }
 

@@ -152,3 +152,7 @@ func (qp *QueryParams) ColumnsAndValues() ([]string, []interface{}) {
 func NewID() string {
 	return ksuid.New().String()
 }
+
+func CurrentTimestamp() int64 {
+	return time.Now().UTC().Unix()
+}
