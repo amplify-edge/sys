@@ -21,6 +21,8 @@ const (
 	defaultSvcName         = "v2.sys_account.services.AuthService.Register"
 	defaultNumberOfRecords = 100
 	defaultConcurrency     = 10
+	defaultTlsEnabled      = false
+	defaultTlsCertPath     = "./rootca.pem"
 )
 
 var (
@@ -34,6 +36,8 @@ var (
 	svcName           string
 	recordNumber      uint
 	concurrentRequest uint
+	tlsEnabled        bool
+	tlsCaCertPath     string
 )
 
 func SysAccountBench() *cobra.Command {
@@ -43,6 +47,8 @@ func SysAccountBench() *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&svcName, "service-name", "n", defaultSvcName, "service name to call: ex: "+defaultSvcName)
 	rootCmd.PersistentFlags().UintVarP(&recordNumber, "number-of-records", "r", defaultNumberOfRecords, fmt.Sprintf("number of records to test, default: %d", defaultNumberOfRecords))
 	rootCmd.PersistentFlags().UintVarP(&concurrentRequest, "concurrent-requests", "c", defaultConcurrency, fmt.Sprintf("number of concurrent requests, default: %d", defaultConcurrency))
+	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "e", defaultTlsEnabled, "enable tls")
+	rootCmd.PersistentFlags().StringVarP(&tlsCaCertPath, "tls-cert-path", "t", defaultTlsCertPath, "CA Cert Path")
 
 	l := logrus.New().WithField("svc", "sys-bench")
 
@@ -64,6 +70,8 @@ func SysAccountBench() *cobra.Command {
 			protoPath,
 			recordNumber,
 			concurrentRequest,
+			tlsEnabled,
+			tlsCaCertPath,
 		); err != nil {
 			l.Errorf("error running benchmark data: %v", err)
 			return err

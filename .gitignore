@@ -16,3 +16,5 @@ bench
 
 # db
 db
+/.srl
+/certs/

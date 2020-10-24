@@ -1,6 +1,7 @@
 package main
 
 import (
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -10,27 +11,36 @@ import (
 )
 
 const (
-	errSourcingConfig    = "error while sourcing config for %s: %v"
-	errCreateSysService  = "error while creating sys-* service: %v"
+	errSourcingConfig   = "error while sourcing config for %s: %v"
+	errCreateSysService = "error while creating sys-* service: %v"
 
 	defaultPort                 = 8888
 	defaultSysCoreConfigPath    = "./config/syscore.yml"
 	defaultSysAccountConfigPath = "./config/sysaccount.yml"
+	defaultLocalTLSCert         = "./certs/local.pem"
+	defaultLocalTLSKey          = "./certs/local.key.pem"
+	defaultTLSEnabled           = true
 )
 
 var (
-	rootCmd        = &cobra.Command{Use: "sys-ex-server"}
-	coreCfgPath    string
-	accountCfgPath string
-	mainexPort     int
+	rootCmd          = &cobra.Command{Use: "sys-ex-server"}
+	coreCfgPath      string
+	accountCfgPath   string
+	mainexPort       int
+	tlsEnabled       bool
+	localTlsCertPath string
+	localTlsKeyPath  string
 )
 
 func main() {
 	// persistent flags
 	rootCmd.PersistentFlags().StringVarP(&coreCfgPath, "sys-core-config-path", "c", defaultSysCoreConfigPath, "sys-core config path to use")
 	rootCmd.PersistentFlags().StringVarP(&accountCfgPath, "sys-account-config-path", "a", defaultSysAccountConfigPath, "sys-account config path to use")
+	rootCmd.PersistentFlags().StringVarP(&localTlsCertPath, "tls-cert-path", "t", defaultLocalTLSCert, "local TLS Cert path")
+	rootCmd.PersistentFlags().StringVarP(&localTlsKeyPath, "tls-key-path", "k", defaultLocalTLSKey, "local TLS Key path")
 	rootCmd.PersistentFlags().IntVarP(&mainexPort, "port", "p", defaultPort, "grpc port to run")
-	
+	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "s", defaultTLSEnabled, "enable TLS")
+
 	// logging
 	logger := logrus.New().WithField("sys-main", "sys-*")
 
@@ -50,10 +60,26 @@ func main() {
 
 		// initiate grpc server
 		unaryInterceptors, streamInterceptors := sysSvc.InjectInterceptors(nil, nil)
-		grpcServer := grpc.NewServer(
-			grpcMw.WithUnaryServerChain(unaryInterceptors...),
-			grpcMw.WithStreamServerChain(streamInterceptors...),
-		)
+		var grpcServer *grpc.Server
+		if tlsEnabled {
+			logger.Info("Server Running With TLS Enabled")
+			tlsCreds, err := sharedConfig.LoadTLSKeypair(localTlsCertPath, localTlsKeyPath)
+			if err != nil {
+				logger.Fatalf(errCreateSysService, err)
+			}
+			grpcServer = grpc.NewServer(
+				grpc.Creds(tlsCreds),
+				grpcMw.WithUnaryServerChain(unaryInterceptors...),
+				grpcMw.WithStreamServerChain(streamInterceptors...),
+			)
+		} else {
+			logger.Info("Server Running With TLS Disabled")
+			grpcServer = grpc.NewServer(
+				grpcMw.WithUnaryServerChain(unaryInterceptors...),
+				grpcMw.WithStreamServerChain(streamInterceptors...),
+			)
+		}
+
 		sysSvc.RegisterServices(grpcServer)
 		grpcWebServer := sysSvc.RegisterGrpcWebServer(grpcServer)
 		// rutn server
