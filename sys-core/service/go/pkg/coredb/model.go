@@ -7,8 +7,8 @@ import (
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/genjidb/genji/sql/query"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/robfig/cron/v3"
-	"github.com/segmentio/ksuid"
 	log "github.com/sirupsen/logrus"
 	"text/template"
 	"time"
@@ -150,7 +150,7 @@ func (qp *QueryParams) ColumnsAndValues() ([]string, []interface{}) {
 }
 
 func NewID() string {
-	return ksuid.New().String()
+	return sharedConfig.NewID()
 }
 
 func CurrentTimestamp() int64 {

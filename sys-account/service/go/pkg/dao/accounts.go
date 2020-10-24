@@ -29,6 +29,7 @@ type Account struct {
 	UpdatedAt         int64                  `genji:"updated_at"`
 	LastLogin         int64                  `genji:"last_login"`
 	Disabled          bool                   `genji:"disabled"`
+	Verified          bool                   `genji:"verified"`
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
@@ -47,6 +48,7 @@ func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
 		LastLogin:         account.LastLogin,
 		Disabled:          account.Disabled,
 		RoleId:            role.ID,
+		Verified:          account.Verified,
 	}, nil
 }
 
@@ -65,6 +67,7 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 		Disabled:  a.Disabled,
 		Fields:    &pkg.UserDefinedFields{Fields: a.UserDefinedFields},
 		Survey:    &pkg.UserDefinedFields{Fields: a.Survey},
+		Verified:  a.Verified,
 	}, nil
 }
 

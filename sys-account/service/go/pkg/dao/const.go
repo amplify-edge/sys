@@ -11,8 +11,8 @@ const (
 	RolesTableName     = "roles"
 	OrgTableName       = "orgs"
 	ProjectTableName   = "projects"
-	AccColumns         = `id, email, password, role_id, user_defined_fields, survey, created_at, updated_at, last_login, disabled`
-	AccColumnsType     = `TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
+	AccColumns         = `id, email, password, role_id, user_defined_fields, survey, created_at, updated_at, last_login, disabled, verified`
+	AccColumnsType     = `TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL, BOOL`
 	AccCursor          = `created_at`
 	RolesColumns       = `id, account_id, role, project_id, org_id, created_at, updated_at`
 	RolesColumnsType   = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`

@@ -8,14 +8,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
+	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	req, err := ad.store.FromPkgOrg(in)
 	if err != nil {
@@ -50,7 +50,7 @@ func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
 
 func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *pkg.IdRequest) (*pkg.Org, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot get org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot get org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
 	if err != nil {
@@ -61,7 +61,7 @@ func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *pkg.IdRequest) (*pkg.O
 
 func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pkg.ListResponse, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	var limit, cursor int64
 	orderBy := in.OrderBy
@@ -96,7 +96,7 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 
 func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	req, err := ad.store.FromPkgOrg(in)
 	if err != nil {
@@ -115,7 +115,7 @@ func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgRequest) (*p
 
 func (ad *SysAccountRepo) DeleteOrg(ctx context.Context, in *pkg.IdRequest) (*emptypb.Empty, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	err := ad.store.DeleteOrg(in.Id)
 	if err != nil {

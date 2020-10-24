@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
+	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
@@ -28,7 +28,7 @@ func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error
 
 func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot insert project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot insert project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	req, err := ad.store.FromPkgProject(in)
 	if err != nil {
@@ -46,7 +46,7 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 
 func (ad *SysAccountRepo) GetProject(ctx context.Context, in *pkg.IdRequest) (*pkg.Project, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot get project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot get project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
 	if err != nil {
@@ -57,7 +57,7 @@ func (ad *SysAccountRepo) GetProject(ctx context.Context, in *pkg.IdRequest) (*p
 
 func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) (*pkg.ListResponse, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	var limit, cursor int64
 	orderBy := in.OrderBy
@@ -92,7 +92,7 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 
 func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	req, err := ad.store.FromPkgProject(in)
 	if err != nil {
@@ -111,7 +111,7 @@ func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectRequ
 
 func (ad *SysAccountRepo) DeleteProject(ctx context.Context, in *pkg.IdRequest) (*emptypb.Empty, error) {
 	if in == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	err := ad.store.DeleteProject(in.Id)
 	if err != nil {

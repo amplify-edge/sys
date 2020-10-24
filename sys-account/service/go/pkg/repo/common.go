@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
+	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
@@ -16,17 +16,17 @@ func (ad *SysAccountRepo) getAccountAndRole(id string) (*pkg.Account, error) {
 		"id": id,
 	}})
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", auth.Error{Reason: auth.ErrAccountNotFound})
+		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}
 	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{
 		"id": acc.RoleId,
 	}})
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
+		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}
 	userRole, err := role.ToPkgRole()
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
+		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}
 
 	return acc.ToPkgAccount(userRole)
