@@ -178,7 +178,7 @@ func (s *SysServices) RegisterGrpcWebServer(srv *grpc.Server) *grpcweb.WrappedGr
 }
 
 // run runs all the sys-* service as a service
-func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *http.Server) error {
+func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *http.Server, certFile, keyFile string) error {
 	if httpServer == nil {
 		httpServer = &http.Server{
 			Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -192,12 +192,15 @@ func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *
 	}
 
 	httpServer.Addr = fmt.Sprintf("127.0.0.1:%d", s.port)
+	if certFile != "" && keyFile != "" {
+		return httpServer.ListenAndServeTLS(certFile, keyFile)
+	}
 	return httpServer.ListenAndServe()
 }
 
 // Run is just an exported wrapper for s.run()
-func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server) error {
-	err := s.run(srv, httpServer)
+func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server, certFile, keyFile string) error {
+	err := s.run(srv, httpServer, certFile, keyFile)
 	if err != nil {
 		s.logger.Errorf(errRunningServer, err)
 		return err

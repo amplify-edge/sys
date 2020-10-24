@@ -110,6 +110,7 @@ this-gen-cert: this-gen-cert-delete
 	@mkdir -p $(EXAMPLE_CERT_DIR)
 	@mkcert -cert-file certs/local.pem -key-file certs/local.key.pem localhost 127.0.0.1 ::1
 	@cp $(MKCERT_CA_ROOT_DIR)/rootCA.pem $(EXAMPLE_CA_ROOT_NAME)
+	mkcert -install
 
 this-gen-cert-delete:
 	#mkcert -uninstall
