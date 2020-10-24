@@ -7,14 +7,21 @@ import (
 // const.go contains
 // all the table columns / fields basically.
 const (
-	AccTableName     = "accounts"
-	RolesTableName   = "roles"
-	AccColumns       = `id, email, password, role_id, user_defined_fields, survey, created_at, updated_at, last_login, disabled`
-	AccColumnsType   = `TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
-	AccCursor        = `created_at`
-	RolesColumns     = `id, account_id, role, project_id, org_id, created_at, updated_at`
-	RolesColumnsType = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
-	DefaultLimit     = 10
+	AccTableName       = "accounts"
+	RolesTableName     = "roles"
+	OrgTableName       = "orgs"
+	ProjectTableName   = "projects"
+	AccColumns         = `id, email, password, role_id, user_defined_fields, survey, created_at, updated_at, last_login, disabled`
+	AccColumnsType     = `TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, BOOL`
+	AccCursor          = `created_at`
+	RolesColumns       = `id, account_id, role, project_id, org_id, created_at, updated_at`
+	RolesColumnsType   = `TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, INTEGER`
+	OrgColumns         = `id, name, logo_url, contact, created_at, account_id`
+	OrgColumnsType     = `TEXT, TEXT, TEXT, TEXT, INTEGER, TEXT`
+	ProjectColumns     = `id, name, logo_url, created_at, account_id, org_id`
+	ProjectColumnsType = `TEXT, TEXT, TEXT, INTEGER, TEXT, TEXT`
+	DefaultLimit       = 50
+	DefaultCursor      = `created_at`
 )
 
 // initFields will only be called once during AccountDB initialization (singleton)

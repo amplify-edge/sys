@@ -20,6 +20,8 @@ func NewAccountDB(db *coresvc.CoreDB) (*AccountDB, error) {
 	err := db.RegisterModels(map[string]coresvc.DbModel{
 		AccTableName: Account{},
 		RolesTableName: Role{},
+		OrgTableName: Org{},
+		ProjectTableName: Project{},
 	})
 	if err != nil {
 		return nil, err

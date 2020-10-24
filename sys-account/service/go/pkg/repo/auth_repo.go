@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
+	"strings"
 
 	l "github.com/sirupsen/logrus"
 
@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
@@ -233,6 +234,10 @@ func ObtainClaimsFromContext(ctx context.Context) auth.TokenClaims {
 func (ad *SysAccountRepo) fromMetadata(ctx context.Context) (authMeta string, err error) {
 	authMeta = metautils.ExtractIncoming(ctx).Get(HeaderAuthorize)
 	if authMeta == "" {
+		return "", auth.Error{Reason: auth.ErrMissingToken}
+	}
+	splitted := strings.Split(authMeta, " ")
+	if len(splitted) != 2 && splitted[0] != "Bearer" {
 		return "", auth.Error{Reason: auth.ErrMissingToken}
 	}
 	return authMeta, nil

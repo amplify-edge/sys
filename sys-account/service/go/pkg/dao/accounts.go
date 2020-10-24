@@ -86,7 +86,7 @@ func (a Account) CreateSQL() []string {
 	return tbl.CreateTable()
 }
 
-func (a *AccountDB) queryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
+func (a *AccountDB) accountQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
 	baseStmt := sq.Select(AccColumns).From(AccTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
@@ -96,26 +96,9 @@ func (a *AccountDB) queryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
 	return baseStmt
 }
 
-func (a *AccountDB) getAccountSelectStatement(filterParams *coresvc.QueryParams) (string, []interface{}, error) {
-	baseStmt := a.queryFilter(filterParams)
-	return baseStmt.ToSql()
-}
-
-func (a *AccountDB) listAccountSelectStatement(filter *coresvc.QueryParams, orderBy string, limit int64, cursor *int64) (string, []interface{}, error) {
-	var csr int
-	baseStmt := a.queryFilter(filter)
-	if cursor == nil {
-		csr = 0
-	}
-	baseStmt.Where(sq.GtOrEq{AccCursor: csr})
-	baseStmt.Limit(uint64(limit))
-	baseStmt.OrderBy(orderBy)
-	return baseStmt.ToSql()
-}
-
 func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, error) {
 	var acc Account
-	selectStmt, args, err := a.getAccountSelectStatement(filterParams)
+	selectStmt, args, err := a.accountQueryFilter(filterParams).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +112,8 @@ func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, err
 
 func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
 	var accs []*Account
-	selectStmt, args, err := a.listAccountSelectStatement(filterParams, orderBy, limit, &cursor)
+	baseStmt := a.accountQueryFilter(filterParams)
+	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
 	if err != nil {
 		return nil, 0, err
 	}

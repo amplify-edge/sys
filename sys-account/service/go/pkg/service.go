@@ -65,7 +65,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 	if err != nil {
 		return nil, err
 	}
-	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo)
+	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo, authRepo)
 	dbProxyService := coresvc.NewSysCoreProxyService(cfg.store)
 	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
 	return &SysAccountService{

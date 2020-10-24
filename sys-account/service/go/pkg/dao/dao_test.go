@@ -18,6 +18,11 @@ var (
 	err        error
 	role1ID    = coresvc.NewID()
 	role2ID    = coresvc.NewID()
+	org1ID     = coresvc.NewID()
+	org2ID     = coresvc.NewID()
+	proj1ID    = coresvc.NewID()
+	proj2ID    = coresvc.NewID()
+	proj3ID    = coresvc.NewID()
 	account0ID = coresvc.NewID()
 	accs       = []dao.Account{
 		{
@@ -73,7 +78,7 @@ func init() {
 	}
 	logger := log.New().WithField("test", "sys-account")
 	logger.Level = log.DebugLevel
-	testDb, err = coresvc.NewCoreDB(logger, csc)
+	testDb, err = coresvc.NewCoreDB(logger, csc, nil)
 	if err != nil {
 		log.Fatalf("error creating CoreDB: %v", err)
 	}
@@ -87,12 +92,23 @@ func init() {
 
 func TestAll(t *testing.T) {
 	t.Run("Test Account Insert", testAccountInsert)
-	t.Run("Test Role Insert", testRolesInsert)
+	t.Run("Test Org Insert", testOrgInsert)
+	t.Run("Test Org Get", testOrgGet)
+	t.Run("Test Org List", testOrgList)
+	t.Run("Test Project Insert", testProjInsert)
+	t.Run("Test Project Get", testProjGet)
 	t.Run("Test Account Query", testQueryAccounts)
+	t.Run("Test Project List", testProjList)
+	t.Run("Test Role Insert", testRolesInsert)
 	t.Run("Test Role List", testRolesList)
 	t.Run("Test Role Get", testRolesGet)
+	t.Run("Test Org Update", testUpdateOrg)
+	t.Run("Test Project Update", testProjUpdate)
 	t.Run("Test Role Update", testRolesUpdate)
 	t.Run("Test Account Update", testUpdateAccounts)
+	t.Run("Test Org Delete", testDeleteOrg)
+	t.Run("Test Account Delete", testDeleteAccounts)
+	t.Run("Test Project Delete", testProjDelete)
 }
 
 func testAccountInsert(t *testing.T) {
@@ -132,8 +148,8 @@ func testQueryAccounts(t *testing.T) {
 	for _, qp := range queryParams {
 		accs, next, err = accdb.ListAccount(qp, "email", 1, 0)
 		assert.NoError(t, err)
+		assert.NotEqual(t, 0, next)
 	}
-	assert.NotEqual(t, 0, next)
 }
 
 func testUpdateAccounts(t *testing.T) {

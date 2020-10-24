@@ -18,7 +18,7 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg
 	roleId := coredb.NewID()
 	if err := ad.store.InsertRole(&dao.Role{
 		ID:        roleId,
-		AccountId: in.Id, // TODO @gutterbacon check for uniqueness
+		AccountId: in.Id,
 		Role:      int(in.Role.Role),
 		ProjectId: in.Role.ProjectID,
 		OrgId:     in.Role.OrgID,
@@ -70,7 +70,12 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
 	}
 	filter := &coredb.QueryParams{Params: map[string]interface{}{}}
-	orderBy := in.OrderBy + " ASC"
+	orderBy := in.OrderBy
+	if in.IsDescending {
+		orderBy += " DESC"
+	} else {
+		orderBy += " ASC"
+	}
 	cursor, err = ad.getCursor(in.CurrentPageId)
 	if err != nil {
 		return nil, err

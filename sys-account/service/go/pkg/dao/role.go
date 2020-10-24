@@ -24,7 +24,7 @@ type Role struct {
 }
 
 var (
-	rolesUniqueIndex = fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_account_id ON %s(account_id)`, RolesTableName)
+	rolesUniqueIndex = fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_account_id ON %s(account_id)`, RolesTableName, RolesTableName)
 )
 
 func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Role, error) {
@@ -64,10 +64,6 @@ func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 		userRole.All = false
 	}
 	return userRole, nil
-}
-
-func (p Role) TableName() string {
-	return RolesTableName
 }
 
 func roleToQueryParam(acc *Role) (res coresvc.QueryParams, err error) {
@@ -141,6 +137,18 @@ func (a *AccountDB) ListRole(filterParam *coresvc.QueryParams) ([]*Role, error) 
 }
 
 func (a *AccountDB) InsertRole(p *Role) error {
+	if p.OrgId != "" {
+		_, err := a.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": p.OrgId}})
+		if err != nil {
+			return err
+		}
+	}
+	if p.ProjectId != "" {
+		_, err := a.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": p.ProjectId}})
+		if err != nil {
+			return err
+		}
+	}
 	filterParam, err := roleToQueryParam(p)
 	if err != nil {
 		return err
@@ -153,10 +161,6 @@ func (a *AccountDB) InsertRole(p *Role) error {
 		Columns(columns...).
 		Values(values...).
 		ToSql()
-	a.log.WithFields(log.Fields{
-		"statement": stmt,
-		"args":      args,
-	}).Debug("insert to roles table")
 	if err != nil {
 		return err
 	}

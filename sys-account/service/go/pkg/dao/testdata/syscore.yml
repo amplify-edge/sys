@@ -8,3 +8,4 @@
     "encryptKey": "yYz8Xjb4HBn4irGQpBWulURjQk2XmwES"
     "name": "gcn.db"
     "rotationDuration": 1
+    "deletePrevious": true
