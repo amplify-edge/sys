@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/genjidb/genji/document"
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -30,6 +31,40 @@ type Account struct {
 	LastLogin         int64                  `genji:"last_login"`
 	Disabled          bool                   `genji:"disabled"`
 	Verified          bool                   `genji:"verified"`
+}
+
+func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account, error) {
+	accountId := utilities.NewID()
+	role := a.FromPkgRoleRequest(account.Role, accountId)
+	fields := map[string]interface{}{}
+	survey := map[string]interface{}{}
+	if account.Fields != nil && account.Fields.Fields != nil {
+		fields = account.Fields.Fields
+	}
+	if account.Survey != nil && account.Survey.Fields != nil {
+		survey = account.Survey.Fields
+	}
+	acc := &Account{
+		ID:                accountId,
+		Email:             account.Email,
+		Password:          account.Password,
+		UserDefinedFields: fields,
+		Survey:            survey,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		LastLogin:         account.LastLogin,
+		Disabled:          account.Disabled,
+		RoleId:            role.ID,
+		Verified:          account.Verified,
+	}
+	err := a.InsertRole(role)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.InsertAccount(acc); err != nil {
+		return nil, err
+	}
+	return acc, nil
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {

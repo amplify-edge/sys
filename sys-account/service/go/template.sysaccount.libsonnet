@@ -17,7 +17,14 @@ local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/serv
         secret: "some_jwt_refresh_secret",
         expiry: cfg.AccessToken.expiry * 100,
     },
+    InitialSuperUsers:: [
+        {
+           email: "test@example.com",
+           password: "supertest",
+        },
+    ],
     sysAccountConfig: {
+        initialSuperUsers: cfg.InitialSuperUsers,
         unauthenticatedRoutes: cfg.UnauthenticatedRoutes,
         jwt: {
             access: cfg.AccessToken,

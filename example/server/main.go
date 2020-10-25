@@ -42,7 +42,9 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "s", defaultTLSEnabled, "enable TLS")
 
 	// logging
-	logger := logrus.New().WithField("sys-main", "sys-*")
+	log := logrus.New()
+	log.SetLevel(logrus.DebugLevel)
+	logger := log.WithField("sys-main", "sys-*")
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// configs

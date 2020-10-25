@@ -2,6 +2,8 @@ package repo
 
 import (
 	"context"
+	"fmt"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +45,7 @@ func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, id string) (*pkg.
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	in, err := ad.getAccountAndRole(id)
+	in, err := ad.getAccountAndRole(id, "")
 	if err != nil {
 		return nil, err
 	}
@@ -114,4 +116,32 @@ func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *pkg.AssignA
 		return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
 	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+}
+
+type SuperAccountRequest struct {
+	Email    string `json:"string"`
+	Password string `json:"password"`
+}
+
+// Initial User Creation via CLI only
+func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
+	if in == nil {
+		return fmt.Errorf("error unable to proceed, user is nil")
+	}
+	newAcc := &pkg.Account{
+		Id:        sharedConfig.NewID(),
+		Email:     in.Email,
+		Password:  in.Password,
+		Role:      &pkg.UserRoles{Role: pkg.SUPERADMIN, All: true},
+		CreatedAt: timestampNow(),
+		UpdatedAt: timestampNow(),
+		Disabled:  false,
+		Verified:  true,
+	}
+	_, err := ad.store.InsertFromPkgAccountRequest(newAcc)
+	if err != nil {
+		ad.log.Debugf("error unable to create super-account request: %v", err)
+		return err
+	}
+	return nil
 }

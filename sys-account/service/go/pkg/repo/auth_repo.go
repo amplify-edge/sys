@@ -12,7 +12,6 @@ import (
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
@@ -35,15 +34,16 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 	ad.log.WithFields(l.Fields{
 		"account_id": acc.ID,
 		"role_id":    acc.RoleId,
-	}).Info("querying user")
+	}).Debug("querying user")
 	qp = &coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}}
 	role, err := ad.store.GetRole(qp)
 	if err != nil {
-		ad.log.Warnf(sharedAuth.Error{Reason: sharedAuth.ErrQueryAccount, Err: err}.Error())
+		ad.log.Debugf("unable to get user role: %v", err)
 		return nil, err
 	}
 	userRole, err := role.ToPkgRole()
 	if err != nil {
+		ad.log.Debugf("unable to convert user role to pkg role: %v", err)
 		return nil, err
 	}
 	return acc.ToPkgAccount(userRole)
@@ -81,31 +81,24 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	}
 	// New user will be assigned GUEST role and no Org / Project for now.
 	// TODO @gutterbacon: subject to change.
-	roleId := coredb.NewID()
 	accountId := coredb.NewID()
 	now := timestampNow()
-	err := ad.store.InsertAccount(&dao.Account{
-		ID:                accountId,
-		Email:             in.Email,
-		Password:          in.Password,
-		RoleId:            roleId,
-		CreatedAt:         now,
-		UserDefinedFields: map[string]interface{}{},
-		Survey:            map[string]interface{}{},
-		Disabled:          false,
-	})
-	if err != nil {
-		return &pkg.RegisterResponse{
-			Success:     false,
-			ErrorReason: err.Error(),
-		}, err
-	}
-	err = ad.store.InsertRole(&dao.Role{
-		ID:        roleId,
-		AccountId: accountId,
-		Role:      1,
+	newAcc := &pkg.Account{
+		Id:       accountId,
+		Email:    in.Email,
+		Password: in.Password,
+		Role: &pkg.UserRoles{
+			Role: 2,
+			All:  false,
+		},
 		CreatedAt: now,
-	})
+		UpdatedAt: now,
+		Disabled:  false,
+		Fields:    &pkg.UserDefinedFields{},
+		Survey:    &pkg.UserDefinedFields{},
+		Verified:  false,
+	}
+	_, err := ad.store.InsertFromPkgAccountRequest(newAcc)
 	if err != nil {
 		return &pkg.RegisterResponse{
 			Success:     false,
@@ -139,10 +132,20 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 			ErrorReason: err.Error(),
 		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrCreatingToken, Err: err})
 	}
+
+	req, err := ad.store.FromPkgAccount(u)
+	if err != nil {
+		return nil, err
+	}
+	req.LastLogin = timestampNow()
+	if err := ad.store.UpdateAccount(req); err != nil {
+		return nil, err
+	}
 	return &pkg.LoginResponse{
 		Success:      true,
 		AccessToken:  tokenPairs.AccessToken,
 		RefreshToken: tokenPairs.RefreshToken,
+		LastLogin:    req.LastLogin,
 	}, nil
 }
 

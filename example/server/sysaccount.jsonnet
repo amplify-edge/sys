@@ -8,6 +8,12 @@ local cfg = {
             "/v2.sys_core.services.DbAdminService/ListBackup",
             "/v2.sys_core.services.DbAdminService/Restore",
         ],
+        initialSuperUsers: [
+            {
+                email: "superadmin@getcouragenow.org",
+                password: "superadmin",
+            }
+        ],
     }
 };
 

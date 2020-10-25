@@ -18,10 +18,11 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	if err != nil {
 		return ctx, nil, err
 	}
+	ad.log.Debugf("Extracted claims: user_id: %s, email: %s, role: %v", claims.Id, claims.UserEmail, *claims.Role)
 	newCtx := context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims)
-	acc, err := ad.getAccountAndRole(claims.UserId)
+	acc, err := ad.getAccountAndRole("", claims.UserEmail)
 	if err != nil {
-		return ctx, nil, err
+		return ctx, nil, status.Errorf(codes.NotFound, "current user not found: %v", err)
 	}
 	return newCtx, acc, nil
 }
@@ -173,7 +174,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	if err != nil {
 		return nil, err
 	}
-	return ad.getAccountAndRole(in.AssignedAccountId)
+	return ad.getAccountAndRole(in.AssignedAccountId, "")
 }
 
 func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
@@ -195,11 +196,12 @@ func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*
 	if err != nil {
 		return nil, err
 	}
+	req.UpdatedAt = timestampNow()
 	err = ad.store.UpdateAccount(req)
 	if err != nil {
 		return nil, err
 	}
-	return ad.getAccountAndRole(in.Id)
+	return ad.getAccountAndRole(in.Id, "")
 }
 
 func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAccountRequest) (*pkg.Account, error) {

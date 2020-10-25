@@ -3,7 +3,6 @@ package accountpkg
 import (
 	"context"
 	"fmt"
-
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -68,6 +67,15 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo, authRepo)
 	dbProxyService := coresvc.NewSysCoreProxyService(cfg.store)
 	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
+	for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
+		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
+			Email:    users.Email,
+			Password: users.Password,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
 		proxyService:        sysAccountProxy,

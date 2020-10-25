@@ -10,11 +10,15 @@ import (
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
-func (ad *SysAccountRepo) getAccountAndRole(id string) (*pkg.Account, error) {
-	// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{
-		"id": id,
-	}})
+func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, error) {
+	queryParams := map[string]interface{}{}
+	if id != "" {
+		queryParams["id"] = id
+	}
+	if email != "" {
+		queryParams["email"] = email
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: queryParams})
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}

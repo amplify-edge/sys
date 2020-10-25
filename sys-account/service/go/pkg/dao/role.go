@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	log "github.com/sirupsen/logrus"
+	"time"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -27,25 +29,28 @@ var (
 	rolesUniqueIndex = fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_account_id ON %s(account_id)`, RolesTableName, RolesTableName)
 )
 
+func (a *AccountDB) FromPkgRoleRequest(role *pkg.UserRoles, accountId string) *Role {
+	return &Role{
+		ID:        utilities.NewID(),
+		AccountId: accountId,
+		Role:      int(role.Role),
+		ProjectId: role.ProjectID,
+		OrgId:     role.OrgID,
+		CreatedAt: time.Now().UTC().Unix(),
+	}
+}
+
 func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Role, error) {
 	queryParam := &coresvc.QueryParams{Params: map[string]interface{}{
 		"account_id": accountId,
 	}}
-	if role.Role > 0 && role.Role <= 4 { // Guest, Member, Admin, or SuperAdmin
-		queryParam.Params["role"] = fmt.Sprintf("%d", role.Role)
-	}
-	if role.OrgID != "" {
-		queryParam.Params["org_id"] = role.OrgID
-	}
-	if role.ProjectID != "" {
-		queryParam.Params["project_id"] = role.ProjectID
-	}
+	a.log.Debugf("Role query param: %v", queryParam.Params)
 	return a.GetRole(queryParam)
 }
 
 func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 	role := p.Role
-	if role == 0 || role >= 4 {
+	if role == int(pkg.INVALID) || role > int(pkg.SUPERADMIN) {
 		return nil, errors.New("invalid role")
 	}
 	userRole := &pkg.UserRoles{
@@ -109,7 +114,11 @@ func (a *AccountDB) GetRole(filterParam *coresvc.QueryParams) (*Role, error) {
 		return nil, err
 	}
 	err = doc.StructScan(&p)
-	return &p, err
+	if err != nil {
+		a.log.Debugf("Unable to scan role to struct: %v", err)
+		return nil, err
+	}
+	return &p, nil
 }
 
 func (a *AccountDB) ListRole(filterParam *coresvc.QueryParams) ([]*Role, error) {

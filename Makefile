@@ -28,8 +28,10 @@ SERVER_BIN=$(BIN_FOLDER)/sys-main
 
 EXAMPLE_SERVER_PORT=8888
 EXAMPLE_SERVER_ADDRESS=127.0.0.1:$(EXAMPLE_SERVER_PORT)
-EXAMPLE_EMAIL = superadmin@getcouragenow.org
-EXAMPLE_PASSWORD = superadmin
+EXAMPLE_EMAIL = test@getcouragenow.org
+EXAMPLE_PASSWORD = test1235
+EXAMPLE_SUPER_EMAIL = superadmin@getcouragenow.org
+EXAMPLE_SUPER_PASSWORD = superadmin
 EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY = yYz8Xjb4HBn4irGQpBWulURjQk2XmwES
 EXAMPLE_SYS_CORE_CFG_PATH = ./config/syscore.yml
 EXAMPLE_SYS_ACCOUNT_CFG_PATH = ./config/sysaccount.yml
@@ -42,6 +44,8 @@ EXAMPLE_CERT_SERVER_NAME ?= $(EXAMPLE_CERT_DIR)/local.pem
 EXAMPLE_CERT_SERVER_KEY ?= $(EXAMPLE_CERT_DIR)/local.key.pem
 EXAMPLE_CA_ROOT_NAME ?= $(EXAMPLE_CERT_DIR)/rootca.pem
 MKCERT_CA_ROOT_DIR = $(shell mkcert -CAROOT)
+
+EXAMPLE_ACCOUNT_ID = ???
 
 this-all: this-print this-dep this-build this-print-end
 
@@ -68,7 +72,7 @@ this-dep:
 this-dev-dep: this-gen-cert-dep
 	## TODO Add to boot and version it.
 	GO111MODULE="on" go get github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
-	brew install jsonnet
+	brew install jsonnet jq
 
 ### BUILD
 
@@ -130,20 +134,31 @@ this-ex-server-run:
 
 this-ex-sdk-auth-signup:
 	@echo Running Example Register Client
-	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME)
+	$(SDK_BIN) sys-account auth-service register --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --password-confirm $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson
 
 this-ex-sdk-auth-signin:
 	@echo Running Example Login Client
-	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME)
+	# export access token to the .token file
+	#$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson | jq -r .accessToken > .token
+	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_EMAIL) --password $(EXAMPLE_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson
+
+this-ex-sdk-auth-signin-super:
+	@echo Running Example Login Client
+	# export access token to the .token file
+	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_SUPER_EMAIL) --password $(EXAMPLE_SUPER_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson | jq -r .accessToken > .token
 
 # gotten from "make this-example-sdk-auth"
 # TODO: easy way to capture this ? Might have to set to ENV and then get from ENV when runnng this make target
 # TODO: error: "command failed: grpc: the credentials require transport level security (use grpc.WithTransportCredentials() to set)"
 #EXAMPLE_TOKEN=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIiLCJyb2xlIjp7InJvbGUiOjF9LCJ1c2VyRW1haWwiOiJzdXBlcmFkbWluQGdldGNvdXJhZ2Vub3cub3JnIiwiZXhwIjoxNjAyOTEwODA4fQ.ppCcWFxLt1nWZMBz_I8d_O2E2eje0EKCsDwVRzXNcbFFBzDykdIEdXgtUGWp8oLi6jcfYaQygyAmlMuZVZ-Blg
 this-ex-sdk-accounts-list:
-	@echo Running Example Accounts CRUD
+	@echo Running Example Accounts List
 	#$(SDK_BIN) sys-account account-service list-accounts --jwt-access-token $(EXAMPLE_TOKEN) --server-addr $(SERVER_ADDRESS) --tls-insecure-skip-verify
-	$(SDK_BIN) sys-account account-service list-accounts --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME)
+	$(SDK_BIN) sys-account account-service list-accounts --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
+
+this-ex-sdk-accounts-get:
+	@echo Running Example Accounts Get
+	$(SDK_BIN) sys-account account-service get-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --id $(EXAMPLE_ACCOUNT_ID) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
 
 this-ex-sdk-bench: this-ex-sdk-bench-start this-ex-sdk-bench-01 this-ex-sdk-bench-02
 	@echo -- Example SDK Benchmark: End --
@@ -173,10 +188,10 @@ this-ex-sdk-bench-03:
 	$(SDK_BIN) sys-bench -e -t $(EXAMPLE_CA_ROOT_NAME) -s $(EXAMPLE_SERVER_ADDRESS) -j "./bench/fake-register-data.json" -p "../sys-share/sys-account/proto/v2/sys_account_services.proto" -n "v2.sys_account.services.AuthService.Register" -r 1000 -c 100
 
 this-ex-sdk-backup:
-	$(SDK_BIN) db-admin-service backup -s $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME)
+	$(SDK_BIN) db-admin-service backup -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson
 
 this-ex-sdk-list-backup:
-	$(SDK_BIN) db-admin-service list-backup -s $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME)
+	$(SDK_BIN) db-admin-service list-backup -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson
 
 this-ex-sdk-restore:
-	$(SDK_BIN) db-admin-service restore --backup-file $(EXAMPLE_BACKUP_FILE) -s $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME)
+	$(SDK_BIN) db-admin-service restore --backup-file $(EXAMPLE_BACKUP_FILE) --tls -s $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson

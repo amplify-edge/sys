@@ -22,13 +22,36 @@ func (s *SysAccountConfig) Validate() error {
 }
 
 type Config struct {
-	UnauthenticatedRoutes []string  `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
-	JWTConfig             JWTConfig `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+	InitialSuperUsers     []SuperUser `json:"initialSuperUsers" yaml:"initialSuperUsers" mapstructure:"initialSuperUsers"`
+	UnauthenticatedRoutes []string    `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
+	JWTConfig             JWTConfig   `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+}
+
+type SuperUser struct {
+	Email    string `json:"email" yaml:"email" mapstructure:"email"`
+	Password string `json:"password" yaml:"password" mapstructure:"password"`
+}
+
+// TODO @gutterbacon: real validation
+func (s SuperUser) Validate() error {
+	if s.Email == "" {
+		return fmt.Errorf("email is empty")
+	}
+	if s.Password == "" {
+		return fmt.Errorf("password is empty")
+	}
+	return nil
 }
 
 func (c Config) validate() error {
 	if len(c.UnauthenticatedRoutes) == 0 {
 		return fmt.Errorf(errNoUnauthenticatedRoutes)
+	}
+	for _, su := range c.InitialSuperUsers {
+		err := su.Validate()
+		if err != nil {
+			return err
+		}
 	}
 	if err := c.JWTConfig.Validate(); err != nil {
 		return err
