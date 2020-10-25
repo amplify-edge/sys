@@ -49,6 +49,7 @@ MKCERT_CA_ROOT_DIR = $(shell mkcert -CAROOT)
 
 EXAMPLE_ACCOUNT_ID = ???
 EXAMPLE_ORG_ID  = ???
+EXAMPLE_PROJECT_ID = ???
 
 this-all: this-print this-dep this-build this-print-end
 
@@ -179,6 +180,18 @@ this-ex-sdk-org-list:
 this-ex-sdk-org-update:
 	@echo Running Example Update Org
 	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') update-org --id $(EXAMPLE_ORG_ID) --name "ORG 2" --contact "contact@getcouragenow.org"
+
+this-ex-sdk-project-new:
+	@echo Running Example Create New Project
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') new-project --org-id $(EXAMPLE_ORG_ID) --name PROJECT1 --logo-url "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Go_Logo_Blue.svg/1200px-Go_Logo_Blue.svg.png"
+
+this-ex-sdk-project-list:
+	@echo Running Example List Project
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') list-project
+
+this-ex-sdk-project-get:
+	@echo Running Example Get Project
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') get-project --id $(EXAMPLE_PROJECT_ID)
 
 this-ex-sdk-bench: this-ex-sdk-bench-start this-ex-sdk-bench-01 this-ex-sdk-bench-02
 	@echo -- Example SDK Benchmark: End --
