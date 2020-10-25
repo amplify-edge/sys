@@ -13,23 +13,39 @@ import (
 )
 
 type Org struct {
-	Id        string `genji:"id"`
-	Name      string `genji:"name"`
-	LogoUrl   string `genji:"logo_url"`
-	Contact   string `genji:"contact"`
-	CreatedAt int64  `genji:"created_at"`
-	AccountId string `genji:"account_id"`
+	Id        string `genji:"id" json:"id,omitempty"`
+	Name      string `genji:"name" json:"name,omitempty"`
+	LogoUrl   string `genji:"logo_url" json:"logo_url,omitempty"`
+	Contact   string `genji:"contact" json:"contact,omitempty"`
+	CreatedAt int64  `genji:"created_at" json:"created_at,omitempty"`
+	AccountId string `genji:"account_id" json:"account_id,omitempty"`
 }
 
-func (a *AccountDB) FromPkgOrg(org *pkg.OrgRequest) (*Org, error) {
+func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, error) {
+	orgId := id
+	if orgId == "" {
+		orgId = coresvc.NewID()
+	}
 	return &Org{
-		Id:        coresvc.NewID(),
+		Id:        orgId,
 		Name:      org.Name,
 		LogoUrl:   org.LogoUrl,
 		Contact:   org.Contact,
 		CreatedAt: coresvc.CurrentTimestamp(),
 		AccountId: org.CreatorId,
 	}, nil
+}
+
+func (a *AccountDB) FromPkgOrgRequestToQueryFilter(org *pkg.OrgRequest) (*coresvc.QueryParams, error) {
+	params := map[string]interface{}{}
+	b, err := json.Marshal(&org)
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(b, &params); err != nil {
+		return nil, err
+	}
+	return &coresvc.QueryParams{Params: params}, nil
 }
 
 func (o *Org) ToPkgOrg(projects []*pkg.Project) (*pkg.Org, error) {
@@ -143,10 +159,16 @@ func (a *AccountDB) UpdateOrg(o *Org) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).ToSql()
+	a.log.Debugf("org update param: %v", filterParam)
+	stmt, args, err := sq.Update(OrgTableName).SetMap(filterParam.Params).
+		Where(sq.Eq{"id": o.Id}).ToSql()
 	if err != nil {
 		return err
 	}
+	a.log.Debugf(
+		"update org statement: %v, args: %v", stmt,
+		args,
+	)
 	return a.db.Exec(stmt, args...)
 }
 

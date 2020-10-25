@@ -83,6 +83,15 @@ func testUpdateOrg(t *testing.T) {
 		err = accdb.UpdateOrg(org)
 		assert.NoError(t, err)
 	}
+
+	var getOrgs []*dao.Org
+
+	for _, org := range orgs {
+		getOrg, err := accdb.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": org.Id}})
+		assert.NoError(t, err)
+		getOrgs = append(getOrgs, getOrg)
+	}
+	assert.Equal(t, orgs[0].Name, getOrgs[0].Name)
 }
 
 func testDeleteOrg(t *testing.T) {

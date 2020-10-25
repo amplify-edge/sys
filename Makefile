@@ -32,6 +32,8 @@ EXAMPLE_EMAIL = test@getcouragenow.org
 EXAMPLE_PASSWORD = test1235
 EXAMPLE_SUPER_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_SUPER_PASSWORD = superadmin
+EXAMPLE_NEW_SUPER_EMAIL = gutterbacon@getcouragenow.org
+EXAMPLE_NEW_SUPER_PASSWORD = SmokeOnTheWater70s
 EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY = yYz8Xjb4HBn4irGQpBWulURjQk2XmwES
 EXAMPLE_SYS_CORE_CFG_PATH = ./config/syscore.yml
 EXAMPLE_SYS_ACCOUNT_CFG_PATH = ./config/sysaccount.yml
@@ -46,6 +48,7 @@ EXAMPLE_CA_ROOT_NAME ?= $(EXAMPLE_CERT_DIR)/rootca.pem
 MKCERT_CA_ROOT_DIR = $(shell mkcert -CAROOT)
 
 EXAMPLE_ACCOUNT_ID = ???
+EXAMPLE_ORG_ID  = ???
 
 this-all: this-print this-dep this-build this-print-end
 
@@ -147,18 +150,35 @@ this-ex-sdk-auth-signin-super:
 	# export access token to the .token file
 	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_SUPER_EMAIL) --password $(EXAMPLE_SUPER_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson | jq -r .accessToken > .token
 
-# gotten from "make this-example-sdk-auth"
-# TODO: easy way to capture this ? Might have to set to ENV and then get from ENV when runnng this make target
-# TODO: error: "command failed: grpc: the credentials require transport level security (use grpc.WithTransportCredentials() to set)"
-#EXAMPLE_TOKEN=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIiLCJyb2xlIjp7InJvbGUiOjF9LCJ1c2VyRW1haWwiOiJzdXBlcmFkbWluQGdldGNvdXJhZ2Vub3cub3JnIiwiZXhwIjoxNjAyOTEwODA4fQ.ppCcWFxLt1nWZMBz_I8d_O2E2eje0EKCsDwVRzXNcbFFBzDykdIEdXgtUGWp8oLi6jcfYaQygyAmlMuZVZ-Blg
+
+this-ex-sdk-accounts-new:
+	@echo Running Example New Account
+	@echo Create another superuser:
+	$(SDK_BIN) sys-account account-service new-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --email gutterbacon@example.com --password gutterbacon123 --role-role 4 --verified --created-at-seconds $(shell date +%s) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
+
 this-ex-sdk-accounts-list:
 	@echo Running Example Accounts List
-	#$(SDK_BIN) sys-account account-service list-accounts --jwt-access-token $(EXAMPLE_TOKEN) --server-addr $(SERVER_ADDRESS) --tls-insecure-skip-verify
 	$(SDK_BIN) sys-account account-service list-accounts --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
 
 this-ex-sdk-accounts-get:
 	@echo Running Example Accounts Get
 	$(SDK_BIN) sys-account account-service get-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --id $(EXAMPLE_ACCOUNT_ID) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
+
+this-ex-sdk-org-new:
+	@echo Running Example Create Org
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') new-org --name "ORG 1" --logo-url "https://avatars3.githubusercontent.com/u/59567775?s=200&v=4"
+
+this-ex-sdk-org-get:
+	@echo Running Example Get Org
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') get-org --id $(EXAMPLE_ORG_ID)
+
+this-ex-sdk-org-list:
+	@echo Running Example List Org
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') list-org
+
+this-ex-sdk-org-update:
+	@echo Running Example Update Org
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') update-org --id $(EXAMPLE_ORG_ID) --name "ORG 2" --contact "contact@getcouragenow.org"
 
 this-ex-sdk-bench: this-ex-sdk-bench-start this-ex-sdk-bench-01 this-ex-sdk-bench-02
 	@echo -- Example SDK Benchmark: End --

@@ -160,6 +160,17 @@ func testUpdateAccounts(t *testing.T) {
 		err = accdb.UpdateAccount(&acc)
 		assert.NoError(t, err)
 	}
+
+	var getAccounts []*dao.Account
+
+	for _, acc := range accs {
+		getAcc, err := accdb.GetAccount(&coresvc.QueryParams{
+			Params: map[string]interface{}{"id": acc.ID},
+		})
+		assert.NoError(t, err)
+		getAccounts = append(getAccounts, getAcc)
+	}
+	assert.Equal(t, accs[0].Email, getAccounts[0].Email)
 }
 
 func testDeleteAccounts(t *testing.T) {

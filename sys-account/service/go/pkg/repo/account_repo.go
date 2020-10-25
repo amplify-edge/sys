@@ -10,7 +10,6 @@ import (
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Context, *pkg.Account, error) {
@@ -18,7 +17,7 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	if err != nil {
 		return ctx, nil, err
 	}
-	ad.log.Debugf("Extracted claims: user_id: %s, email: %s, role: %v", claims.Id, claims.UserEmail, *claims.Role)
+	ad.log.Debugf("Extracted current user claims: email: %s, role: %v", claims.UserEmail, *claims.Role)
 	newCtx := context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims)
 	acc, err := ad.getAccountAndRole("", claims.UserEmail)
 	if err != nil {
@@ -31,44 +30,12 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg
 	if err := ad.allowNewAccount(ctx, in); err != nil {
 		return nil, err
 	}
-	now := timestampNow()
-	roleId := coredb.NewID()
-	if err := ad.store.InsertRole(&dao.Role{
-		ID:        roleId,
-		AccountId: in.Id,
-		Role:      int(in.Role.Role),
-		ProjectId: in.Role.ProjectID,
-		OrgId:     in.Role.OrgID,
-		CreatedAt: now,
-	}); err != nil {
-		return nil, err
-	}
-	if err := ad.store.InsertAccount(&dao.Account{
-		ID:                in.Id,
-		Email:             in.Email,
-		Password:          in.Password,
-		RoleId:            roleId,
-		UserDefinedFields: in.Fields.Fields,
-		CreatedAt:         in.CreatedAt,
-		UpdatedAt:         in.UpdatedAt,
-		LastLogin:         in.LastLogin,
-		Disabled:          in.Disabled,
-	}); err != nil {
-		return nil, err
-	}
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	acc, err := ad.store.InsertFromPkgAccountRequest(in)
 	if err != nil {
+		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
 	}
-	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"id": acc.RoleId}})
-	if err != nil {
-		return nil, err
-	}
-	userRole, err := role.ToPkgRole()
-	if err != nil {
-		return nil, err
-	}
-	return acc.ToPkgAccount(userRole)
+	return ad.getAccountAndRole(acc.ID, "")
 }
 
 func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequest) (*pkg.Account, error) {

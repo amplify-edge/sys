@@ -113,6 +113,12 @@ func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
 	}
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
+	for k, v := range params {
+		key := coresvc.ToSnakeCase(k)
+		val := v
+		delete(params, k)
+		params[key] = val
+	}
 	res.Params = params
 	return res, err
 }
@@ -204,7 +210,12 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).ToSql()
+	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).
+		Where(sq.Eq{"id": acc.ID}).ToSql()
+	a.log.Debugf(
+		"update accounts statement: %v, args: %v", stmt,
+		args,
+	)
 	if err != nil {
 		return err
 	}

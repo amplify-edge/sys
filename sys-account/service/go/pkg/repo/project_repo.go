@@ -90,19 +90,25 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 	}, nil
 }
 
-func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
+func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectUpdateRequest) (*pkg.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	req, err := ad.store.FromPkgProject(in)
+	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
 	if err != nil {
 		return nil, err
 	}
-	err = ad.store.UpdateProject(req)
+	if in.Name != "" {
+		proj.Name = in.Name
+	}
+	if in.LogoUrl != "" {
+		proj.LogoUrl = in.LogoUrl
+	}
+	err = ad.store.UpdateProject(proj)
 	if err != nil {
 		return nil, err
 	}
-	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
+	proj, err = ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": proj.Id}})
 	if err != nil {
 		return nil, err
 	}

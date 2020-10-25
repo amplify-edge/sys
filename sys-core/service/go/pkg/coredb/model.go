@@ -156,3 +156,7 @@ func NewID() string {
 func CurrentTimestamp() int64 {
 	return time.Now().UTC().Unix()
 }
+
+func ToSnakeCase(s string) string {
+	return helper.ToSnakeCase(s)
+}

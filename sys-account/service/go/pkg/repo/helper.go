@@ -23,20 +23,27 @@ func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *pkg.Account) 
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
 	if in.Role.OrgID != "" && in.Role.ProjectID == "" {
+		ad.log.Debugf("expecting org admin of: %s", in.Role.OrgID)
 		allowed, err := sharedAuth.AllowOrgAdmin(curAcc, in.Role.OrgID)
 		if err != nil || !allowed {
 			return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 		}
-	} else if in.Role.OrgID == "" && in.Role.ProjectID != "" {
+		return nil
+	} else if (in.Role.OrgID == "" && in.Role.ProjectID != "") || (in.Role.OrgID != "" && in.Role.ProjectID != "") {
+		ad.log.Debugf("expecting project admin of org: %s, project: %s", in.Role.OrgID)
 		allowed, err := sharedAuth.AllowProjectAdmin(curAcc, "", in.Role.ProjectID)
 		if err != nil || !allowed {
 			return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 		}
+		return nil
 	} else if in.Role.OrgID == "" && in.Role.ProjectID == "" {
+		ad.log.Debugf("expecting superadmin")
 		if allowed := sharedAuth.IsSuperadmin(in.Role); !allowed {
 			return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 		}
+		return nil
 	}
+	ad.log.Debugf("no match for current user, denying new account privilege")
 	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
 
@@ -107,11 +114,13 @@ func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *pkg.AssignA
 			if err != nil || !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 			}
+			return nil
 		} else if in.Role.ProjectID != "" {
 			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, in.Role.OrgID, in.Role.ProjectID)
 			if err != nil || !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 			}
+			return nil
 		}
 		return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}

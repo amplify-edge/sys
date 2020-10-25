@@ -78,6 +78,12 @@ func roleToQueryParam(acc *Role) (res coresvc.QueryParams, err error) {
 	}
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
+	for k, v := range params {
+		key := coresvc.ToSnakeCase(k)
+		val := v
+		delete(params, k)
+		params[key] = val
+	}
 	res.Params = params
 	return res, err
 }
@@ -181,7 +187,8 @@ func (a *AccountDB) UpdateRole(p *Role) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).ToSql()
+	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).
+		Where(sq.Eq{"id": p.ID}).ToSql()
 	if err != nil {
 		return err
 	}

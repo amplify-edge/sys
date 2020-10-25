@@ -120,7 +120,10 @@ func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string
 	if err != nil {
 		return nil, 0, err
 	}
-	return projs, projs[len(projs)-1].CreatedAt, nil
+	if len(projs) > 0 {
+		return projs, projs[len(projs)-1].CreatedAt, nil
+	}
+	return projs, 0, nil
 }
 
 func (a *AccountDB) InsertProject(p *Project) error {
@@ -151,7 +154,8 @@ func (a *AccountDB) UpdateProject(p *Project) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).ToSql()
+	stmt, args, err := sq.Update(ProjectTableName).SetMap(filterParam.Params).
+		Where(sq.Eq{"id": p.Id}).ToSql()
 	if err != nil {
 		return err
 	}

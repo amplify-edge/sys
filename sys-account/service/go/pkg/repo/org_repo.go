@@ -17,15 +17,19 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	req, err := ad.store.FromPkgOrg(in)
+	req, err := ad.store.FromPkgOrgRequest(in, "")
 	if err != nil {
+		ad.log.Debugf("unable to convert org request to dao object: %v", err)
 		return nil, err
 	}
-	if err := ad.store.InsertOrg(req); err != nil {
+	ad.log.Debugf("New Org Input: %v", req)
+	if err = ad.store.InsertOrg(req); err != nil {
+		ad.log.Debugf("unable to insert new org to db: %v", err)
 		return nil, err
 	}
 	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
 	if err != nil {
+		ad.log.Debugf("unable to get new org from db: %v", err)
 		return nil, err
 	}
 	return org.ToPkgOrg(nil)
@@ -35,6 +39,9 @@ func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
 	projects, _, err := ad.store.ListProject(&coresvc.QueryParams{Params: map[string]interface{}{"org_id": org.Id}},
 		"name ASC", dao.DefaultLimit, 0)
 	if err != nil {
+		if err.Error() == "document not found" {
+			return org.ToPkgOrg(nil)
+		}
 		return nil, err
 	}
 	var pkgProjects []*pkg.Project
@@ -94,22 +101,29 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 	}, nil
 }
 
-func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {
+func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgUpdateRequest) (*pkg.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	req, err := ad.store.FromPkgOrg(in)
+	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
 	if err != nil {
 		return nil, err
 	}
-	err = ad.store.UpdateOrg(req)
+	if in.Name != "" {
+		org.Name = in.Name
+	}
+	if in.LogoUrl != "" {
+		org.LogoUrl = in.LogoUrl
+	}
+	if in.Contact != "" {
+		org.Contact = in.Contact
+	}
+	ad.log.Debugf("Updated org: %v", org)
+	err = ad.store.UpdateOrg(org)
 	if err != nil {
 		return nil, err
 	}
-	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
-	if err != nil {
-		return nil, err
-	}
+	org, err = ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": org.Id}})
 	return ad.orgFetchProjects(org)
 }
 
