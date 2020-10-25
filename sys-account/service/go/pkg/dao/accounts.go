@@ -31,6 +31,7 @@ type Account struct {
 	LastLogin         int64                  `genji:"last_login"`
 	Disabled          bool                   `genji:"disabled"`
 	Verified          bool                   `genji:"verified"`
+	VerificationToken string                 `genji:"verification_token"`
 }
 
 func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account, error) {

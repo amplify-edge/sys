@@ -3,6 +3,8 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/getcouragenow/sys-share/sys-core/service/config"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -105,11 +107,43 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			ErrorReason: err.Error(),
 		}, err
 	}
+
+	vtoken, err := ad.genVerificationToken(accountId)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pkg.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
+		VerifyToken: vtoken,
 		ErrorReason: "",
 	}, nil
+}
+
+func (ad *SysAccountRepo) genVerificationToken(accountId string) (string, error) {
+	// TODO @gutterbacon: verification token, replace this with anything else
+	// like OTP or anything
+	vtokenBytes, err := config.GenRandomByteSlice(10)
+	if err != nil {
+		return "", err
+	}
+	vtoken, err := pass.GenHash(string(vtokenBytes))
+	if err != nil {
+		return "", err
+	}
+	// TODO @gutterbacon: this is the part where we do email to user (verification) normally
+	// update user's account table's verification_token
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": accountId}})
+	if err != nil {
+		return "", err
+	}
+	acc.VerificationToken = vtoken
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		return "", err
+	}
+	return vtoken, nil
 }
 
 func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg.LoginResponse, error) {
@@ -156,9 +190,17 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 	// TODO @gutterbacon: this is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// for now this method is a stub.
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.Email}})
+	if err != nil {
+		return nil, err
+	}
+	vtoken, err := ad.genVerificationToken(acc.ID)
+	if err != nil {
+		return nil, err
+	}
+	ad.log.Debugf("Generated Verification Token for ForgotPassword: %s", vtoken)
 	return &pkg.ForgotPasswordResponse{
 		Success:                   false,
-		ErrorReason:               "Unimplemented method",
 		ForgotPasswordRequestedAt: timestampNow(),
 	}, nil
 }
@@ -170,12 +212,47 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 	// TODO @gutterbacon: This is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// but for now this method is a stub.
+	if in.Password != in.PasswordConfirm {
+		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	if err != nil {
+		return nil, err
+	}
+	newPasswd, err := pass.GenHash(in.Password)
+	if err != nil {
+		return nil, err
+	}
+	acc.Password = newPasswd
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		return nil, err
+	}
 	return &pkg.ResetPasswordResponse{
 		Success:                  false,
 		SuccessMsg:               "",
 		ErrorReason:              "Unimplemented method",
 		ResetPasswordRequestedAt: timestampNow(),
 	}, nil
+}
+
+func (ad *SysAccountRepo) VerifyAccount(ctx context.Context, in *pkg.VerifyAccountRequest) (*emptypb.Empty, error) {
+	if in == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot verify account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.AccountId}})
+	if err != nil {
+		return nil, err
+	}
+	if acc.VerificationToken != in.VerifyToken {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot verify account: %v", sharedAuth.Error{Reason: sharedAuth.ErrVerificationTokenMismatch})
+	}
+	acc.VerificationToken = ""
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (ad *SysAccountRepo) RefreshAccessToken(ctx context.Context, in *pkg.RefreshAccessTokenRequest) (*pkg.RefreshAccessTokenResponse, error) {
