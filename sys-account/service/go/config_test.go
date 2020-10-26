@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"fmt"
+	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,11 +29,11 @@ func TestNewSysAccountConfig(t *testing.T) {
 				"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
 			},
 			JWTConfig: acccfg.JWTConfig{
-				Access: acccfg.TokenConfig{
+				Access: commonCfg.TokenConfig{
 					Secret: "some_jwt_access_secret",
 					Expiry: 3600,
 				},
-				Refresh: acccfg.TokenConfig{
+				Refresh: commonCfg.TokenConfig{
 					Secret: "some_jwt_refresh_secret",
 					Expiry: 3600,
 				},

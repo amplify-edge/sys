@@ -16,7 +16,6 @@ bench
 
 # db
 db
-
-*.lock.json
-
-*.dylib
+/.srl
+/certs/
+/.token

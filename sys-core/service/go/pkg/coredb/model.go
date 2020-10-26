@@ -7,8 +7,8 @@ import (
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/genjidb/genji/sql/query"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/robfig/cron/v3"
-	"github.com/segmentio/ksuid"
 	log "github.com/sirupsen/logrus"
 	"text/template"
 	"time"
@@ -36,7 +36,7 @@ type CoreDB struct {
 // if one wants to use one or the other.
 // or if internally will use the underlying badger DB engine to create Stream for example
 // for backup, restore, or anything
-func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
+func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig, cronFuncs map[string]func()) (*CoreDB, error) {
 	dbName := cfg.SysCoreConfig.DbConfig.Name
 	dbPath := cfg.SysCoreConfig.DbConfig.DbDir + "/" + dbName
 	store, engine, err := newGenjiStore(dbPath, cfg.SysCoreConfig.DbConfig.EncryptKey, cfg.SysCoreConfig.DbConfig.RotationDuration)
@@ -44,11 +44,12 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
 		return nil, err
 	}
 	cdb := &CoreDB{
-		logger: l,
-		store:  store,
-		engine: engine,
-		models: map[string]DbModel{},
-		config: cfg,
+		logger:    l,
+		store:     store,
+		engine:    engine,
+		models:    map[string]DbModel{},
+		config:    cfg,
+		cronFuncs: cronFuncs,
 	}
 	err = cdb.scheduleBackup()
 	if err != nil {
@@ -59,11 +60,9 @@ func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig) (*CoreDB, error) {
 }
 
 // helper function to create genji.DB
-func newGenjiStore(path string, encKey string, keyRotationSchedule int) (*genji.DB, *badgerengine.Engine, error) {
+func newGenjiStore(path, encKey string, keyRotationSchedule int) (*genji.DB, *badgerengine.Engine, error) {
 	// badgerengine options with encryption and encryption key rotation
-	options := badger.DefaultOptions(path)
-	// .
-	//	WithEncryptionKey(helper.MD5(encKey)) // .
+	options := createBadgerOpts(path, encKey, keyRotationSchedule)
 	// TODO: encryption key rotation is currently disabled, which is not great
 	// WithEncryptionKeyRotationDuration(time.Duration(keyRotationSchedule) * day)
 	engine, err := badgerengine.NewEngine(options)
@@ -75,6 +74,11 @@ func newGenjiStore(path string, encKey string, keyRotationSchedule int) (*genji.
 		return nil, nil, err
 	}
 	return store, engine, nil
+}
+
+func createBadgerOpts(path, encKey string, keyRotationSchedule int) badger.Options {
+	return badger.DefaultOptions(path) //.
+		// WithEncryptionKey(helper.MD5(encKey))
 }
 
 const (
@@ -146,5 +150,13 @@ func (qp *QueryParams) ColumnsAndValues() ([]string, []interface{}) {
 }
 
 func NewID() string {
-	return ksuid.New().String()
+	return sharedConfig.NewID()
+}
+
+func CurrentTimestamp() int64 {
+	return time.Now().UTC().Unix()
+}
+
+func ToSnakeCase(s string) string {
+	return helper.ToSnakeCase(s)
 }

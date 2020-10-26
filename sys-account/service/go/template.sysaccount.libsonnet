@@ -1,3 +1,4 @@
+local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/service/config/mixins/mixin.jwt.libsonnet";
 {
     local cfg = self,
     UnauthenticatedRoutes:: [
@@ -6,17 +7,25 @@
     	"/v2.sys_account.services.AuthService/ResetPassword",
     	"/v2.sys_account.services.AuthService/ForgotPassword",
     	"/v2.sys_account.services.AuthService/RefreshAccessToken",
+    	"/v2.sys_account.services.AuthService/VerifyAccount",
     	"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
     ],
-    AccessToken:: {
+    AccessToken:: tokencfg.Token {
         secret: "some_jwt_access_secret",
         expiry: 3600,
     },
-    RefreshToken:: {
+    RefreshToken:: tokencfg.Token {
         secret: "some_jwt_refresh_secret",
         expiry: cfg.AccessToken.expiry * 100,
     },
+    InitialSuperUsers:: [
+        {
+           email: "test@example.com",
+           password: "supertest",
+        },
+    ],
     sysAccountConfig: {
+        initialSuperUsers: cfg.InitialSuperUsers,
         unauthenticatedRoutes: cfg.UnauthenticatedRoutes,
         jwt: {
             access: cfg.AccessToken,

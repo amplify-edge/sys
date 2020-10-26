@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/genjidb/genji/document"
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -29,6 +30,42 @@ type Account struct {
 	UpdatedAt         int64                  `genji:"updated_at"`
 	LastLogin         int64                  `genji:"last_login"`
 	Disabled          bool                   `genji:"disabled"`
+	Verified          bool                   `genji:"verified"`
+	VerificationToken string                 `genji:"verification_token"`
+}
+
+func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account, error) {
+	accountId := utilities.NewID()
+	role := a.FromPkgRoleRequest(account.Role, accountId)
+	fields := map[string]interface{}{}
+	survey := map[string]interface{}{}
+	if account.Fields != nil && account.Fields.Fields != nil {
+		fields = account.Fields.Fields
+	}
+	if account.Survey != nil && account.Survey.Fields != nil {
+		survey = account.Survey.Fields
+	}
+	acc := &Account{
+		ID:                accountId,
+		Email:             account.Email,
+		Password:          account.Password,
+		UserDefinedFields: fields,
+		Survey:            survey,
+		CreatedAt:         account.CreatedAt,
+		UpdatedAt:         account.UpdatedAt,
+		LastLogin:         account.LastLogin,
+		Disabled:          account.Disabled,
+		RoleId:            role.ID,
+		Verified:          account.Verified,
+	}
+	err := a.InsertRole(role)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.InsertAccount(acc); err != nil {
+		return nil, err
+	}
+	return acc, nil
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
@@ -47,6 +84,7 @@ func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
 		LastLogin:         account.LastLogin,
 		Disabled:          account.Disabled,
 		RoleId:            role.ID,
+		Verified:          account.Verified,
 	}, nil
 }
 
@@ -65,6 +103,7 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 		Disabled:  a.Disabled,
 		Fields:    &pkg.UserDefinedFields{Fields: a.UserDefinedFields},
 		Survey:    &pkg.UserDefinedFields{Fields: a.Survey},
+		Verified:  a.Verified,
 	}, nil
 }
 
@@ -75,6 +114,12 @@ func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
 	}
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
+	for k, v := range params {
+		key := coresvc.ToSnakeCase(k)
+		val := v
+		delete(params, k)
+		params[key] = val
+	}
 	res.Params = params
 	return res, err
 }
@@ -86,7 +131,7 @@ func (a Account) CreateSQL() []string {
 	return tbl.CreateTable()
 }
 
-func (a *AccountDB) queryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
+func (a *AccountDB) accountQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
 	baseStmt := sq.Select(AccColumns).From(AccTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
@@ -96,26 +141,9 @@ func (a *AccountDB) queryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
 	return baseStmt
 }
 
-func (a *AccountDB) getAccountSelectStatement(filterParams *coresvc.QueryParams) (string, []interface{}, error) {
-	baseStmt := a.queryFilter(filterParams)
-	return baseStmt.ToSql()
-}
-
-func (a *AccountDB) listAccountSelectStatement(filter *coresvc.QueryParams, orderBy string, limit int64, cursor *int64) (string, []interface{}, error) {
-	var csr int
-	baseStmt := a.queryFilter(filter)
-	if cursor == nil {
-		csr = 0
-	}
-	baseStmt.Where(sq.GtOrEq{AccCursor: csr})
-	baseStmt.Limit(uint64(limit))
-	baseStmt.OrderBy(orderBy)
-	return baseStmt.ToSql()
-}
-
 func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, error) {
 	var acc Account
-	selectStmt, args, err := a.getAccountSelectStatement(filterParams)
+	selectStmt, args, err := a.accountQueryFilter(filterParams).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +157,8 @@ func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, err
 
 func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
 	var accs []*Account
-	selectStmt, args, err := a.listAccountSelectStatement(filterParams, orderBy, limit, &cursor)
+	baseStmt := a.accountQueryFilter(filterParams)
+	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -182,7 +211,12 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).ToSql()
+	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).
+		Where(sq.Eq{"id": acc.ID}).ToSql()
+	a.log.Debugf(
+		"update accounts statement: %v, args: %v", stmt,
+		args,
+	)
 	if err != nil {
 		return err
 	}

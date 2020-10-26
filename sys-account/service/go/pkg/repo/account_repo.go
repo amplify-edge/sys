@@ -3,127 +3,85 @@ package repo
 import (
 	"context"
 	"fmt"
-	"strconv"
-
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
+func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Context, *pkg.Account, error) {
+	claims, err := ad.ObtainAccessClaimsFromMetadata(ctx, true)
+	if err != nil {
+		return ctx, nil, err
+	}
+	ad.log.Debugf("Extracted current user claims: email: %s, role: %v", claims.UserEmail, *claims.Role)
+	newCtx := context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims)
+	acc, err := ad.getAccountAndRole("", claims.UserEmail)
+	if err != nil {
+		ad.log.Debugf("Cannot get user's account: %v", err)
+		return ctx, nil, status.Errorf(codes.NotFound, "current user not found: %v", err)
+	}
+	return newCtx, acc, nil
+}
+
 func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
-	now := timestampNow()
-	roleId := coredb.NewID()
-	if err := ad.store.InsertRole(&dao.Role{
-		ID:        roleId,
-		AccountId: in.Id, // TODO @gutterbacon check for uniqueness
-		Role:      int(in.Role.Role),
-		ProjectId: in.Role.ProjectID,
-		OrgId:     in.Role.OrgID,
-		CreatedAt: now,
-	}); err != nil {
+	if err := ad.allowNewAccount(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := ad.store.InsertAccount(&dao.Account{
-		ID:                in.Id,
-		Email:             in.Email,
-		Password:          in.Password,
-		RoleId:            roleId,
-		UserDefinedFields: in.Fields.Fields,
-		CreatedAt:         in.CreatedAt,
-		UpdatedAt:         in.UpdatedAt,
-		LastLogin:         in.LastLogin,
-		Disabled:          in.Disabled,
-	}); err != nil {
-		return nil, err
-	}
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	acc, err := ad.store.InsertFromPkgAccountRequest(in)
 	if err != nil {
+		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
 	}
-	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"id": acc.RoleId}})
-	if err != nil {
-		return nil, err
-	}
-	userRole, err := role.ToPkgRole()
-	if err != nil {
-		return nil, err
-	}
-	return acc.ToPkgAccount(userRole)
+	return ad.getAccountAndRole(acc.ID, "")
 }
 
 func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequest) (*pkg.Account, error) {
 	if in == nil {
 		return &pkg.Account{},
-			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-
-	// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{
-		"id": in.Id,
-	}})
+	acc, err := ad.allowGetAccount(ctx, in.Id)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", auth.Error{Reason: auth.ErrAccountNotFound})
+		return nil, err
 	}
-	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{
-		"id": acc.RoleId,
-	}})
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
-	}
-	userRole, err := role.ToPkgRole()
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", auth.Error{Reason: auth.ErrAccountNotFound})
-	}
-
-	return acc.ToPkgAccount(userRole)
+	return acc, nil
 }
 
-// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
 func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccountsRequest) (*pkg.ListAccountsResponse, error) {
 	var limit, cursor int64
 	var err error
 	if in == nil {
-		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	filter := &coredb.QueryParams{Params: map[string]interface{}{}}
-	orderBy := in.OrderBy + " ASC"
-	if in.CurrentPageId != "" {
-		cursor, err = strconv.ParseInt(in.CurrentPageId, 10, 64)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
-		}
-	} else {
-		cursor = 0
-	}
-	if in.PerPageEntries == 0 {
-		limit = dao.DefaultLimit
-	}
-	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor)
+	filter, err := ad.allowListAccount(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var accounts []*pkg.Account
-
-	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
-		if err != nil {
-			return nil, err
-		}
-		role, err := r.ToPkgRole()
-		if err != nil {
-			return nil, err
-		}
-		account, err := acc.ToPkgAccount(role)
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
+	orderBy := in.OrderBy
+	if in.IsDescending {
+		orderBy += " DESC"
+	} else {
+		orderBy += " ASC"
 	}
+	cursor, err = ad.getCursor(in.CurrentPageId)
+	if err != nil {
+		return nil, err
+	}
+
+	if in.PerPageEntries == 0 {
+		limit = dao.DefaultLimit
+	}
+
+	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pkg.ListAccountsResponse{
 		Accounts:   accounts,
 		NextPageId: fmt.Sprintf("%d", next),
@@ -135,44 +93,31 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 	var limit, cursor int64
 	var err error
 	if in == nil {
-		return &pkg.SearchAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot search user accounts: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return &pkg.SearchAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot search user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	filter := &coredb.QueryParams{Params: map[string]interface{}{}}
+	filter, err := ad.allowListAccount(ctx)
+	if err != nil {
+		return nil, err
+	}
 	for k, v := range in.Query {
 		filter.Params[k] = v
 	}
-	orderBy := in.SearchParam.OrderBy + " ASC"
-	if in.SearchParam.CurrentPageId != "" {
-		cursor, err = strconv.ParseInt(in.SearchParam.CurrentPageId, 10, 64)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", err)
-		}
+	orderBy := in.SearchParam.OrderBy
+	if in.SearchParam.IsDescending {
+		orderBy += " DESC"
 	} else {
-		cursor = 0
+		orderBy += " ASC"
+	}
+	cursor, err = ad.getCursor(in.SearchParam.CurrentPageId)
+	if err != nil {
+		return nil, err
 	}
 	if in.SearchParam.PerPageEntries == 0 {
 		limit = dao.DefaultLimit
 	}
-	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor)
+	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor)
 	if err != nil {
 		return nil, err
-	}
-	var accounts []*pkg.Account
-
-	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
-		if err != nil {
-			return nil, err
-		}
-		role, err := r.ToPkgRole()
-		if err != nil {
-			return nil, err
-		}
-		account, err := acc.ToPkgAccount(role)
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
 	}
 	return &pkg.SearchAccountsResponse{
 		SearchResponse: &pkg.ListAccountsResponse{
@@ -182,17 +127,78 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 	}, nil
 }
 
-// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-func (ad *SysAccountRepo) AssignAccountToRole(context.Context, *pkg.AssignAccountToRoleRequest) (*pkg.Account, error) {
-	return &pkg.Account{}, nil
+func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.AssignAccountToRoleRequest) (*pkg.Account, error) {
+	if in == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot assign user Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	err := ad.allowAssignToRole(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	req, err := ad.store.FromPkgRole(&in.Role, in.AssignedAccountId)
+	if err != nil {
+		return nil, err
+	}
+	err = ad.store.UpdateRole(req)
+	if err != nil {
+		return nil, err
+	}
+	return ad.getAccountAndRole(in.AssignedAccountId, "")
 }
 
-// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-func (ad *SysAccountRepo) UpdateAccount(context.Context, *pkg.Account) (*pkg.Account, error) {
-	return &pkg.Account{}, nil
+func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
+	if in == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	cur, err := ad.allowGetAccount(ctx, in.Id)
+	if err != nil {
+		return nil, err
+	}
+	ad.log.Debugf("current to be updated user: %v", cur)
+	acc, err := ad.store.GetAccount(&coresvc.QueryParams{Params: map[string]interface{}{"id": cur.Id}})
+	if err != nil {
+		return nil, err
+	}
+	if in.Disabled {
+		acc.Disabled = true
+	}
+	if !in.Disabled {
+		acc.Disabled = false
+	}
+	if in.Fields != nil && in.Fields.Fields != nil {
+		cur.Fields = in.Fields
+	}
+	if in.Survey != nil && in.Survey.Fields != nil {
+		cur.Survey = in.Survey
+	}
+	if in.Verified {
+		acc.Verified = true
+	}
+	acc.UpdatedAt = timestampNow()
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		ad.log.Debugf("unable to update account: %v", err)
+		return nil, err
+	}
+	return ad.getAccountAndRole(in.Id, "")
 }
 
-// TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-func (ad *SysAccountRepo) DisableAccount(context.Context, *pkg.DisableAccountRequest) (*pkg.Account, error) {
-	return &pkg.Account{}, nil
+func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAccountRequest) (*pkg.Account, error) {
+	if in == nil {
+		return &pkg.Account{}, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	acc, err := ad.allowGetAccount(ctx, in.AccountId)
+	if err != nil {
+		return nil, err
+	}
+	acc.Disabled = true
+	req, err := ad.store.FromPkgAccount(acc)
+	if err != nil {
+		return nil, err
+	}
+	err = ad.store.UpdateAccount(req)
+	if err != nil {
+		return nil, err
+	}
+	return acc, nil
 }

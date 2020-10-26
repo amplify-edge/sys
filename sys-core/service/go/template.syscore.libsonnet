@@ -1,4 +1,4 @@
-local dbcfg = import "vendor/config/mixin.db.libsonnet";
+local dbcfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/service/config/mixins/mixin.db.libsonnet";
 
 {
     local cfg = self,

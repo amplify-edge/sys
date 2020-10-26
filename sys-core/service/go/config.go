@@ -2,20 +2,31 @@ package service
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"gopkg.in/yaml.v2"
 
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"gopkg.in/yaml.v2"
+	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
 )
 
 const (
 	errParsingConfig = "error parsing %s config: %v\n"
-	errDbNameEmpty   = "error: db name empty"
-	errDbRotation    = "error: db rotation has to be greater than or equal to 1 (day)"
-	errCronSchedule  = "error: db cron schedule is in wrong format / empty"
-	defaultDirPerm   = 0755
 )
+
+type SysCoreConfig struct {
+	SysCoreConfig commonCfg.Config `yaml:"sysCoreConfig" mapstructure:"sysCoreConfig"`
+}
+
+func (s *SysCoreConfig) Validate() error {
+	return s.SysCoreConfig.Validate()
+}
+
+type DbConfig struct {
+	Name             string `json:"name" yaml:"name" mapstructure:"name"`
+	EncryptKey       string `json:"encryptKey" yaml:"encryptKey" mapstructure:"encryptKey"`
+	RotationDuration int    `json:"rotationDuration" yaml:"rotationDuration" mapstructure:"rotationDuration"`
+	DbDir            string `json:"dbDir" yaml:"dbDir" mapstructure:"dbDir"`
+	DeletePrevious   bool   `json:"deletePrevious" yaml:"deletePrevious" mapstructure:"deletePrevious"`
+}
 
 func NewConfig(filepath string) (*SysCoreConfig, error) {
 	sysCfg := &SysCoreConfig{}
@@ -31,84 +42,4 @@ func NewConfig(filepath string) (*SysCoreConfig, error) {
 	}
 
 	return sysCfg, nil
-}
-
-type SysCoreConfig struct {
-	SysCoreConfig Config `yaml:"sysCoreConfig" mapstructure:"sysCoreConfig"`
-}
-
-func (s *SysCoreConfig) Validate() error {
-	return s.SysCoreConfig.validate()
-}
-
-type DbConfig struct {
-	Name             string `json:"name" yaml:"name" mapstructure:"name"`
-	EncryptKey       string `json:"encryptKey" yaml:"encryptKey" mapstructure:"encryptKey"`
-	RotationDuration int    `json:"rotationDuration" yaml:"rotationDuration" mapstructure:"rotationDuration"`
-	DbDir            string `json:"dbDir" yaml:"dbDir" mapstructure:"dbDir"`
-	DeletePrevious   bool   `json:"deletePrevious" yaml:"deletePrevious" mapstructure:"deletePrevious"`
-}
-
-func (d DbConfig) validate() error {
-	if d.Name == "" {
-		return fmt.Errorf(errDbNameEmpty)
-	}
-	if d.RotationDuration < 1 {
-		return fmt.Errorf(errDbRotation)
-	}
-	if d.EncryptKey == "" {
-		encKey, err := sharedConfig.GenRandomByteSlice(32)
-		if err != nil {
-			return err
-		}
-		d.EncryptKey = string(encKey)
-	}
-	abspath, err := filepath.Abs(d.DbDir)
-	if err != nil {
-		return err
-	}
-	exists, err := sharedConfig.PathExists(abspath)
-	if err != nil || !exists {
-		return os.MkdirAll(abspath, defaultDirPerm)
-	}
-	d.DbDir = abspath
-
-	if d.DeletePrevious {
-		return os.RemoveAll(abspath + "/" + d.Name)
-	}
-
-	return nil
-}
-
-type CronConfig struct {
-	BackupSchedule string `json:"backupSchedule" yaml:"backupSchedule" mapstructure:"backupSchedule"`
-	RotateSchedule string `json:"rotateSchedule" yaml:"rotateSchedule" mapstructure:"rotateSchedule"`
-	BackupDir      string `json:"backupDir" yaml:"backupDir" mapstructure:"backupDir"`
-}
-
-func (c CronConfig) validate() error {
-	if c.BackupSchedule == "" || c.RotateSchedule == "" {
-		return fmt.Errorf(errCronSchedule)
-	}
-	if exists, err := sharedConfig.PathExists(c.BackupDir); err != nil || !exists {
-		return os.MkdirAll(c.BackupDir, defaultDirPerm)
-	}
-	c.BackupDir, _ = filepath.Abs(c.BackupDir)
-	return nil
-}
-
-type Config struct {
-	DbConfig   DbConfig   `json:"db" yaml:"db" mapstructure:"db"`
-	CronConfig CronConfig `json:"cron" yaml:"cron" mapstructure:"cron"`
-}
-
-func (c Config) validate() error {
-	if err := c.DbConfig.validate(); err != nil {
-		return err
-	}
-	if err := c.CronConfig.validate(); err != nil {
-		return err
-	}
-	return nil
-
 }

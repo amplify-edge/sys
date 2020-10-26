@@ -3,55 +3,54 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 )
 
-// for now we hardcode the user first
-// later we'll use Genji from getcouragenow/sys-core/service/db
 func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
 	qp := &coredb.QueryParams{Params: map[string]interface{}{
 		"email": req.Email,
 	}}
 	acc, err := ad.store.GetAccount(qp)
 	if err != nil {
-		ad.log.Warnf(auth.Error{Reason: auth.ErrQueryAccount, Err: err}.Error())
 		return nil, err
 	}
+
+	if acc.Disabled {
+		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrAccountDisabled, Err: fmt.Errorf("password mismatch")}.Error())
+	}
+
 	matchedPassword, err := pass.VerifyHash(req.Password, acc.Password)
 	if err != nil {
-		ad.log.Warnf(auth.Error{Reason: auth.ErrVerifyPassword, Err: err}.Error())
 		return nil, err
 	}
 	if !matchedPassword {
-		ad.log.Warnf(auth.Error{Reason: auth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
-		return nil, err
+		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
 	}
 	ad.log.WithFields(l.Fields{
 		"account_id": acc.ID,
 		"role_id":    acc.RoleId,
-	}).Info("querying user")
+	}).Debug("querying user")
 	qp = &coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}}
 	role, err := ad.store.GetRole(qp)
 	if err != nil {
-		ad.log.Warnf(auth.Error{Reason: auth.ErrQueryAccount, Err: err}.Error())
+		ad.log.Debugf("unable to get user role: %v", err)
 		return nil, err
 	}
 	userRole, err := role.ToPkgRole()
 	if err != nil {
+		ad.log.Debugf("unable to convert user role to pkg role: %v", err)
 		return nil, err
 	}
 	return acc.ToPkgAccount(userRole)
@@ -76,7 +75,7 @@ func (ad *SysAccountRepo) DefaultInterceptor(ctx context.Context) (context.Conte
 		return nil, status.Errorf(codes.Unauthenticated, "Request unauthenticated with error: %v", err)
 	}
 
-	return context.WithValue(ctx, ContextKeyClaims, claims), nil
+	return context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims), nil
 }
 
 // Register satisfies rpc.Register function on AuthService proto definition
@@ -89,49 +88,71 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	}
 	// New user will be assigned GUEST role and no Org / Project for now.
 	// TODO @gutterbacon: subject to change.
-	roleId := coredb.NewID()
 	accountId := coredb.NewID()
 	now := timestampNow()
-	err := ad.store.InsertAccount(&dao.Account{
-		ID:                accountId,
-		Email:             in.Email,
-		Password:          in.Password,
-		RoleId:            roleId,
-		CreatedAt:         now,
-		UserDefinedFields: map[string]interface{}{},
-		Survey:            map[string]interface{}{},
-		Disabled:          false,
-	})
-	if err != nil {
-		return &pkg.RegisterResponse{
-			Success:     false,
-			ErrorReason: err.Error(),
-		}, err
-	}
-	err = ad.store.InsertRole(&dao.Role{
-		ID:        roleId,
-		AccountId: accountId,
-		Role:      1,
+	newAcc := &pkg.Account{
+		Id:       accountId,
+		Email:    in.Email,
+		Password: in.Password,
+		Role: &pkg.UserRoles{
+			Role: 2,
+			All:  false,
+		},
 		CreatedAt: now,
-	})
+		UpdatedAt: now,
+		Disabled:  false,
+		Fields:    &pkg.UserDefinedFields{},
+		Survey:    &pkg.UserDefinedFields{},
+		Verified:  false,
+	}
+	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc)
 	if err != nil {
 		return &pkg.RegisterResponse{
 			Success:     false,
 			ErrorReason: err.Error(),
 		}, err
 	}
+
+	vtoken, _, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	if err != nil {
+		return nil, err
+	}
+
 	return &pkg.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
+		VerifyToken: vtoken,
 		ErrorReason: "",
+		TempUserId:  acc.ID,
 	}, nil
+}
+
+func (ad *SysAccountRepo) genVerificationToken(param *coredb.QueryParams) (string, *dao.Account, error) {
+	// TODO @gutterbacon: verification token, replace this with anything else
+	// like OTP or anything
+	vtoken, err := pass.GenHash(coredb.NewID())
+	if err != nil {
+		return "", nil, err
+	}
+	// TODO @gutterbacon: this is the part where we do email to user (verification) normally
+	// update user's account table's verification_token
+	acc, err := ad.store.GetAccount(param)
+	if err != nil {
+		return "", nil, err
+	}
+	acc.VerificationToken = vtoken
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		return "", nil, err
+	}
+	return acc.VerificationToken, acc, nil
 }
 
 func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg.LoginResponse, error) {
 	if in == nil {
-		return &pkg.LoginResponse{}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return &pkg.LoginResponse{}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	var claimant auth.Claimant
+	var claimant sharedAuth.Claimant
 
 	u, err := ad.getAndVerifyAccount(ctx, in)
 	if err != nil {
@@ -145,60 +166,141 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 	if err != nil {
 		return &pkg.LoginResponse{
 			ErrorReason: err.Error(),
-		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.Error{Reason: auth.ErrCreatingToken, Err: err})
+		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrCreatingToken, Err: err})
+	}
+
+	req, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": u.Id}})
+	if err != nil {
+		return nil, err
+	}
+	req.LastLogin = timestampNow()
+	if err := ad.store.UpdateAccount(req); err != nil {
+		return nil, err
 	}
 	return &pkg.LoginResponse{
 		Success:      true,
 		AccessToken:  tokenPairs.AccessToken,
 		RefreshToken: tokenPairs.RefreshToken,
+		LastLogin:    req.LastLogin,
 	}, nil
 }
 
 func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPasswordRequest) (*pkg.ForgotPasswordResponse, error) {
 	if in == nil {
-		return &pkg.ForgotPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request forgot password endpoint: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return &pkg.ForgotPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request forgot password endpoint: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	// TODO @gutterbacon: this is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// for now this method is a stub.
+	vtoken, _, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	if err != nil {
+		return &pkg.ForgotPasswordResponse{
+			Success:                   false,
+			SuccessMsg:                "",
+			ErrorReason:               err.Error(),
+			ForgotPasswordRequestedAt: timestampNow(),
+		}, err
+	}
+	ad.log.Debugf("Generated Verification Token for ForgotPassword: %s", vtoken)
 	return &pkg.ForgotPasswordResponse{
-		Success:                   false,
-		ErrorReason:               "Unimplemented method",
+		Success:                   true,
+		SuccessMsg:                "Reset password token sent",
 		ForgotPasswordRequestedAt: timestampNow(),
 	}, nil
 }
 
 func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswordRequest) (*pkg.ResetPasswordResponse, error) {
 	if in == nil {
-		return &pkg.ResetPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request reset password endpoint: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+		return &pkg.ResetPasswordResponse{}, status.Errorf(codes.InvalidArgument, "cannot request reset password endpoint: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	// TODO @gutterbacon: This is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// but for now this method is a stub.
+	if in.Password != in.PasswordConfirm {
+		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	if err != nil {
+		ad.log.Debugf("error getting reset password account: %v", err)
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              err.Error(),
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
+	}
+	ad.log.Debugf("reset password account: %v", *acc)
+	if acc.VerificationToken != in.VerifyToken {
+		ad.log.Debugf("mismatch verification token: wanted %s\n got: %s", acc.VerificationToken, in.VerifyToken)
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              "verification token mismatch",
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
+	}
+	newPasswd, err := pass.GenHash(in.Password)
+	if err != nil {
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              err.Error(),
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
+	}
+	acc.Password = newPasswd
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              err.Error(),
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
+	}
 	return &pkg.ResetPasswordResponse{
-		Success:                  false,
+		Success:                  true,
 		SuccessMsg:               "",
-		ErrorReason:              "Unimplemented method",
+		ErrorReason:              "",
 		ResetPasswordRequestedAt: timestampNow(),
 	}, nil
+}
+
+func (ad *SysAccountRepo) VerifyAccount(ctx context.Context, in *pkg.VerifyAccountRequest) (*emptypb.Empty, error) {
+	if in == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot verify account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.AccountId}})
+	if err != nil {
+		return nil, err
+	}
+	if acc.VerificationToken != in.VerifyToken {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot verify account: %v", sharedAuth.Error{Reason: sharedAuth.ErrVerificationTokenMismatch})
+	}
+	acc.Verified = true
+	err = ad.store.UpdateAccount(acc)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (ad *SysAccountRepo) RefreshAccessToken(ctx context.Context, in *pkg.RefreshAccessTokenRequest) (*pkg.RefreshAccessTokenResponse, error) {
 	if in == nil {
 		return &pkg.RefreshAccessTokenResponse{
-			ErrorReason: auth.Error{Reason: auth.ErrInvalidParameters}.Error(),
-		}, status.Errorf(codes.InvalidArgument, "cannot request new access token: %v", auth.Error{Reason: auth.ErrInvalidParameters})
+			ErrorReason: sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters}.Error(),
+		}, status.Errorf(codes.InvalidArgument, "cannot request new access token: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	claims, err := ad.tokenCfg.ParseTokenStringToClaim(in.RefreshToken, false)
 	if err != nil {
 		return &pkg.RefreshAccessTokenResponse{
-			ErrorReason: auth.Error{Reason: auth.ErrInvalidToken}.Error(),
-		}, status.Errorf(codes.InvalidArgument, "refresh token is invalid: %v", auth.Error{Reason: auth.ErrInvalidToken})
+			ErrorReason: sharedAuth.Error{Reason: sharedAuth.ErrInvalidToken}.Error(),
+		}, status.Errorf(codes.InvalidArgument, "refresh token is invalid: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidToken})
 	}
 	newAccessToken, err := ad.tokenCfg.RenewAccessToken(&claims)
 	if err != nil {
 		return &pkg.RefreshAccessTokenResponse{
-			ErrorReason: auth.Error{Reason: auth.ErrCreatingToken}.Error(),
+			ErrorReason: sharedAuth.Error{Reason: sharedAuth.ErrCreatingToken}.Error(),
 		}, status.Errorf(codes.Internal, "cannot request new access token from claims: %v", err.Error())
 	}
 	return &pkg.RefreshAccessTokenResponse{
@@ -207,33 +309,14 @@ func (ad *SysAccountRepo) RefreshAccessToken(ctx context.Context, in *pkg.Refres
 }
 
 // ObtainAccessClaimsFromMetadata obtains token claims from given context with gRPC metadata.
-func (ad *SysAccountRepo) ObtainAccessClaimsFromMetadata(ctx context.Context, isAccess bool) (claims auth.TokenClaims, err error) {
+func (ad *SysAccountRepo) ObtainAccessClaimsFromMetadata(ctx context.Context, isAccess bool) (claims sharedAuth.TokenClaims, err error) {
 	var authmeta string
-	if authmeta, err = ad.fromMetadata(ctx); err != nil {
-		return auth.TokenClaims{}, err
+	if authmeta, err = sharedAuth.FromMetadata(ctx); err != nil {
+		return sharedAuth.TokenClaims{}, err
 	}
 
 	if claims, err = ad.tokenCfg.ParseTokenStringToClaim(authmeta, isAccess); err != nil {
-		return auth.TokenClaims{}, err
+		return sharedAuth.TokenClaims{}, err
 	}
-
 	return claims, nil
-}
-
-// ObtainClaimsFromContext obtains token claims from given context with value.
-// TODO @gutterbacon: see ../policy/stub.md
-func ObtainClaimsFromContext(ctx context.Context) auth.TokenClaims {
-	claims, ok := ctx.Value(ContextKeyClaims).(auth.TokenClaims)
-	if !ok {
-		return auth.TokenClaims{}
-	}
-	return claims
-}
-
-func (ad *SysAccountRepo) fromMetadata(ctx context.Context) (authMeta string, err error) {
-	authMeta = metautils.ExtractIncoming(ctx).Get(HeaderAuthorize)
-	if authMeta == "" {
-		return "", auth.Error{Reason: auth.ErrMissingToken}
-	}
-	return authMeta, nil
 }
