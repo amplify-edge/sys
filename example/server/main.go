@@ -84,7 +84,7 @@ func main() {
 
 		sysSvc.RegisterServices(grpcServer)
 		grpcWebServer := sysSvc.RegisterGrpcWebServer(grpcServer)
-		// rutn server
+		// run server
 		return sysSvc.Run(grpcWebServer, nil, localTlsCertPath, localTlsKeyPath)
 	}
 	if err := rootCmd.Execute(); err != nil {

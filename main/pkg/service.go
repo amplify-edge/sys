@@ -170,6 +170,10 @@ func (s *SysServices) RegisterGrpcWebServer(srv *grpc.Server) *grpcweb.WrappedGr
 	return grpcweb.WrapServer(
 		srv,
 		grpcweb.WithCorsForRegisteredEndpointsOnly(false),
+		grpcweb.WithAllowedRequestHeaders([]string{"Accept", "Cache-Control", "Keep-Alive", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "X-User-Agent", "X-Grpc-Web"}),
+		grpcweb.WithOriginFunc(func(origin string) bool {
+			return true
+		}),
 		grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool {
 			return true
 		}),
@@ -183,9 +187,13 @@ func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *
 		httpServer = &http.Server{
 			Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
-				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-				w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-User-Agent, X-Grpc-Web")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
+				w.Header().Set("Access-Control-Allow-Headers", "Accept, Cache-Control, Keep-Alive, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-User-Agent, X-Grpc-Web")
+				w.Header().Set("Access-Control-Expose-Headers", "grpc-status, grpc-message")
 				s.logger.Infof("Request Endpoint: %s", r.URL)
+				// if r.Method == "OPTIONS" {
+				// 	return
+				// }
 				grpcWebServer.ServeHTTP(w, r)
 			}), &http2.Server{}),
 		}
