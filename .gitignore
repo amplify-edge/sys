@@ -14,6 +14,9 @@ fake*.json
 # benchmark binaries
 bench
 
+# JSONNET locks
+*.lock.json
+
 # db
 db
 /.srl
