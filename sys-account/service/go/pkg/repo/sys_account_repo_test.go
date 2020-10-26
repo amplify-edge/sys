@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/auth"
 )
 
 var (
@@ -32,9 +32,9 @@ var (
 func TestSysAccountRepoAll(t *testing.T) {
 	os.Setenv("JWT_ACCESS_SECRET", "AccessVerySecretHush!")
 	os.Setenv("JWT_REFRESH_SECRET", "RefreshVeryHushHushFriends!")
-	tc := auth.NewTokenConfig([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")))
+	tc := sharedAuth.NewTokenConfig([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")))
 	ad = &SysAccountRepo{
-		log:      logrus.New().WithField("test", "auth-delivery"),
+		log:      logrus.New().WithField("test", "sharedAuth-delivery"),
 		tokenCfg: tc,
 	}
 	t.Run("Test Login User", testUserLogin)
@@ -44,10 +44,10 @@ func TestSysAccountRepoAll(t *testing.T) {
 func testUserLogin(t *testing.T) {
 	// empty request
 	_, err := ad.Login(context.Background(), nil)
-	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", auth.Error{Reason: auth.ErrInvalidParameters}))
+	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "Can't sharedAuthenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters}))
 	// Wrong credentials
 	_, err = ad.Login(context.Background(), loginRequests[0])
-	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "cannot authenticate: %v", auth.Error{Reason: auth.ErrInvalidCredentials}))
+	assert.Error(t, err, status.Errorf(codes.Unauthenticated, "cannot sharedAuthenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidCredentials}))
 	// Correct Credentials
 	resp, err := ad.Login(context.Background(), loginRequests[1])
 	assert.NoError(t, err)

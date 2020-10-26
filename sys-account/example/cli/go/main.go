@@ -9,6 +9,7 @@ import (
 func main() {
 	spsc := pkg.NewSysShareProxyClient()
 	rootCmd := spsc.CobraCommand()
+
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("command failed: %v", err)
 	}

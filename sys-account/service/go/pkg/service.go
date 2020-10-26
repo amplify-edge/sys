@@ -3,12 +3,13 @@ package accountpkg
 import (
 	"context"
 	"fmt"
-
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
+	sharedBus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -22,15 +23,18 @@ const (
 type SysAccountService struct {
 	authInterceptorFunc func(context.Context) (context.Context, error)
 	proxyService        *pkg.SysAccountProxyService
+	DbProxyService      *coresvc.SysCoreProxyService
+	BusProxyService     *coresvc.SysBusProxyService
 }
 
 type SysAccountServiceConfig struct {
 	store  *coredb.CoreDB
 	Cfg    *service.SysAccountConfig
+	bus    *sharedBus.CoreBus
 	logger *logrus.Entry
 }
 
-func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath string) (*SysAccountServiceConfig, error) {
+func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
 	var err error
 	if db == nil {
 		return nil, fmt.Errorf("error creating sys account service: database is null")
@@ -47,6 +51,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath str
 	sasc := &SysAccountServiceConfig{
 		store:  db,
 		Cfg:    accountCfg,
+		bus:    bus,
 		logger: sysAccountLogger,
 	}
 	return sasc, nil
@@ -59,10 +64,23 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 	if err != nil {
 		return nil, err
 	}
-	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo)
+	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo, authRepo)
+	dbProxyService := coresvc.NewSysCoreProxyService(cfg.store)
+	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
+	for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
+		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
+			Email:    users.Email,
+			Password: users.Password,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
 		proxyService:        sysAccountProxy,
+		DbProxyService:      dbProxyService,
+		BusProxyService:     busProxyService,
 	}, nil
 }
 

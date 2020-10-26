@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"fmt"
+	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
+	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"net/http"
 
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -32,6 +34,8 @@ type SysServices struct {
 	logger        *logrus.Entry
 	port          int
 	sysAccountSvc *accountpkg.SysAccountService
+	dbSvc         *coresvc.SysCoreProxyService
+	busSvc        *coresvc.SysBusProxyService
 }
 
 type ServiceConfigPaths struct {
@@ -75,12 +79,12 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 		if err != nil {
 			return nil, err
 		}
-		db, err = coredb.NewCoreDB(l, csc)
+		db, err = coredb.NewCoreDB(l, csc, nil)
 		if err != nil {
 			return nil, err
 		}
 	}
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account)
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, corebus.NewCoreBus())
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +114,15 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// ========================================================================
 
 	return &SysServices{
 		logger:        cfg.logger,
 		port:          cfg.port,
 		sysAccountSvc: sysAccountSvc,
+		dbSvc:         sysAccountSvc.DbProxyService,
+		busSvc:        sysAccountSvc.BusProxyService,
 	}, nil
 }
 
@@ -146,6 +153,8 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.sysAccountSvc.RegisterServices(srv)
+	s.dbSvc.RegisterSvc(srv)
+	s.busSvc.RegisterSvc(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {
@@ -161,6 +170,10 @@ func (s *SysServices) RegisterGrpcWebServer(srv *grpc.Server) *grpcweb.WrappedGr
 	return grpcweb.WrapServer(
 		srv,
 		grpcweb.WithCorsForRegisteredEndpointsOnly(false),
+		grpcweb.WithAllowedRequestHeaders([]string{"Accept", "Cache-Control", "Keep-Alive", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "X-User-Agent", "X-Grpc-Web"}),
+		grpcweb.WithOriginFunc(func(origin string) bool {
+			return true
+		}),
 		grpcweb.WithWebsocketOriginFunc(func(req *http.Request) bool {
 			return true
 		}),
@@ -169,26 +182,33 @@ func (s *SysServices) RegisterGrpcWebServer(srv *grpc.Server) *grpcweb.WrappedGr
 }
 
 // run runs all the sys-* service as a service
-func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *http.Server) error {
+func (s *SysServices) run(grpcWebServer *grpcweb.WrappedGrpcServer, httpServer *http.Server, certFile, keyFile string) error {
 	if httpServer == nil {
 		httpServer = &http.Server{
 			Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
-				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-				w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-User-Agent, X-Grpc-Web")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
+				w.Header().Set("Access-Control-Allow-Headers", "Accept, Cache-Control, Keep-Alive, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-User-Agent, X-Grpc-Web")
+				w.Header().Set("Access-Control-Expose-Headers", "grpc-status, grpc-message")
 				s.logger.Infof("Request Endpoint: %s", r.URL)
+				// if r.Method == "OPTIONS" {
+				// 	return
+				// }
 				grpcWebServer.ServeHTTP(w, r)
 			}), &http2.Server{}),
 		}
 	}
 
 	httpServer.Addr = fmt.Sprintf("127.0.0.1:%d", s.port)
+	if certFile != "" && keyFile != "" {
+		return httpServer.ListenAndServeTLS(certFile, keyFile)
+	}
 	return httpServer.ListenAndServe()
 }
 
 // Run is just an exported wrapper for s.run()
-func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server) error {
-	err := s.run(srv, httpServer)
+func (s *SysServices) Run(srv *grpcweb.WrappedGrpcServer, httpServer *http.Server, certFile, keyFile string) error {
+	err := s.run(srv, httpServer, certFile, keyFile)
 	if err != nil {
 		s.logger.Errorf(errRunningServer, err)
 		return err

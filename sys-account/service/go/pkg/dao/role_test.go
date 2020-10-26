@@ -16,7 +16,7 @@ var (
 			ID:        role1ID,
 			AccountId: account0ID,
 			Role:      3, // 3 is Admin
-			OrgId:     coresvc.NewID(),
+			OrgId:     org1ID,
 			CreatedAt: time.Now().UTC().Unix(),
 		},
 		{
@@ -24,8 +24,8 @@ var (
 			ID:        role2ID,
 			AccountId: accs[1].ID,
 			Role:      2, // 2 is member
-			ProjectId: coresvc.NewID(),
-			OrgId:     coresvc.NewID(),
+			ProjectId: proj1ID,
+			OrgId:     org2ID,
 			CreatedAt: time.Now().UTC().Unix(),
 		},
 	}
