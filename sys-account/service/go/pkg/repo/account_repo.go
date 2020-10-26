@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -21,6 +22,7 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	newCtx := context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims)
 	acc, err := ad.getAccountAndRole("", claims.UserEmail)
 	if err != nil {
+		ad.log.Debugf("Cannot get user's account: %v", err)
 		return ctx, nil, status.Errorf(codes.NotFound, "current user not found: %v", err)
 	}
 	return newCtx, acc, nil
@@ -152,20 +154,30 @@ func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*
 	if err != nil {
 		return nil, err
 	}
-	if cur.Role != in.Role {
-		req, err := ad.store.FromPkgRole(in.Role, in.Id)
-		if err != nil {
-			return nil, err
-		}
-		err = ad.store.UpdateRole(req)
-	}
-	req, err := ad.store.FromPkgAccount(in)
+	ad.log.Debugf("current to be updated user: %v", cur)
+	acc, err := ad.store.GetAccount(&coresvc.QueryParams{Params: map[string]interface{}{"id": cur.Id}})
 	if err != nil {
 		return nil, err
 	}
-	req.UpdatedAt = timestampNow()
-	err = ad.store.UpdateAccount(req)
+	if in.Disabled {
+		acc.Disabled = true
+	}
+	if !in.Disabled {
+		acc.Disabled = false
+	}
+	if in.Fields != nil && in.Fields.Fields != nil {
+		cur.Fields = in.Fields
+	}
+	if in.Survey != nil && in.Survey.Fields != nil {
+		cur.Survey = in.Survey
+	}
+	if in.Verified {
+		acc.Verified = true
+	}
+	acc.UpdatedAt = timestampNow()
+	err = ad.store.UpdateAccount(acc)
 	if err != nil {
+		ad.log.Debugf("unable to update account: %v", err)
 		return nil, err
 	}
 	return ad.getAccountAndRole(in.Id, "")

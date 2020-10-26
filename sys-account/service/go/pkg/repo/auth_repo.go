@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/getcouragenow/sys-share/sys-core/service/config"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
@@ -108,7 +107,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		}, err
 	}
 
-	vtoken, err := ad.genVerificationToken(accountId)
+	vtoken, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
 	if err != nil {
 		return nil, err
 	}
@@ -121,20 +120,16 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	}, nil
 }
 
-func (ad *SysAccountRepo) genVerificationToken(accountId string) (string, error) {
+func (ad *SysAccountRepo) genVerificationToken(param *coredb.QueryParams) (string, error) {
 	// TODO @gutterbacon: verification token, replace this with anything else
 	// like OTP or anything
-	vtokenBytes, err := config.GenRandomByteSlice(10)
-	if err != nil {
-		return "", err
-	}
-	vtoken, err := pass.GenHash(string(vtokenBytes))
+	vtoken, err := pass.GenHash(coredb.NewID())
 	if err != nil {
 		return "", err
 	}
 	// TODO @gutterbacon: this is the part where we do email to user (verification) normally
 	// update user's account table's verification_token
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": accountId}})
+	acc, err := ad.store.GetAccount(param)
 	if err != nil {
 		return "", err
 	}
@@ -143,7 +138,11 @@ func (ad *SysAccountRepo) genVerificationToken(accountId string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	return vtoken, nil
+	account, err := ad.store.GetAccount(param)
+	if err != nil {
+		return "", err
+	}
+	return account.VerificationToken, nil
 }
 
 func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg.LoginResponse, error) {
@@ -167,7 +166,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrCreatingToken, Err: err})
 	}
 
-	req, err := ad.store.FromPkgAccount(u)
+	req, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": u.Id}})
 	if err != nil {
 		return nil, err
 	}
@@ -190,17 +189,13 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 	// TODO @gutterbacon: this is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// for now this method is a stub.
-	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": in.Email}})
-	if err != nil {
-		return nil, err
-	}
-	vtoken, err := ad.genVerificationToken(acc.ID)
+	vtoken, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
 	if err != nil {
 		return nil, err
 	}
 	ad.log.Debugf("Generated Verification Token for ForgotPassword: %s", vtoken)
 	return &pkg.ForgotPasswordResponse{
-		Success:                   false,
+		Success:                   true,
 		ForgotPasswordRequestedAt: timestampNow(),
 	}, nil
 }
@@ -229,7 +224,7 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 		return nil, err
 	}
 	return &pkg.ResetPasswordResponse{
-		Success:                  false,
+		Success:                  true,
 		SuccessMsg:               "",
 		ErrorReason:              "Unimplemented method",
 		ResetPasswordRequestedAt: timestampNow(),
@@ -247,7 +242,7 @@ func (ad *SysAccountRepo) VerifyAccount(ctx context.Context, in *pkg.VerifyAccou
 	if acc.VerificationToken != in.VerifyToken {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot verify account: %v", sharedAuth.Error{Reason: sharedAuth.ErrVerificationTokenMismatch})
 	}
-	acc.VerificationToken = ""
+	acc.Verified = true
 	err = ad.store.UpdateAccount(acc)
 	if err != nil {
 		return nil, err
@@ -290,12 +285,3 @@ func (ad *SysAccountRepo) ObtainAccessClaimsFromMetadata(ctx context.Context, is
 	}
 	return claims, nil
 }
-
-// func (ad *SysAccountRepo) AuthOverride(ctx context.Context) (context.Context, error) {
-// 	claims, err := ad.ObtainAccessClaimsFromMetadata(ctx, true)
-// 	if err != nil {
-// 		return nil, status.Errorf(codes.Unauthenticated,
-// 			sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
-// 	}
-// 	return context.WithValue(ctx, ContextKeyClaims, claims), nil
-// }

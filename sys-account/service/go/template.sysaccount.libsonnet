@@ -7,6 +7,7 @@ local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/serv
     	"/v2.sys_account.services.AuthService/ResetPassword",
     	"/v2.sys_account.services.AuthService/ForgotPassword",
     	"/v2.sys_account.services.AuthService/RefreshAccessToken",
+    	"/v2.sys_account.services.AuthService/VerifyAccount",
     	"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
     ],
     AccessToken:: tokencfg.Token {

@@ -213,7 +213,7 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	}
 	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).
 		Where(sq.Eq{"id": acc.ID}).ToSql()
-	a.log.Debugf(
+	a.log.Warnf(
 		"update accounts statement: %v, args: %v", stmt,
 		args,
 	)

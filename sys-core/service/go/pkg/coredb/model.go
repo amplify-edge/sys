@@ -77,8 +77,8 @@ func newGenjiStore(path, encKey string, keyRotationSchedule int) (*genji.DB, *ba
 }
 
 func createBadgerOpts(path, encKey string, keyRotationSchedule int) badger.Options {
-	return badger.DefaultOptions(path).
-		WithEncryptionKey(helper.MD5(encKey))
+	return badger.DefaultOptions(path) //.
+		// WithEncryptionKey(helper.MD5(encKey))
 }
 
 const (

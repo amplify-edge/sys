@@ -66,6 +66,7 @@ var (
 			UpdatedAt: time.Now().UTC().Unix(),
 			LastLogin: 0,
 			Disabled:  false,
+			VerificationToken: "blaharsoaiten",
 		},
 	}
 )
@@ -155,6 +156,7 @@ func testQueryAccounts(t *testing.T) {
 func testUpdateAccounts(t *testing.T) {
 	accs[0].Email = "makavelli@example.com"
 	accs[1].Email = "notorious_big@example.com"
+	accs[2].VerificationToken = "MopedRulesTheHighway"
 
 	for _, acc := range accs {
 		err = accdb.UpdateAccount(&acc)
@@ -171,6 +173,9 @@ func testUpdateAccounts(t *testing.T) {
 		getAccounts = append(getAccounts, getAcc)
 	}
 	assert.Equal(t, accs[0].Email, getAccounts[0].Email)
+	assert.Equal(t, accs[1].Email, getAccounts[1].Email)
+	assert.Equal(t, accs[2].VerificationToken, getAccounts[2].VerificationToken)
+	t.Logf("Updated token: %s", getAccounts[2].VerificationToken)
 }
 
 func testDeleteAccounts(t *testing.T) {

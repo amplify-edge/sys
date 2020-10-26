@@ -48,6 +48,7 @@ EXAMPLE_CA_ROOT_NAME ?= $(EXAMPLE_CERT_DIR)/rootca.pem
 MKCERT_CA_ROOT_DIR = $(shell mkcert -CAROOT)
 
 EXAMPLE_ACCOUNT_ID = ???
+EXAMPLE_VERIFY_TOKEN = ???
 EXAMPLE_ORG_ID  = ???
 EXAMPLE_PROJECT_ID = ???
 
@@ -61,6 +62,10 @@ this-print:
 	@echo SDK_BIN: $(SDK_BIN)
 	@echo SERVER_BIN: $(SERVER_BIN)
 	@echo CA_ROOT_DIR: $(MKCERT_CA_ROOT_DIR)
+	@echo EXAMPLE_ACCOUNT_ID: ???
+	@echo EXAMPLE_VERIFY_TOKEN: ???
+	@echo EXAMPLE_ORG_ID: ???
+	@echo EXAMPLE_PROJECT_ID: ???
 	@echo
 
 this-print-end:
@@ -151,6 +156,9 @@ this-ex-sdk-auth-signin-super:
 	# export access token to the .token file
 	$(SDK_BIN) sys-account auth-service login --email $(EXAMPLE_SUPER_EMAIL) --password $(EXAMPLE_SUPER_PASSWORD) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson | jq -r .accessToken > .token
 
+this-ex-sdk-auth-verify:
+	@echo Running Example Verify Client
+	$(SDK_BIN) sys-account auth-service verify-account --account-id $(EXAMPLE_ACCOUNT_ID) --verify-token $(EXAMPLE_VERIFY_TOKEN) --server-addr $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson
 
 this-ex-sdk-accounts-new:
 	@echo Running Example New Account
@@ -164,6 +172,10 @@ this-ex-sdk-accounts-list:
 this-ex-sdk-accounts-get:
 	@echo Running Example Accounts Get
 	$(SDK_BIN) sys-account account-service get-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --id $(EXAMPLE_ACCOUNT_ID) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
+
+this-ex-sdk-accounts-update:
+	@echo Running Example Accounts Update
+	$(SDK_BIN) sys-account account-service update-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --id $(EXAMPLE_ACCOUNT_ID) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') --disabled
 
 this-ex-sdk-org-new:
 	@echo Running Example Create Org
