@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
@@ -25,6 +26,11 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 	if err != nil {
 		return nil, err
 	}
+
+	if acc.Disabled {
+		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrAccountDisabled, Err: fmt.Errorf("password mismatch")}.Error())
+	}
+
 	matchedPassword, err := pass.VerifyHash(req.Password, acc.Password)
 	if err != nil {
 		return nil, err
@@ -99,7 +105,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		Survey:    &pkg.UserDefinedFields{},
 		Verified:  false,
 	}
-	_, err := ad.store.InsertFromPkgAccountRequest(newAcc)
+	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc)
 	if err != nil {
 		return &pkg.RegisterResponse{
 			Success:     false,
@@ -107,7 +113,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		}, err
 	}
 
-	vtoken, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	vtoken, _, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
 	if err != nil {
 		return nil, err
 	}
@@ -117,32 +123,29 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
 		VerifyToken: vtoken,
 		ErrorReason: "",
+		TempUserId:  acc.ID,
 	}, nil
 }
 
-func (ad *SysAccountRepo) genVerificationToken(param *coredb.QueryParams) (string, error) {
+func (ad *SysAccountRepo) genVerificationToken(param *coredb.QueryParams) (string, *dao.Account, error) {
 	// TODO @gutterbacon: verification token, replace this with anything else
 	// like OTP or anything
 	vtoken, err := pass.GenHash(coredb.NewID())
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	// TODO @gutterbacon: this is the part where we do email to user (verification) normally
 	// update user's account table's verification_token
 	acc, err := ad.store.GetAccount(param)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	acc.VerificationToken = vtoken
 	err = ad.store.UpdateAccount(acc)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	account, err := ad.store.GetAccount(param)
-	if err != nil {
-		return "", err
-	}
-	return account.VerificationToken, nil
+	return acc.VerificationToken, acc, nil
 }
 
 func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg.LoginResponse, error) {
@@ -189,13 +192,19 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 	// TODO @gutterbacon: this is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// for now this method is a stub.
-	vtoken, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	vtoken, _, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
 	if err != nil {
-		return nil, err
+		return &pkg.ForgotPasswordResponse{
+			Success:                   false,
+			SuccessMsg:                "",
+			ErrorReason:               err.Error(),
+			ForgotPasswordRequestedAt: timestampNow(),
+		}, err
 	}
 	ad.log.Debugf("Generated Verification Token for ForgotPassword: %s", vtoken)
 	return &pkg.ForgotPasswordResponse{
 		Success:                   true,
+		SuccessMsg:                "Reset password token sent",
 		ForgotPasswordRequestedAt: timestampNow(),
 	}, nil
 }
@@ -212,21 +221,47 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 	}
 	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
 	if err != nil {
-		return nil, err
+		ad.log.Debugf("error getting reset password account: %v", err)
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              err.Error(),
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
+	}
+	ad.log.Debugf("reset password account: %v", *acc)
+	if acc.VerificationToken != in.VerifyToken {
+		ad.log.Debugf("mismatch verification token: wanted %s\n got: %s", acc.VerificationToken, in.VerifyToken)
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              "verification token mismatch",
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
 	}
 	newPasswd, err := pass.GenHash(in.Password)
 	if err != nil {
-		return nil, err
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              err.Error(),
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
 	}
 	acc.Password = newPasswd
 	err = ad.store.UpdateAccount(acc)
 	if err != nil {
-		return nil, err
+		return &pkg.ResetPasswordResponse{
+			Success:                  false,
+			SuccessMsg:               "",
+			ErrorReason:              err.Error(),
+			ResetPasswordRequestedAt: timestampNow(),
+		}, err
 	}
 	return &pkg.ResetPasswordResponse{
 		Success:                  true,
 		SuccessMsg:               "",
-		ErrorReason:              "Unimplemented method",
+		ErrorReason:              "",
 		ResetPasswordRequestedAt: timestampNow(),
 	}, nil
 }
