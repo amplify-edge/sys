@@ -16,3 +16,7 @@ bench
 
 # db
 db
+
+*.lock.json
+
+*.dylib
