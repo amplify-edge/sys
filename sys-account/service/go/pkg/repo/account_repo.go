@@ -18,11 +18,10 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	if err != nil {
 		return ctx, nil, err
 	}
-	ad.log.Debugf("Extracted current user claims: email: %s, role: %v", claims.UserEmail, *claims.Role)
+	ad.log.Debugf("Extracted current user claims: email: %s, role: %v", claims.UserEmail, claims.Role)
 	newCtx := context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims)
 	acc, err := ad.getAccountAndRole("", claims.UserEmail)
 	if err != nil {
-		ad.log.Debugf("Cannot get user's account: %v", err)
 		return ctx, nil, status.Errorf(codes.NotFound, "current user not found: %v", err)
 	}
 	return newCtx, acc, nil
@@ -30,6 +29,7 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 
 func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
 	if err := ad.allowNewAccount(ctx, in); err != nil {
+		ad.log.Debugf("creation of new account failed: %v", err)
 		return nil, err
 	}
 	acc, err := ad.store.InsertFromPkgAccountRequest(in)
@@ -135,15 +135,97 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	if err != nil {
 		return nil, err
 	}
-	req, err := ad.store.FromPkgRole(&in.Role, in.AssignedAccountId)
+	_, curAcc, err := ad.accountFromClaims(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	roles, err := ad.store.FetchRoles(in.AssignedAccountId)
 	if err != nil {
 		return nil, err
 	}
-	err = ad.store.UpdateRole(req)
-	if err != nil {
-		return nil, err
+	// ORG ADMIN
+	if in.Role.OrgID != "" && in.Role.ProjectID == "" {
+		for _, r := range roles {
+			if r.OrgId == in.Role.OrgID {
+				if err := ad.store.UpdateRole(&dao.Role{
+					ID:        r.ID,
+					AccountId: r.AccountId,
+					Role:      int(in.Role.Role),
+					ProjectId: r.ProjectId,
+					OrgId:     in.Role.OrgID,
+					CreatedAt: r.CreatedAt,
+					UpdatedAt: timestampNow(),
+				}); err != nil {
+					return nil, err
+				}
+				return ad.getAccountAndRole(in.AssignedAccountId, "")
+			}
+		}
 	}
-	return ad.getAccountAndRole(in.AssignedAccountId, "")
+	// PROJECT ADMIN
+	if in.Role.OrgID != "" && in.Role.ProjectID != "" {
+		for _, r := range roles {
+			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+				if err := ad.store.UpdateRole(&dao.Role{
+					ID:        r.ID,
+					AccountId: r.AccountId,
+					Role:      int(in.Role.Role),
+					ProjectId: in.Role.ProjectID,
+					OrgId:     in.Role.OrgID,
+					CreatedAt: r.CreatedAt,
+					UpdatedAt: timestampNow(),
+				}); err != nil {
+					return nil, err
+				}
+				return ad.getAccountAndRole(in.AssignedAccountId, "")
+			}
+		}
+	}
+	// SUPERADMIN
+	if in.Role.Role == pkg.SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.Role) {
+		newRole := &dao.Role{
+			ID:        coresvc.NewID(),
+			AccountId: in.AssignedAccountId,
+			Role:      int(in.Role.Role),
+			ProjectId: in.Role.ProjectID,
+			OrgId:     in.Role.OrgID,
+			CreatedAt: timestampNow(),
+			UpdatedAt: timestampNow(),
+		}
+		ad.log.Debugf("to be updated roles: %v", *roles[0])
+		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
+			ad.log.Debug("deleting user guest role")
+			if err = ad.store.DeleteRole(roles[0].ID); err != nil {
+				return nil, err
+			}
+		}
+		if err = ad.store.InsertRole(newRole); err != nil {
+			return nil, err
+		}
+		return ad.getAccountAndRole(in.AssignedAccountId, "")
+	} else if sharedAuth.IsSuperadmin(curAcc.Role) {
+		newRole := &dao.Role{
+			ID:        coresvc.NewID(),
+			AccountId: in.AssignedAccountId,
+			Role:      int(in.Role.Role),
+			ProjectId: in.Role.ProjectID,
+			OrgId:     in.Role.OrgID,
+			CreatedAt: timestampNow(),
+			UpdatedAt: timestampNow(),
+		}
+		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
+			ad.log.Debug("deleting user guest role")
+			if err := ad.store.DeleteRole(roles[0].ID); err != nil {
+				return nil, err
+			}
+		}
+		if err := ad.store.InsertRole(newRole); err != nil {
+			return nil, err
+		}
+
+		return ad.getAccountAndRole(in.AssignedAccountId, "")
+	}
+	return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
 }
 
 func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {

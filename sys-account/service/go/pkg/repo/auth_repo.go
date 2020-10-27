@@ -38,22 +38,27 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 	if !matchedPassword {
 		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
 	}
+
 	ad.log.WithFields(l.Fields{
 		"account_id": acc.ID,
-		"role_id":    acc.RoleId,
 	}).Debug("querying user")
-	qp = &coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}}
-	role, err := ad.store.GetRole(qp)
+
+	daoRoles, err := ad.store.FetchRoles(acc.ID)
 	if err != nil {
-		ad.log.Debugf("unable to get user role: %v", err)
+		ad.log.Debugf("unable to fetch user roles: %v", err)
 		return nil, err
 	}
-	userRole, err := role.ToPkgRole()
-	if err != nil {
-		ad.log.Debugf("unable to convert user role to pkg role: %v", err)
-		return nil, err
+	var pkgRoles []*pkg.UserRoles
+	for _, daoRole := range daoRoles {
+		pkgRole, err := daoRole.ToPkgRole()
+		if err != nil {
+			ad.log.Debugf("unable to convert user role to pkg role: %v", err)
+			return nil, err
+		}
+		pkgRoles = append(pkgRoles, pkgRole)
 	}
-	return acc.ToPkgAccount(userRole)
+
+	return acc.ToPkgAccount(pkgRoles)
 }
 
 // DefaultInterceptor is default authN/authZ interceptor, validates only token correctness without performing any role specific authorization.
@@ -94,9 +99,11 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		Id:       accountId,
 		Email:    in.Email,
 		Password: in.Password,
-		Role: &pkg.UserRoles{
-			Role: 2,
-			All:  false,
+		Role: []*pkg.UserRoles{
+			{
+				Role: 1,
+				All:  false,
+			},
 		},
 		CreatedAt: now,
 		UpdatedAt: now,

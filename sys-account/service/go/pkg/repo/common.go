@@ -22,18 +22,21 @@ func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, err
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}
-	role, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{
-		"id": acc.RoleId,
+	daoRoles, err := ad.store.ListRole(&coredb.QueryParams{Params: map[string]interface{}{
+		"account_id": acc.ID,
 	}})
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}
-	userRole, err := role.ToPkgRole()
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
+	var pkgRoles []*pkg.UserRoles
+	for _, daoRole := range daoRoles {
+		pkgRole, err := daoRole.ToPkgRole()
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
+		}
+		pkgRoles = append(pkgRoles, pkgRole)
 	}
-
-	return acc.ToPkgAccount(userRole)
+	return acc.ToPkgAccount(pkgRoles)
 }
 
 func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, orderBy string, limit, cursor int64) ([]*pkg.Account, *int64, error) {
@@ -44,15 +47,21 @@ func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, order
 	var accounts []*pkg.Account
 
 	for _, acc := range listAccounts {
-		r, err := ad.store.GetRole(&coredb.QueryParams{Params: map[string]interface{}{"account_id": acc.ID}})
+		daoRoles, err := ad.store.ListRole(&coredb.QueryParams{Params: map[string]interface{}{
+			"account_id": acc.ID,
+		}})
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, status.Errorf(codes.NotFound, "cannot find user roles: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound, Err: err})
 		}
-		role, err := r.ToPkgRole()
-		if err != nil {
-			return nil, nil, err
+		var pkgRoles []*pkg.UserRoles
+		for _, daoRole := range daoRoles {
+			pkgRole, err := daoRole.ToPkgRole()
+			if err != nil {
+				return nil, nil, status.Errorf(codes.NotFound, "cannot find user roles: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound, Err: err})
+			}
+			pkgRoles = append(pkgRoles, pkgRole)
 		}
-		account, err := acc.ToPkgAccount(role)
+		account, err := acc.ToPkgAccount(pkgRoles)
 		if err != nil {
 			return nil, nil, err
 		}

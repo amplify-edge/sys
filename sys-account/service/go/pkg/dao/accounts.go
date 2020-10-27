@@ -1,13 +1,13 @@
 package dao
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/genjidb/genji/document"
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/segmentio/encoding/json"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
@@ -23,7 +23,6 @@ type Account struct {
 	ID                string                 `genji:"id"`
 	Email             string                 `genji:"email"`
 	Password          string                 `genji:"password"`
-	RoleId            string                 `genji:"role_id"`
 	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
 	Survey            map[string]interface{} `genji:"survey"`
 	CreatedAt         int64                  `genji:"created_at"`
@@ -36,7 +35,29 @@ type Account struct {
 
 func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account, error) {
 	accountId := utilities.NewID()
-	role := a.FromPkgRoleRequest(account.Role, accountId)
+	var roles []*Role
+	if account.Role != nil && len(account.Role) > 0 {
+		a.log.Debugf("Convert and getting roles")
+		for _, pkgRole := range account.Role {
+			role := a.FromPkgRoleRequest(pkgRole, accountId)
+			roles = append(roles, role)
+		}
+	} else {
+		roles = append(roles, &Role{
+			ID:        coresvc.NewID(),
+			AccountId: accountId,
+			Role:      int(pkg.GUEST),
+			ProjectId: "",
+			OrgId:     "",
+			CreatedAt: time.Now().UTC().Unix(),
+		})
+	}
+	for _, daoRole := range roles {
+		err := a.InsertRole(daoRole)
+		if err != nil {
+			return nil, err
+		}
+	}
 	fields := map[string]interface{}{}
 	survey := map[string]interface{}{}
 	if account.Fields != nil && account.Fields.Fields != nil {
@@ -55,13 +76,9 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account,
 		UpdatedAt:         account.UpdatedAt,
 		LastLogin:         account.LastLogin,
 		Disabled:          account.Disabled,
-		RoleId:            role.ID,
 		Verified:          account.Verified,
 	}
-	err := a.InsertRole(role)
-	if err != nil {
-		return nil, err
-	}
+
 	if err := a.InsertAccount(acc); err != nil {
 		return nil, err
 	}
@@ -69,10 +86,6 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account,
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
-	role, err := a.FromPkgRole(account.Role, account.Id)
-	if err != nil {
-		return nil, err
-	}
 	return &Account{
 		ID:                account.Id,
 		Email:             account.Email,
@@ -83,12 +96,11 @@ func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
 		UpdatedAt:         account.UpdatedAt,
 		LastLogin:         account.LastLogin,
 		Disabled:          account.Disabled,
-		RoleId:            role.ID,
 		Verified:          account.Verified,
 	}, nil
 }
 
-func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
+func (a *Account) ToPkgAccount(roles []*pkg.UserRoles) (*pkg.Account, error) {
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
@@ -96,7 +108,7 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 		Id:        a.ID,
 		Email:     a.Email,
 		Password:  a.Password,
-		Role:      role,
+		Role:      roles,
 		CreatedAt: createdAt.Unix(),
 		UpdatedAt: updatedAt.Unix(),
 		LastLogin: lastLogin.Unix(),
@@ -114,6 +126,10 @@ func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
 	}
 	var params map[string]interface{}
 	err = json.Unmarshal(jstring, &params)
+	if err != nil {
+		log.Debugf("marshal account to queryParam failed: %v", err)
+		return coresvc.QueryParams{}, err
+	}
 	for k, v := range params {
 		key := coresvc.ToSnakeCase(k)
 		val := v
