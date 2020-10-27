@@ -22,6 +22,10 @@ type Project struct {
 	OrgId     string `genji:"org_id"`
 }
 
+var (
+	projectUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", ProjectTableName, ProjectTableName)
+)
+
 func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
 	var orgId string
 	if p.OrgId == "" {
@@ -55,7 +59,7 @@ func (p *Project) ToPkgProject(org *pkg.Org) (*pkg.Project, error) {
 func (o Project) CreateSQL() []string {
 	fields := initFields(ProjectColumns, ProjectColumnsType)
 	// tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
-	tbl := coresvc.NewTable(ProjectTableName, fields, []string{})
+	tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
 	return tbl.CreateTable()
 }
 

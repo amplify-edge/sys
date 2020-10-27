@@ -21,6 +21,10 @@ type Org struct {
 	AccountId string `genji:"account_id" json:"account_id,omitempty"`
 }
 
+var (
+	orgUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", OrgTableName, OrgTableName)
+)
+
 func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, error) {
 	orgId := id
 	if orgId == "" {
@@ -63,7 +67,7 @@ func (o *Org) ToPkgOrg(projects []*pkg.Project) (*pkg.Org, error) {
 func (o Org) CreateSQL() []string {
 	fields := initFields(OrgColumns, OrgColumnsType)
 	// tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
-	tbl := coresvc.NewTable(OrgTableName, fields, []string{})
+	tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
 	return tbl.CreateTable()
 }
 
