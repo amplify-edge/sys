@@ -89,16 +89,16 @@ this-prebuild:
 	# so the go mod is updated
 	go get -u github.com/getcouragenow/sys-share
 
-this-build: this-build-delete this-config-gen
+this-build: this-build-delete #this-config-gen
 
 	mkdir -p ./bin-all
 	mkdir -p ./bench
 
-	cd sys-account && $(MAKE) this-all
-	cd sys-core && $(MAKE) this-all
+#	cd sys-account && $(MAKE) this-all
+#	cd sys-core && $(MAKE) this-all
 
-	go build -o $(SDK_BIN) $(EXAMPLE_SDK_DIR)/main.go
-	go build -o $(SERVER_BIN) $(EXAMPLE_SERVER_DIR)/main.go
+	go build -gcflags="all=-N -l" -o $(SDK_BIN) $(EXAMPLE_SDK_DIR)/main.go
+	go build -gcflags="all=-N -l" -o $(SERVER_BIN) $(EXAMPLE_SERVER_DIR)/main.go
 
 this-build-delete:
 	rm -rf $(BIN_FOLDER)
@@ -162,8 +162,7 @@ this-ex-sdk-auth-verify:
 
 this-ex-sdk-accounts-new:
 	@echo Running Example New Account
-	@echo Create another superuser:
-	$(SDK_BIN) sys-account account-service new-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --email gutterbacon@example.com --password gutterbacon123 --role-role 4 --verified --created-at-seconds $(shell date +%s) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
+	$(SDK_BIN) sys-account account-service new-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --email gutterbacon@example.com --password gutterbacon123 --verified --created-at-seconds $(shell date +%s) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
 
 this-ex-sdk-accounts-list:
 	@echo Running Example Accounts List
@@ -176,6 +175,10 @@ this-ex-sdk-accounts-get:
 this-ex-sdk-accounts-update:
 	@echo Running Example Accounts Update
 	$(SDK_BIN) sys-account account-service update-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --id $(EXAMPLE_ACCOUNT_ID) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') --disabled
+
+this-ex-sdk-accounts-assign-super:
+	@echo Assigning Account to Superuser
+	$(SDK_BIN) sys-account account-service assign-account-to-role --assigned-account-id $(EXAMPLE_ACCOUNT_ID) --role-all --role-role 4 -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
 
 this-ex-sdk-org-new:
 	@echo Running Example Create Org

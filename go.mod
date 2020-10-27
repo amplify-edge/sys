@@ -18,6 +18,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.13.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0 // indirect
+	github.com/segmentio/encoding v0.2.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.6.1
