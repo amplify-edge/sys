@@ -7,7 +7,6 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/segmentio/encoding/json"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
@@ -120,24 +119,7 @@ func (a *Account) ToPkgAccount(roles []*pkg.UserRoles) (*pkg.Account, error) {
 }
 
 func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
-	jstring, err := json.Marshal(acc)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	if err != nil {
-		log.Debugf("marshal account to queryParam failed: %v", err)
-		return coresvc.QueryParams{}, err
-	}
-	for k, v := range params {
-		key := coresvc.ToSnakeCase(k)
-		val := v
-		delete(params, k)
-		params[key] = val
-	}
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(acc, true)
 }
 
 // CreateSQL will only be called once by sys-core see sys-core API.
@@ -227,6 +209,7 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
+	delete(filterParams.Params, "id")
 	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).
 		Where(sq.Eq{"id": acc.ID}).ToSql()
 	a.log.Debugf(
@@ -244,5 +227,12 @@ func (a *AccountDB) DeleteAccount(id string) error {
 	if err != nil {
 		return err
 	}
-	return a.db.Exec(stmt, args...)
+	rstmt, rargs, err := sq.Delete(RolesTableName).Where("account_id = ?", id).ToSql()
+	if err != nil {
+		return err
+	}
+	return a.db.BulkExec(map[string][]interface{}{
+		stmt:  args,
+		rstmt: rargs,
+	})
 }

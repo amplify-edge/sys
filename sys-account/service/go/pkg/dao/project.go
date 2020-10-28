@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -56,7 +55,7 @@ func (p *Project) ToPkgProject(org *pkg.Org) (*pkg.Project, error) {
 	}, nil
 }
 
-func (o Project) CreateSQL() []string {
+func (p Project) CreateSQL() []string {
 	fields := initFields(ProjectColumns, ProjectColumnsType)
 	// tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
 	tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
@@ -64,14 +63,7 @@ func (o Project) CreateSQL() []string {
 }
 
 func projectToQueryParam(p *Project) (res coresvc.QueryParams, err error) {
-	jstring, err := json.Marshal(p)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(p, true)
 }
 
 func (a *AccountDB) projectQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
@@ -158,6 +150,7 @@ func (a *AccountDB) UpdateProject(p *Project) error {
 	if err != nil {
 		return err
 	}
+	delete(filterParam.Params, "id")
 	stmt, args, err := sq.Update(ProjectTableName).SetMap(filterParam.Params).
 		Where(sq.Eq{"id": p.Id}).ToSql()
 	if err != nil {

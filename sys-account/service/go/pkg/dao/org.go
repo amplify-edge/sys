@@ -72,14 +72,7 @@ func (o Org) CreateSQL() []string {
 }
 
 func orgToQueryParam(org *Org) (res coresvc.QueryParams, err error) {
-	jstring, err := json.Marshal(org)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(org, true)
 }
 
 func (a *AccountDB) orgQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
@@ -164,6 +157,7 @@ func (a *AccountDB) UpdateOrg(o *Org) error {
 		return err
 	}
 	a.log.Debugf("org update param: %v", filterParam)
+	delete(filterParam.Params, "id")
 	stmt, args, err := sq.Update(OrgTableName).SetMap(filterParam.Params).
 		Where(sq.Eq{"id": o.Id}).ToSql()
 	if err != nil {
@@ -181,5 +175,12 @@ func (a *AccountDB) DeleteOrg(id string) error {
 	if err != nil {
 		return err
 	}
-	return a.db.Exec(stmt, args...)
+	pstmt, pargs, err := sq.Delete(ProjectTableName).Where("org_id = ?", id).ToSql()
+	if err != nil {
+		return err
+	}
+	return a.db.BulkExec(map[string][]interface{}{
+		stmt:  args,
+		pstmt: pargs,
+	})
 }

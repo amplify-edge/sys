@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
@@ -72,21 +71,7 @@ func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 }
 
 func roleToQueryParam(acc *Role) (res coresvc.QueryParams, err error) {
-	log.Debugf("Convert role to query params")
-	jstring, err := json.Marshal(acc)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	for k, v := range params {
-		key := coresvc.ToSnakeCase(k)
-		val := v
-		delete(params, k)
-		params[key] = val
-	}
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(acc, true)
 }
 
 // CreateSQL will only be called once by sys-core see sys-core API.
@@ -188,6 +173,8 @@ func (a *AccountDB) UpdateRole(p *Role) error {
 	if err != nil {
 		return err
 	}
+	delete(filterParam.Params, "id")
+	delete(filterParam.Params, "account_id")
 	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).
 		Where(sq.Eq{"id": p.ID}).ToSql()
 	if err != nil {
