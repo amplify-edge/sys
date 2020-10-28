@@ -267,7 +267,7 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 	}
 	return &pkg.ResetPasswordResponse{
 		Success:                  true,
-		SuccessMsg:               "",
+		SuccessMsg:               "successfully reseted password",
 		ErrorReason:              "",
 		ResetPasswordRequestedAt: timestampNow(),
 	}, nil
