@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/genjidb/genji/document"
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
@@ -23,7 +22,6 @@ type Account struct {
 	ID                string                 `genji:"id"`
 	Email             string                 `genji:"email"`
 	Password          string                 `genji:"password"`
-	RoleId            string                 `genji:"role_id"`
 	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
 	Survey            map[string]interface{} `genji:"survey"`
 	CreatedAt         int64                  `genji:"created_at"`
@@ -36,7 +34,29 @@ type Account struct {
 
 func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account, error) {
 	accountId := utilities.NewID()
-	role := a.FromPkgRoleRequest(account.Role, accountId)
+	var roles []*Role
+	if account.Role != nil && len(account.Role) > 0 {
+		a.log.Debugf("Convert and getting roles")
+		for _, pkgRole := range account.Role {
+			role := a.FromPkgRoleRequest(pkgRole, accountId)
+			roles = append(roles, role)
+		}
+	} else {
+		roles = append(roles, &Role{
+			ID:        coresvc.NewID(),
+			AccountId: accountId,
+			Role:      int(pkg.GUEST),
+			ProjectId: "",
+			OrgId:     "",
+			CreatedAt: time.Now().UTC().Unix(),
+		})
+	}
+	for _, daoRole := range roles {
+		err := a.InsertRole(daoRole)
+		if err != nil {
+			return nil, err
+		}
+	}
 	fields := map[string]interface{}{}
 	survey := map[string]interface{}{}
 	if account.Fields != nil && account.Fields.Fields != nil {
@@ -55,13 +75,9 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account,
 		UpdatedAt:         account.UpdatedAt,
 		LastLogin:         account.LastLogin,
 		Disabled:          account.Disabled,
-		RoleId:            role.ID,
 		Verified:          account.Verified,
 	}
-	err := a.InsertRole(role)
-	if err != nil {
-		return nil, err
-	}
+
 	if err := a.InsertAccount(acc); err != nil {
 		return nil, err
 	}
@@ -69,10 +85,6 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account,
 }
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
-	role, err := a.FromPkgRole(account.Role, account.Id)
-	if err != nil {
-		return nil, err
-	}
 	return &Account{
 		ID:                account.Id,
 		Email:             account.Email,
@@ -83,12 +95,11 @@ func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
 		UpdatedAt:         account.UpdatedAt,
 		LastLogin:         account.LastLogin,
 		Disabled:          account.Disabled,
-		RoleId:            role.ID,
 		Verified:          account.Verified,
 	}, nil
 }
 
-func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
+func (a *Account) ToPkgAccount(roles []*pkg.UserRoles) (*pkg.Account, error) {
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
@@ -96,7 +107,7 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 		Id:        a.ID,
 		Email:     a.Email,
 		Password:  a.Password,
-		Role:      role,
+		Role:      roles,
 		CreatedAt: createdAt.Unix(),
 		UpdatedAt: updatedAt.Unix(),
 		LastLogin: lastLogin.Unix(),
@@ -108,20 +119,7 @@ func (a *Account) ToPkgAccount(role *pkg.UserRoles) (*pkg.Account, error) {
 }
 
 func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
-	jstring, err := json.Marshal(acc)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	for k, v := range params {
-		key := coresvc.ToSnakeCase(k)
-		val := v
-		delete(params, k)
-		params[key] = val
-	}
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(acc, true)
 }
 
 // CreateSQL will only be called once by sys-core see sys-core API.
@@ -211,6 +209,7 @@ func (a *AccountDB) UpdateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
+	delete(filterParams.Params, "id")
 	stmt, args, err := sq.Update(AccTableName).SetMap(filterParams.Params).
 		Where(sq.Eq{"id": acc.ID}).ToSql()
 	a.log.Debugf(
@@ -228,5 +227,12 @@ func (a *AccountDB) DeleteAccount(id string) error {
 	if err != nil {
 		return err
 	}
-	return a.db.Exec(stmt, args...)
+	rstmt, rargs, err := sq.Delete(RolesTableName).Where("account_id = ?", id).ToSql()
+	if err != nil {
+		return err
+	}
+	return a.db.BulkExec(map[string][]interface{}{
+		stmt:  args,
+		rstmt: rargs,
+	})
 }

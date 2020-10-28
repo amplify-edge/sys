@@ -62,7 +62,7 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 	var limit, cursor int64
 	orderBy := in.OrderBy
 	var err error
-	filter := &coresvc.QueryParams{Params: map[string]interface{}{}}
+	filter := &coresvc.QueryParams{Params: in.Filters}
 	if in.IsDescending {
 		orderBy += " DESC"
 	} else {

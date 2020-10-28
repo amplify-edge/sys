@@ -11,13 +11,14 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/sys-share v0.0.0-20201026115222-6198dd431a9b
+	github.com/getcouragenow/sys-share v0.0.0-20201026130736-575e968e4348
 	github.com/go-playground/validator v9.30.0+incompatible
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/improbable-eng/grpc-web v0.13.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0 // indirect
+	github.com/segmentio/encoding v0.2.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.6.1
@@ -30,3 +31,4 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
+replace github.com/getcouragenow/sys-share => ../sys-share/

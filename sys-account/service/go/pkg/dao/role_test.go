@@ -74,3 +74,11 @@ func testRolesUpdate(t *testing.T) {
 	})
 	assert.NoError(t, err)
 }
+
+func testRoleDelete(t *testing.T) {
+	t.Log("on deleting role / perm")
+	err = accdb.DeleteRole(role1ID)
+	assert.NoError(t, err)
+	_, err := accdb.GetRole(&coresvc.QueryParams{Params: map[string]interface{}{"id": role1ID}})
+	assert.Error(t, err)
+}

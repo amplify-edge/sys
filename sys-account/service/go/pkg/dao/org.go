@@ -21,6 +21,10 @@ type Org struct {
 	AccountId string `genji:"account_id" json:"account_id,omitempty"`
 }
 
+var (
+	orgUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", OrgTableName, OrgTableName)
+)
+
 func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, error) {
 	orgId := id
 	if orgId == "" {
@@ -63,19 +67,12 @@ func (o *Org) ToPkgOrg(projects []*pkg.Project) (*pkg.Org, error) {
 func (o Org) CreateSQL() []string {
 	fields := initFields(OrgColumns, OrgColumnsType)
 	// tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
-	tbl := coresvc.NewTable(OrgTableName, fields, []string{})
+	tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
 	return tbl.CreateTable()
 }
 
 func orgToQueryParam(org *Org) (res coresvc.QueryParams, err error) {
-	jstring, err := json.Marshal(org)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(org, true)
 }
 
 func (a *AccountDB) orgQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
@@ -160,6 +157,7 @@ func (a *AccountDB) UpdateOrg(o *Org) error {
 		return err
 	}
 	a.log.Debugf("org update param: %v", filterParam)
+	delete(filterParam.Params, "id")
 	stmt, args, err := sq.Update(OrgTableName).SetMap(filterParam.Params).
 		Where(sq.Eq{"id": o.Id}).ToSql()
 	if err != nil {
@@ -177,5 +175,12 @@ func (a *AccountDB) DeleteOrg(id string) error {
 	if err != nil {
 		return err
 	}
-	return a.db.Exec(stmt, args...)
+	pstmt, pargs, err := sq.Delete(ProjectTableName).Where("org_id = ?", id).ToSql()
+	if err != nil {
+		return err
+	}
+	return a.db.BulkExec(map[string][]interface{}{
+		stmt:  args,
+		pstmt: pargs,
+	})
 }

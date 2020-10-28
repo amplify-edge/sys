@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-const (
-	tablePrefix = "sys_accounts"
-	modName     = "accounts"
-)
-
 type AccountDB struct {
 	db  *coresvc.CoreDB
 	log *logrus.Logger

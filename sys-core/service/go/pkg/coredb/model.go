@@ -9,6 +9,7 @@ import (
 	"github.com/genjidb/genji/sql/query"
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/robfig/cron/v3"
+	"github.com/segmentio/encoding/json"
 	log "github.com/sirupsen/logrus"
 	"text/template"
 	"time"
@@ -77,8 +78,8 @@ func newGenjiStore(path, encKey string, keyRotationSchedule int) (*genji.DB, *ba
 }
 
 func createBadgerOpts(path, encKey string, keyRotationSchedule int) badger.Options {
-	return badger.DefaultOptions(path) //.
-		// WithEncryptionKey(helper.MD5(encKey))
+	return badger.DefaultOptions(path) // .
+	// WithEncryptionKey(helper.MD5(encKey))
 }
 
 const (
@@ -147,6 +148,39 @@ func (qp *QueryParams) ColumnsAndValues() ([]string, []interface{}) {
 		values = append(values, v)
 	}
 	return columns, values
+}
+
+func UnmarshalToMap(b []byte) (map[string]interface{}, error) {
+	m := map[string]interface{}{}
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func MarshalToBytes(any interface{}) ([]byte, error) {
+	return json.Marshal(&any)
+}
+
+func AnyToQueryParam(m interface{}, snakeCase bool) (res QueryParams, err error) {
+	jbytes, err := MarshalToBytes(&m)
+	if err != nil {
+		return QueryParams{}, err
+	}
+	params, err := UnmarshalToMap(jbytes)
+	if err != nil {
+		return QueryParams{}, err
+	}
+	if snakeCase {
+		for k, v := range params {
+			key := ToSnakeCase(k)
+			val := v
+			delete(params, k)
+			params[key] = val
+		}
+	}
+	res.Params = params
+	return res, err
 }
 
 func NewID() string {

@@ -29,7 +29,6 @@ var (
 			ID:       account0ID,
 			Email:    "2pac@example.com",
 			Password: "no_biggie",
-			RoleId:   role1ID,
 			Survey:   map[string]interface{}{},
 			UserDefinedFields: map[string]interface{}{
 				"City": "Compton",
@@ -43,7 +42,6 @@ var (
 			ID:       coresvc.NewID(),
 			Email:    "bigg@example.com",
 			Password: "two_packs",
-			RoleId:   role2ID,
 			Survey:   map[string]interface{}{},
 			UserDefinedFields: map[string]interface{}{
 				"City": "NY",
@@ -57,15 +55,14 @@ var (
 			ID:       coresvc.NewID(),
 			Email:    "shakur@example.com",
 			Password: "no_biggie",
-			RoleId:   role1ID,
 			Survey:   map[string]interface{}{},
 			UserDefinedFields: map[string]interface{}{
 				"City": "Compton LA",
 			},
-			CreatedAt: time.Now().UTC().Unix(),
-			UpdatedAt: time.Now().UTC().Unix(),
-			LastLogin: 0,
-			Disabled:  false,
+			CreatedAt:         time.Now().UTC().Unix(),
+			UpdatedAt:         time.Now().UTC().Unix(),
+			LastLogin:         0,
+			Disabled:          false,
 			VerificationToken: "blaharsoaiten",
 		},
 	}
@@ -110,6 +107,7 @@ func TestAll(t *testing.T) {
 	t.Run("Test Org Delete", testDeleteOrg)
 	t.Run("Test Account Delete", testDeleteAccounts)
 	t.Run("Test Project Delete", testProjDelete)
+	t.Run("Test Role Delete", testRoleDelete)
 }
 
 func testAccountInsert(t *testing.T) {

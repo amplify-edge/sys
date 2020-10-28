@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
@@ -25,10 +24,6 @@ type Role struct {
 	UpdatedAt int64  `genji:"updated_at"`
 }
 
-var (
-	rolesUniqueIndex = fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_account_id ON %s(account_id)`, RolesTableName, RolesTableName)
-)
-
 func (a *AccountDB) FromPkgRoleRequest(role *pkg.UserRoles, accountId string) *Role {
 	return &Role{
 		ID:        utilities.NewID(),
@@ -40,12 +35,16 @@ func (a *AccountDB) FromPkgRoleRequest(role *pkg.UserRoles, accountId string) *R
 	}
 }
 
-func (a *AccountDB) FromPkgRole(role *pkg.UserRoles, accountId string) (*Role, error) {
+func (a *AccountDB) FetchRoles(accountId string) ([]*Role, error) {
 	queryParam := &coresvc.QueryParams{Params: map[string]interface{}{
 		"account_id": accountId,
 	}}
 	a.log.Debugf("Role query param: %v", queryParam.Params)
-	return a.GetRole(queryParam)
+	listRoles, err := a.ListRole(queryParam)
+	if err != nil {
+		return nil, err
+	}
+	return listRoles, nil
 }
 
 func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
@@ -72,26 +71,13 @@ func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 }
 
 func roleToQueryParam(acc *Role) (res coresvc.QueryParams, err error) {
-	jstring, err := json.Marshal(acc)
-	if err != nil {
-		return coresvc.QueryParams{}, err
-	}
-	var params map[string]interface{}
-	err = json.Unmarshal(jstring, &params)
-	for k, v := range params {
-		key := coresvc.ToSnakeCase(k)
-		val := v
-		delete(params, k)
-		params[key] = val
-	}
-	res.Params = params
-	return res, err
+	return coresvc.AnyToQueryParam(acc, true)
 }
 
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (p Role) CreateSQL() []string {
 	fields := initFields(RolesColumns, RolesColumnsType)
-	tbl := coresvc.NewTable(RolesTableName, fields, []string{rolesUniqueIndex})
+	tbl := coresvc.NewTable(RolesTableName, fields, []string{})
 	return tbl.CreateTable()
 }
 
@@ -187,6 +173,8 @@ func (a *AccountDB) UpdateRole(p *Role) error {
 	if err != nil {
 		return err
 	}
+	delete(filterParam.Params, "id")
+	delete(filterParam.Params, "account_id")
 	stmt, args, err := sq.Update(RolesTableName).SetMap(filterParam.Params).
 		Where(sq.Eq{"id": p.ID}).ToSql()
 	if err != nil {
