@@ -2,6 +2,7 @@ package repo
 
 import (
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -20,13 +21,23 @@ type (
 	}
 )
 
-func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig) (*SysAccountRepo, error) {
+func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)
 		return nil, err
 	}
 	tokenCfg := sharedAuth.NewTokenConfig([]byte(cfg.SysAccountConfig.JWTConfig.Access.Secret), []byte(cfg.SysAccountConfig.JWTConfig.Refresh.Secret))
+	// Register Bus Dispatchers
+	repo := &SysAccountRepo{
+		store:                 accdb,
+		log:                   l,
+		tokenCfg:              tokenCfg,
+		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
+	}
+	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
+	bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)
+	bus.RegisterAction("onDeleteProject", repo.onDeleteProject)
 	return &SysAccountRepo{
 		store:                 accdb,
 		log:                   l,

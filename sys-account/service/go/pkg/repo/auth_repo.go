@@ -7,7 +7,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -59,28 +58,6 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 	}
 
 	return acc.ToPkgAccount(pkgRoles)
-}
-
-// DefaultInterceptor is default authN/authZ interceptor, validates only token correctness without performing any role specific authorization.
-func (ad *SysAccountRepo) DefaultInterceptor(ctx context.Context) (context.Context, error) {
-	methodName, ok := grpc.Method(ctx)
-	if ok {
-		ad.log.Infof("Method being called: %s", methodName)
-	}
-
-	// Simply returns the context if request are being made on unauthenticated service path / method.
-	for _, routes := range ad.unauthenticatedRoutes {
-		if routes == methodName {
-			return ctx, nil
-		}
-	}
-
-	claims, err := ad.ObtainAccessClaimsFromMetadata(ctx, true)
-	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "Request unauthenticated with error: %v", err)
-	}
-
-	return context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims), nil
 }
 
 // Register satisfies rpc.Register function on AuthService proto definition
@@ -313,17 +290,4 @@ func (ad *SysAccountRepo) RefreshAccessToken(ctx context.Context, in *pkg.Refres
 	return &pkg.RefreshAccessTokenResponse{
 		AccessToken: newAccessToken,
 	}, nil
-}
-
-// ObtainAccessClaimsFromMetadata obtains token claims from given context with gRPC metadata.
-func (ad *SysAccountRepo) ObtainAccessClaimsFromMetadata(ctx context.Context, isAccess bool) (claims sharedAuth.TokenClaims, err error) {
-	var authmeta string
-	if authmeta, err = sharedAuth.FromMetadata(ctx); err != nil {
-		return sharedAuth.TokenClaims{}, err
-	}
-
-	if claims, err = ad.tokenCfg.ParseTokenStringToClaim(authmeta, isAccess); err != nil {
-		return sharedAuth.TokenClaims{}, err
-	}
-	return claims, nil
 }
