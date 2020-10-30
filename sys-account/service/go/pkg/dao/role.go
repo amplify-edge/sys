@@ -15,7 +15,7 @@ import (
 )
 
 type Role struct {
-	ID        string `genji:"id"`
+	ID        string `genji:"id" coredb:"primary"`
 	AccountId string `genji:"account_id"`
 	Role      int    `genji:"role"`
 	ProjectId string `genji:"project_id"`
@@ -76,13 +76,13 @@ func roleToQueryParam(acc *Role) (res coresvc.QueryParams, err error) {
 
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (p Role) CreateSQL() []string {
-	fields := initFields(RolesColumns, RolesColumnsType)
+	fields := coresvc.GetStructTags(p)
 	tbl := coresvc.NewTable(RolesTableName, fields, []string{})
 	return tbl.CreateTable()
 }
 
 func (a *AccountDB) getRolesSelectStatements(filterParam *coresvc.QueryParams) (string, []interface{}, error) {
-	baseStmt := sq.Select(RolesColumns).From(RolesTableName)
+	baseStmt := sq.Select(a.roleColumns).From(RolesTableName)
 	if filterParam != nil && filterParam.Params != nil {
 		for k, v := range filterParam.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})

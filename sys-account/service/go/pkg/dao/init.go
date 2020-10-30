@@ -7,15 +7,24 @@ import (
 )
 
 type AccountDB struct {
-	db  *coresvc.CoreDB
-	log *logrus.Logger
+	db             *coresvc.CoreDB
+	log            *logrus.Entry
+	accountColumns string
+	roleColumns    string
+	orgColumns     string
+	projectColumns string
 }
 
-func NewAccountDB(db *coresvc.CoreDB) (*AccountDB, error) {
+func NewAccountDB(db *coresvc.CoreDB, l *logrus.Entry) (*AccountDB, error) {
+	accColumns := coresvc.GetStructColumns(Account{})
+	roleColumns := coresvc.GetStructColumns(Role{})
+	orgColumns := coresvc.GetStructColumns(Org{})
+	projectColumns := coresvc.GetStructColumns(Project{})
+
 	err := db.RegisterModels(map[string]coresvc.DbModel{
-		AccTableName: Account{},
-		RolesTableName: Role{},
-		OrgTableName: Org{},
+		AccTableName:     Account{},
+		RolesTableName:   Role{},
+		OrgTableName:     Org{},
 		ProjectTableName: Project{},
 	})
 	if err != nil {
@@ -24,8 +33,7 @@ func NewAccountDB(db *coresvc.CoreDB) (*AccountDB, error) {
 	if err := db.MakeSchema(); err != nil {
 		return nil, err
 	}
-	log := logrus.New()
-	return &AccountDB{db, log}, nil
+	return &AccountDB{db, l, accColumns, roleColumns, orgColumns, projectColumns}, nil
 }
 
 func (a *AccountDB) BuildSearchQuery(qs string) string {

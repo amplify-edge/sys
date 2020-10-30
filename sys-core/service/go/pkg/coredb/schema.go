@@ -30,3 +30,20 @@ func (c *CoreDB) MakeSchema() error {
 		return nil
 	})
 }
+
+
+/*
+  final String id;
+
+  final String prod;
+
+  final String refOrgId;
+
+  final String group;
+
+  final String name;
+
+  final String isTextBox;
+
+  final String description;
+ */

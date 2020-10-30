@@ -19,7 +19,7 @@ var (
 )
 
 type Account struct {
-	ID                string                 `genji:"id"`
+	ID                string                 `genji:"id" coredb:"primary"`
 	Email             string                 `genji:"email"`
 	Password          string                 `genji:"password"`
 	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
@@ -124,13 +124,13 @@ func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
 
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (a Account) CreateSQL() []string {
-	fields := initFields(AccColumns, AccColumnsType)
+	fields := coresvc.GetStructTags(a)
 	tbl := coresvc.NewTable(AccTableName, fields, []string{accountsUniqueIdx})
 	return tbl.CreateTable()
 }
 
 func (a *AccountDB) accountQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(AccColumns).From(AccTableName)
+	baseStmt := sq.Select(a.accountColumns).From(AccTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
