@@ -118,6 +118,7 @@ func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string
 	if len(projs) > 0 {
 		return projs, projs[len(projs)-1].CreatedAt, nil
 	}
+	res.Close()
 	return projs, 0, nil
 }
 

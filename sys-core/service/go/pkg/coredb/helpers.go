@@ -50,3 +50,4 @@ func GetStructColumns(someStruct interface{}) string {
 	}
 	return strings.Join(structCols, ", ")
 }
+

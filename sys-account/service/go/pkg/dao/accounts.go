@@ -172,6 +172,7 @@ func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy strin
 		accs = append(accs, &acc)
 		return nil
 	})
+	res.Close()
 	if err != nil {
 		return nil, 0, err
 	}

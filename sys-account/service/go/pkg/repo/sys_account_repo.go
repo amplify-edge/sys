@@ -36,8 +36,8 @@ func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, b
 		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
 	}
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
-	// bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)
-	// bus.RegisterAction("onDeleteProject", repo.onDeleteProject)
+	bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)
+	bus.RegisterAction("onDeleteProject", repo.onDeleteProject)
 	return &SysAccountRepo{
 		store:                 accdb,
 		log:                   l,

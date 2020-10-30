@@ -131,6 +131,7 @@ func (a *AccountDB) ListRole(filterParam *coresvc.QueryParams) ([]*Role, error) 
 		perms = append(perms, &perm)
 		return nil
 	})
+	res.Close()
 	if err != nil {
 		return nil, err
 	}

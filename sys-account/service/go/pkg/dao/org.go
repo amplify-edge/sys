@@ -125,6 +125,7 @@ func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, li
 	if err != nil {
 		return nil, 0, err
 	}
+	res.Close()
 	return orgs, orgs[len(orgs)-1].CreatedAt, nil
 }
 
