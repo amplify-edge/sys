@@ -131,7 +131,16 @@ func (ad *SysAccountRepo) DeleteOrg(ctx context.Context, in *pkg.IdRequest) (*em
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	err := ad.store.DeleteOrg(in.Id)
+	org, err := ad.GetOrg(ctx, &pkg.IdRequest{Id: in.Id})
+	if err != nil {
+		return nil, err
+	}
+	for _, proj := range org.Projects {
+		if _, err = ad.DeleteProject(ctx, &pkg.IdRequest{Id: proj.Id}); err != nil {
+			return nil, err
+		}
+	}
+	err = ad.store.DeleteOrg(in.Id)
 	if err != nil {
 		return nil, err
 	}

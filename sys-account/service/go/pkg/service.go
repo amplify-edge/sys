@@ -60,7 +60,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath str
 func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, error) {
 	cfg.logger.Infoln("Initializing Sys-Account Service")
 
-	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg)
+	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +76,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 			return nil, err
 		}
 	}
+
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
 		proxyService:        sysAccountProxy,

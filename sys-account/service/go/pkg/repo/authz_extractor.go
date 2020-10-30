@@ -22,7 +22,6 @@ func (ad *SysAccountRepo) GetTokenConfig() *sharedAuth.TokenConfig {
 }
 
 func (ad *SysAccountRepo) GetAuthenticatedRoutes() map[string]func(claims sharedAuth.TokenClaims) error {
-	// TODO: unimplemented
 	return nil
 }
 
