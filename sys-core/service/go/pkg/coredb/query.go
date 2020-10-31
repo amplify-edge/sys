@@ -60,3 +60,4 @@ func (c *CoreDB) BulkExec(stmtMap map[string][]interface{}) error {
 		return nil
 	})
 }
+

@@ -13,7 +13,7 @@ import (
 )
 
 type Org struct {
-	Id        string `genji:"id" json:"id,omitempty"`
+	Id        string `genji:"id" json:"id,omitempty" coredb:"primary"`
 	Name      string `genji:"name" json:"name,omitempty"`
 	LogoUrl   string `genji:"logo_url" json:"logo_url,omitempty"`
 	Contact   string `genji:"contact" json:"contact,omitempty"`
@@ -65,7 +65,7 @@ func (o *Org) ToPkgOrg(projects []*pkg.Project) (*pkg.Org, error) {
 }
 
 func (o Org) CreateSQL() []string {
-	fields := initFields(OrgColumns, OrgColumnsType)
+	fields := coresvc.GetStructTags(o)
 	// tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
 	tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
 	return tbl.CreateTable()
@@ -76,7 +76,7 @@ func orgToQueryParam(org *Org) (res coresvc.QueryParams, err error) {
 }
 
 func (a *AccountDB) orgQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(OrgColumns).From(OrgTableName)
+	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
@@ -125,6 +125,7 @@ func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, li
 	if err != nil {
 		return nil, 0, err
 	}
+	res.Close()
 	return orgs, orgs[len(orgs)-1].CreatedAt, nil
 }
 

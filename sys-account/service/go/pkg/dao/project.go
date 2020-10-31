@@ -13,7 +13,7 @@ import (
 )
 
 type Project struct {
-	Id        string `genji:"id"`
+	Id        string `genji:"id" coredb:"primary"`
 	Name      string `genji:"name"`
 	LogoUrl   string `genji:"logo_url"`
 	CreatedAt int64  `genji:"created_at"`
@@ -56,8 +56,7 @@ func (p *Project) ToPkgProject(org *pkg.Org) (*pkg.Project, error) {
 }
 
 func (p Project) CreateSQL() []string {
-	fields := initFields(ProjectColumns, ProjectColumnsType)
-	// tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
+	fields := coresvc.GetStructTags(p)
 	tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
 	return tbl.CreateTable()
 }
@@ -67,7 +66,7 @@ func projectToQueryParam(p *Project) (res coresvc.QueryParams, err error) {
 }
 
 func (a *AccountDB) projectQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(ProjectColumns).From(ProjectTableName)
+	baseStmt := sq.Select(a.projectColumns).From(ProjectTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
 			baseStmt = baseStmt.Where(sq.Eq{k: v})
@@ -119,6 +118,7 @@ func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string
 	if len(projs) > 0 {
 		return projs, projs[len(projs)-1].CreatedAt, nil
 	}
+	res.Close()
 	return projs, 0, nil
 }
 

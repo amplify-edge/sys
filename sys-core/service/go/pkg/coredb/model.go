@@ -78,8 +78,8 @@ func newGenjiStore(path, encKey string, keyRotationSchedule int) (*genji.DB, *ba
 }
 
 func createBadgerOpts(path, encKey string, keyRotationSchedule int) badger.Options {
-	return badger.DefaultOptions(path) // .
-	// WithEncryptionKey(helper.MD5(encKey))
+	return badger.DefaultOptions(path).
+		WithEncryptionKey(helper.MD5(encKey))
 }
 
 const (
@@ -129,11 +129,11 @@ type QueryResult struct {
 }
 
 type DocumentResult struct {
-	doc document.Document
+	Doc document.Document
 }
 
 func (d *DocumentResult) StructScan(dest interface{}) error {
-	return document.StructScan(d.doc, dest)
+	return document.StructScan(d.Doc, dest)
 }
 
 type QueryParams struct {

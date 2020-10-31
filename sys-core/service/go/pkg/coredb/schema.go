@@ -30,3 +30,5 @@ func (c *CoreDB) MakeSchema() error {
 		return nil
 	})
 }
+
+

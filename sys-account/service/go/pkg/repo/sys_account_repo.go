@@ -22,7 +22,7 @@ type (
 )
 
 func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus) (*SysAccountRepo, error) {
-	accdb, err := dao.NewAccountDB(db)
+	accdb, err := dao.NewAccountDB(db, l)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)
 		return nil, err
