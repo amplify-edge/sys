@@ -45,7 +45,7 @@ EXAMPLE_CERT_DIR = ./certs
 EXAMPLE_CERT_SERVER_NAME ?= $(EXAMPLE_CERT_DIR)/local.pem
 EXAMPLE_CERT_SERVER_KEY ?= $(EXAMPLE_CERT_DIR)/local.key.pem
 EXAMPLE_CA_ROOT_NAME ?= $(EXAMPLE_CERT_DIR)/rootca.pem
-MKCERT_CA_ROOT_DIR = $(shell mkcert -CAROOT)
+MKCERT_CA_ROOT_DIR = $(shell mkcert -CAROOT | printf %q)
 
 EXAMPLE_ACCOUNT_ID = ???
 EXAMPLE_VERIFY_TOKEN = ???
@@ -121,9 +121,7 @@ this-config-delete:
 
 this-gen-cert: this-gen-cert-delete
 	@mkdir -p $(EXAMPLE_CERT_DIR)
-	@mkcert -cert-file certs/local.pem -key-file certs/local.key.pem localhost 127.0.0.1 ::1
-	@cp $(MKCERT_CA_ROOT_DIR)/rootCA.pem $(EXAMPLE_CA_ROOT_NAME)
-	mkcert -install
+	/usr/bin/env bash -c ./scripts/certgen.sh
 
 this-gen-cert-delete:
 	#mkcert -uninstall
