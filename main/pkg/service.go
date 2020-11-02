@@ -65,10 +65,11 @@ type SysServiceConfig struct {
 	port   int
 	logger *logrus.Entry
 	cfg    *serviceConfigs
+	bus    *corebus.CoreBus
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
-func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int) (*SysServiceConfig, error) {
+func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int, bus *corebus.CoreBus) (*SysServiceConfig, error) {
 	var err error
 	var csc *corecfg.SysCoreConfig
 	if db == nil {
@@ -84,7 +85,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 			return nil, err
 		}
 	}
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, corebus.NewCoreBus())
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, bus)
 	if err != nil {
 		return nil, err
 	}

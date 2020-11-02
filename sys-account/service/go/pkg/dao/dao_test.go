@@ -81,7 +81,7 @@ func init() {
 		log.Fatalf("error creating CoreDB: %v", err)
 	}
 	log.Debug("MakeSchema testing .....")
-	accdb, err = dao.NewAccountDB(testDb)
+	accdb, err = dao.NewAccountDB(testDb, logger)
 	if err != nil {
 		log.Fatal(err)
 	}
