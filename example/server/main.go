@@ -2,6 +2,7 @@ package main
 
 import (
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -49,7 +50,8 @@ func main() {
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// configs
 		sspaths := pkg.NewServiceConfigPaths(coreCfgPath, accountCfgPath)
-		sscfg, err := pkg.NewSysServiceConfig(logger, nil, sspaths, defaultPort)
+		cbus := corebus.NewCoreBus()
+		sscfg, err := pkg.NewSysServiceConfig(logger, nil, sspaths, defaultPort, cbus)
 		if err != nil {
 			logger.Fatalf(errSourcingConfig, err)
 		}

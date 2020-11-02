@@ -15,11 +15,6 @@ import (
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
-const (
-	errInvalidConfig = "error validating provided config, %s is %s"
-	errRunningServer = "error running grpc & grpc web service: %v"
-)
-
 type SysAccountService struct {
 	authInterceptorFunc func(context.Context) (context.Context, error)
 	proxyService        *pkg.SysAccountProxyService
