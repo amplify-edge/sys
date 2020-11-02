@@ -18,6 +18,7 @@ type (
 		// the auth interceptor would not intercept tokens on these routes
 		// (format is: /ProtoServiceName/ProtoServiceMethod, example: /proto.AuthService/Login).
 		unauthenticatedRoutes []string
+		bus                   *corebus.CoreBus
 	}
 )
 
@@ -34,14 +35,10 @@ func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, b
 		log:                   l,
 		tokenCfg:              tokenCfg,
 		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
+		bus:                   bus,
 	}
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
 	bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)
 	bus.RegisterAction("onDeleteProject", repo.onDeleteProject)
-	return &SysAccountRepo{
-		store:                 accdb,
-		log:                   l,
-		tokenCfg:              tokenCfg,
-		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
-	}, nil
+	return repo, nil
 }

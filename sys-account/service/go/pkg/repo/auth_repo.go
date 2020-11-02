@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -159,6 +160,29 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 	}
 	req.LastLogin = timestampNow()
 	if err := ad.store.UpdateAccount(req); err != nil {
+		return nil, err
+	}
+	errChan := make(chan error, 1)
+	go func() {
+		payloadBytes, err := coredb.MarshalToBytes(map[string]interface{}{"accessToken": tokenPairs.AccessToken, "refreshToken": tokenPairs.RefreshToken})
+		if err != nil {
+			ad.log.Debugf("error while marshal onLoginCreateInterceptor payload: %v", err)
+			errChan <- err
+		}
+		resp, err := ad.bus.Broadcast(ctx, &corepkg.EventRequest{
+			EventName:   "onLoginCreateInterceptor",
+			Initiator:   "sys-account",
+			UserId:      u.Id,
+			JsonPayload: payloadBytes,
+		})
+		if err != nil {
+			ad.log.Debugf("error while calling onLoginCreateInterceptor: %v", err)
+			errChan <- err
+		}
+		ad.log.Debugf("event response: %v", string(resp.Reply))
+	}()
+	close(errChan)
+	if err = <-errChan; err != nil {
 		return nil, err
 	}
 	return &pkg.LoginResponse{
