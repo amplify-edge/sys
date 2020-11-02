@@ -11,7 +11,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/sys-share v0.0.0-20201026130736-575e968e4348
+	github.com/getcouragenow/sys-share v0.0.0-20201102093809-ef0efd93ad36
 	github.com/go-playground/validator v9.30.0+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
@@ -32,5 +32,3 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v2 v2.3.0
 )
-
-replace github.com/getcouragenow/sys-share => ../sys-share/
