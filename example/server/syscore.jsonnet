@@ -11,7 +11,10 @@ local cfg = {
        },
        cron: coreTpl.CoreCron {
            backupSchedule: "@daily",
-       }
+       },
+       mailConfig: coreTpl.CoreMail {
+           sendgridApiKey: loadVar(prefixName="SYS_CORE", env="SENDGRID_API_KEY").val,
+       },
     }
 };
 

@@ -17,6 +17,7 @@ import (
 	accountpkg "github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 )
 
 const (
@@ -36,6 +37,7 @@ type SysServices struct {
 	sysAccountSvc *accountpkg.SysAccountService
 	dbSvc         *coresvc.SysCoreProxyService
 	busSvc        *coresvc.SysBusProxyService
+	mailSvc       *coresvc.SysEmailProxyService
 }
 
 type ServiceConfigPaths struct {
@@ -61,31 +63,32 @@ type serviceConfigs struct {
 // load up and provide sub grpc services.
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
-	store  *coredb.CoreDB // sys-core
-	port   int
-	logger *logrus.Entry
-	cfg    *serviceConfigs
-	bus    *corebus.CoreBus
+	store   *coredb.CoreDB // sys-core
+	port    int
+	logger  *logrus.Entry
+	cfg     *serviceConfigs
+	bus     *corebus.CoreBus
+	mailSvc *coremail.MailSvc
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
 func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int, bus *corebus.CoreBus) (*SysServiceConfig, error) {
 	var err error
-	var csc *corecfg.SysCoreConfig
+	csc, err := corecfg.NewConfig(servicePaths.core)
+	if err != nil {
+		return nil, err
+	}
 	if db == nil {
 		if servicePaths.core == "" {
 			return nil, fmt.Errorf("error neither db nor sys-core config path is provided")
-		}
-		csc, err = corecfg.NewConfig(servicePaths.core)
-		if err != nil {
-			return nil, err
 		}
 		db, err = coredb.NewCoreDB(l, csc, nil)
 		if err != nil {
 			return nil, err
 		}
 	}
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, bus)
+	mailSvc := coremail.NewMailSvc(&csc.MailConfig, l)
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, bus, mailSvc)
 	if err != nil {
 		return nil, err
 	}
@@ -93,10 +96,11 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 	// configs
 
 	ssc := &SysServiceConfig{
-		logger: l,
-		store:  db,
-		port:   port,
-		cfg:    &serviceConfigs{account: newSysAccountCfg, core: csc},
+		logger:  l,
+		store:   db,
+		port:    port,
+		cfg:     &serviceConfigs{account: newSysAccountCfg, core: csc},
+		mailSvc: mailSvc,
 	}
 	return ssc, nil
 }
@@ -117,6 +121,12 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	}
 
 	// ========================================================================
+	// Sys-Mail
+	// ========================================================================
+
+	mailService := coresvc.NewSysMailProxyService(cfg.mailSvc)
+
+	// ========================================================================
 
 	return &SysServices{
 		logger:        cfg.logger,
@@ -124,6 +134,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		sysAccountSvc: sysAccountSvc,
 		dbSvc:         sysAccountSvc.DbProxyService,
 		busSvc:        sysAccountSvc.BusProxyService,
+		mailSvc:       mailService,
 	}, nil
 }
 

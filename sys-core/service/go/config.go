@@ -14,9 +14,13 @@ const (
 
 type SysCoreConfig struct {
 	SysCoreConfig commonCfg.Config `yaml:"sysCoreConfig" mapstructure:"sysCoreConfig"`
+	MailConfig    MailConfig       `yaml:"mailConfig" mapstructure:"mailConfig"`
 }
 
 func (s *SysCoreConfig) Validate() error {
+	if err := s.MailConfig.validate(); err != nil {
+		return err
+	}
 	return s.SysCoreConfig.Validate()
 }
 
@@ -26,6 +30,23 @@ type DbConfig struct {
 	RotationDuration int    `json:"rotationDuration" yaml:"rotationDuration" mapstructure:"rotationDuration"`
 	DbDir            string `json:"dbDir" yaml:"dbDir" mapstructure:"dbDir"`
 	DeletePrevious   bool   `json:"deletePrevious" yaml:"deletePrevious" mapstructure:"deletePrevious"`
+}
+
+type MailConfig struct {
+	SendgridApiKey string `json:"sendgridApiKey,omitempty" yaml:"sendgridApiKey"`
+	SenderName     string `json:"senderName,omitempty" yaml:"senderName"`
+	SenderMail     string `json:"senderMail,omitempty" yaml:"senderMail"`
+	ProductName    string `json:"productName,omitempty" yaml:"productName"`
+	LogoUrl        string `json:"logoUrl,omitempty" yaml:"logoUrl"`
+	Copyright      string `json:"copyright,omitempty" yaml:"copyright"`
+	TroubleContact string `json:"troubleContact,omitempty" yaml:"troubleContact"`
+}
+
+func (m *MailConfig) validate() error {
+	if m.SendgridApiKey == "" {
+		return fmt.Errorf(errParsingConfig, "no sendgrid api key provided")
+	}
+	return nil
 }
 
 func NewConfig(filepath string) (*SysCoreConfig, error) {

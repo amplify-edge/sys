@@ -103,10 +103,32 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 		return nil, err
 	}
 
+	errChan := make(chan error, 1)
+	go func() {
+		mailContent, err := ad.mailVerifyAccountTpl(acc.Email, vtoken)
+		if err != nil {
+			errChan <- err
+		}
+		resp, err := ad.mail.SendMail(ctx, &corepkg.EmailRequest{
+			Subject: fmt.Sprintf("Verify Account %s Register", acc.Email),
+			Recipients: map[string]string{
+				acc.Email: acc.Email,
+			},
+			Content: mailContent,
+		})
+		if err != nil {
+			errChan <- err
+		}
+		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
+	}()
+	if err = <-errChan; err != nil {
+		return nil, err
+	}
+	close(errChan)
+
 	return &pkg.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
-		VerifyToken: vtoken,
 		ErrorReason: "",
 		TempUserId:  acc.ID,
 	}, nil
@@ -200,7 +222,7 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 	// TODO @gutterbacon: this is where we should send an email to verify the user
 	// We could also add this to audit log trail.
 	// for now this method is a stub.
-	vtoken, _, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
+	vtoken, acc, err := ad.genVerificationToken(&coredb.QueryParams{Params: map[string]interface{}{"email": in.Email}})
 	if err != nil {
 		return &pkg.ForgotPasswordResponse{
 			Success:                   false,
@@ -210,6 +232,29 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 		}, err
 	}
 	ad.log.Debugf("Generated Verification Token for ForgotPassword: %s", vtoken)
+	errChan := make(chan error, 1)
+	go func() {
+		mailContent, err := ad.mailForgotPassword(acc.Email, vtoken)
+		if err != nil {
+			errChan <- err
+		}
+		resp, err := ad.mail.SendMail(ctx, &corepkg.EmailRequest{
+			Subject: fmt.Sprintf("Reset %s Password", acc.Email),
+			Recipients: map[string]string{
+				acc.Email: acc.Email,
+			},
+			Content: mailContent,
+		})
+		if err != nil {
+			errChan <- err
+		}
+		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
+	}()
+	if err = <-errChan; err != nil {
+		return nil, err
+	}
+	close(errChan)
+
 	return &pkg.ForgotPasswordResponse{
 		Success:                   true,
 		SuccessMsg:                "Reset password token sent",
@@ -268,7 +313,7 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 	}
 	return &pkg.ResetPasswordResponse{
 		Success:                  true,
-		SuccessMsg:               "successfully reseted password",
+		SuccessMsg:               "successfully reset password",
 		ErrorReason:              "",
 		ResetPasswordRequestedAt: timestampNow(),
 	}, nil

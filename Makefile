@@ -34,7 +34,8 @@ EXAMPLE_SUPER_EMAIL = superadmin@getcouragenow.org
 EXAMPLE_SUPER_PASSWORD = superadmin
 EXAMPLE_NEW_SUPER_EMAIL = gutterbacon@getcouragenow.org
 EXAMPLE_NEW_SUPER_PASSWORD = SmokeOnTheWater70s
-EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY = yYz8Xjb4HBn4irGQpBWulURjQk2XmwES
+EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY   = yYz8Xjb4HBn4irGQpBWulURjQk2XmwES
+EXAMPLE_SYS_CORE_SENDGRID_API_KEY = SOME_SENDGRID_API_KEY
 EXAMPLE_SYS_CORE_CFG_PATH = ./config/syscore.yml
 EXAMPLE_SYS_ACCOUNT_CFG_PATH = ./config/sysaccount.yml
 EXAMPLE_SERVER_DIR = ./example/server
@@ -66,6 +67,8 @@ this-print:
 	@echo EXAMPLE_VERIFY_TOKEN: ???
 	@echo EXAMPLE_ORG_ID: ???
 	@echo EXAMPLE_PROJECT_ID: ???
+	@echo EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY: $(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY)
+	@echo EXAMPLE_SYS_CORE_SENDGRID_API_KEY: $(EXAMPLE_SYS_CORE_SENDGRID_API_KEY)
 	@echo
 
 this-print-end:
@@ -107,7 +110,9 @@ this-config-gen: this-config-delete this-config-dep
 	@echo Generating Config
 	@mkdir -p ./config
 	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysaccount.jsonnet > $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
-	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet -V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_CORE_CFG_PATH)
+	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet \
+		-V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) \
+		-V SYS_CORE_SENDGRID_API_KEY=$(EXAMPLE_SYS_CORE_SENDGRID_API_KEY) > $(EXAMPLE_SYS_CORE_CFG_PATH)
 
 this-config-dep:
 	cd $(EXAMPLE_SERVER_DIR) && jb install && jb update

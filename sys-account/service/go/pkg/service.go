@@ -3,6 +3,7 @@ package accountpkg
 import (
 	"context"
 	"fmt"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -13,6 +14,7 @@ import (
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/repo"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 )
 
 type SysAccountService struct {
@@ -26,10 +28,11 @@ type SysAccountServiceConfig struct {
 	store  *coredb.CoreDB
 	Cfg    *service.SysAccountConfig
 	bus    *sharedBus.CoreBus
+	mail   *coremail.MailSvc
 	logger *logrus.Entry
 }
 
-func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
+func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath string, bus *sharedBus.CoreBus, mailSvc *mailer.MailSvc) (*SysAccountServiceConfig, error) {
 	var err error
 	if db == nil {
 		return nil, fmt.Errorf("error creating sys account service: database is null")
@@ -48,6 +51,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath str
 		Cfg:    accountCfg,
 		bus:    bus,
 		logger: sysAccountLogger,
+		mail:   mailSvc,
 	}
 	return sasc, nil
 }
@@ -55,7 +59,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, db *coredb.CoreDB, filepath str
 func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, error) {
 	cfg.logger.Infoln("Initializing Sys-Account Service")
 
-	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus)
+	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail)
 	if err != nil {
 		return nil, err
 	}
