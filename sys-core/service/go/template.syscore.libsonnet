@@ -18,6 +18,6 @@ local dbcfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/service
     sysCoreConfig: {
         db: self.CoreDB,
         cron: self.CoreCron,
-        mailConfig: self.CoreMail,
-    }
+    },
+    mailConfig: self.CoreMail,
 }

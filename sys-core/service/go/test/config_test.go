@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"fmt"
+	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,15 +21,15 @@ func testNewSysCoreConfig(t *testing.T) {
 	sysCoreCfg, err = corecfg.NewConfig(fmt.Sprintf("%s/%s", baseTestDir, "valid.yml"))
 	assert.NoError(t, err)
 	expected := &corecfg.SysCoreConfig{
-		SysCoreConfig: corecfg.Config{
-			DbConfig: corecfg.DbConfig{
+		SysCoreConfig: commonCfg.Config{
+			DbConfig: commonCfg.DbConfig{
 				Name:             "getcouragenow.db",
 				EncryptKey:       "testkey!@",
 				RotationDuration: 1,
 				DbDir:            "./db",
 				DeletePrevious:   true,
 			},
-			CronConfig: corecfg.CronConfig{
+			CronConfig: commonCfg.CronConfig{
 				BackupSchedule: "@daily",
 				RotateSchedule: "@every 3s",
 				BackupDir:      "./db/backups",

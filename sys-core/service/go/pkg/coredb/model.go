@@ -8,13 +8,13 @@ import (
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/genjidb/genji/sql/query"
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
 	"github.com/robfig/cron/v3"
 	"github.com/segmentio/encoding/json"
 	log "github.com/sirupsen/logrus"
 	"text/template"
 	"time"
 
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/internal/helper"
 )
 
@@ -28,7 +28,7 @@ type CoreDB struct {
 	store     *genji.DB
 	engine    *badgerengine.Engine
 	models    map[string]DbModel
-	config    *corecfg.SysCoreConfig
+	config    *commonCfg.Config
 	crony     *cron.Cron
 	cronFuncs map[string]func()
 }
@@ -37,10 +37,10 @@ type CoreDB struct {
 // if one wants to use one or the other.
 // or if internally will use the underlying badger DB engine to create Stream for example
 // for backup, restore, or anything
-func NewCoreDB(l *log.Entry, cfg *corecfg.SysCoreConfig, cronFuncs map[string]func()) (*CoreDB, error) {
-	dbName := cfg.SysCoreConfig.DbConfig.Name
-	dbPath := cfg.SysCoreConfig.DbConfig.DbDir + "/" + dbName
-	store, engine, err := newGenjiStore(dbPath, cfg.SysCoreConfig.DbConfig.EncryptKey, cfg.SysCoreConfig.DbConfig.RotationDuration)
+func NewCoreDB(l *log.Entry, cfg *commonCfg.Config, cronFuncs map[string]func()) (*CoreDB, error) {
+	dbName := cfg.DbConfig.Name
+	dbPath := cfg.DbConfig.DbDir + "/" + dbName
+	store, engine, err := newGenjiStore(dbPath, cfg.DbConfig.EncryptKey, cfg.DbConfig.RotationDuration)
 	if err != nil {
 		return nil, err
 	}

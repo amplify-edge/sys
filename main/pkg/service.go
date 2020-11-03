@@ -82,7 +82,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 		if servicePaths.core == "" {
 			return nil, fmt.Errorf("error neither db nor sys-core config path is provided")
 		}
-		db, err = coredb.NewCoreDB(l, csc, nil)
+		db, err = coredb.NewCoreDB(l, &csc.SysCoreConfig, nil)
 		if err != nil {
 			return nil, err
 		}
