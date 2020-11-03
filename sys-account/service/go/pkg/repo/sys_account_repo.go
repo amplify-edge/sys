@@ -6,6 +6,7 @@ import (
 	"github.com/getcouragenow/sys/sys-account/service/go"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 	l "github.com/sirupsen/logrus"
 )
 
@@ -19,10 +20,11 @@ type (
 		// (format is: /ProtoServiceName/ProtoServiceMethod, example: /proto.AuthService/Login).
 		unauthenticatedRoutes []string
 		bus                   *corebus.CoreBus
+		mail                  *coremail.MailSvc
 	}
 )
 
-func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus) (*SysAccountRepo, error) {
+func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db, l)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)
@@ -36,6 +38,7 @@ func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, b
 		tokenCfg:              tokenCfg,
 		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
 		bus:                   bus,
+		mail:                  mail,
 	}
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
 	bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)

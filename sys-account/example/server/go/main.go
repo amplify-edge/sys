@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 	"net/http"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -60,12 +61,14 @@ func main() {
 			log.Fatalf(errSourcingConfig, err)
 		}
 
-		gdb, err := coredb.NewCoreDB(log, csc, nil)
+		gdb, err := coredb.NewCoreDB(log, &csc.SysCoreConfig, nil)
 		if err != nil {
 			log.Fatalf(errSourcingConfig, err)
 		}
 
-		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath, corebus.NewCoreBus())
+		newMailSvc := mailer.NewMailSvc(&csc.MailConfig, log)
+
+		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath, corebus.NewCoreBus(), newMailSvc)
 		if err != nil {
 			log.Fatalf("error creating config: %v", err)
 		}

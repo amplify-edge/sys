@@ -25,7 +25,7 @@ func (c *CoreDB) scheduleBackup() error {
 
 	// default backup schedule
 	errChan := make(chan error, 1)
-	_, err := crony.AddFunc(c.config.SysCoreConfig.CronConfig.BackupSchedule, func() {
+	_, err := crony.AddFunc(c.config.CronConfig.BackupSchedule, func() {
 		_, err := c.backup()
 		if err != nil {
 			errChan <- err
@@ -113,7 +113,7 @@ func (c *CoreDB) ListBackup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.
 }
 
 func (c *CoreDB) listBackups() ([]string, error) {
-	backupDir := c.config.SysCoreConfig.CronConfig.BackupDir
+	backupDir := c.config.CronConfig.BackupDir
 	c.logger.Info("backup dir: " + backupDir)
 	files, err := ioutil.ReadDir(backupDir)
 	if err != nil {
@@ -129,8 +129,8 @@ func (c *CoreDB) listBackups() ([]string, error) {
 func (c *CoreDB) createBackupFile() (io.WriteCloser, string, error) {
 	currentTime := time.Now().Format("200601021859")
 	backupFileName := filepath.Join(
-		c.config.SysCoreConfig.CronConfig.BackupDir,
-		fmt.Sprintf(backupFormat, c.config.SysCoreConfig.DbConfig.Name, currentTime),
+		c.config.CronConfig.BackupDir,
+		fmt.Sprintf(backupFormat, c.config.DbConfig.Name, currentTime),
 	)
 	f, err := createFile(backupFileName)
 	if err != nil {
