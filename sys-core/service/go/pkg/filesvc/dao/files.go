@@ -3,15 +3,15 @@ package dao
 import (
 	"crypto/sha512"
 	"fmt"
-
 	sq "github.com/Masterminds/squirrel"
+	"github.com/genjidb/genji/document"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 type File struct {
 	Id        string `json:"id" genji:"id" coredb:"primary"`
 	Binary    []byte `json:"binary" genji:"binary"`
-	Sum       string `json:"sum" genji:"sum"`
+	Sum       []byte `json:"sum" genji:"sum"`
 	ForeignId string `json:"foreignId" genji:"foreign_id"`
 	CreatedAt int64  `json:"createdAt" genji:"created_at"`
 	UpdatedAt int64  `json:"updatedAt" genji:"updated_at"`
@@ -46,29 +46,38 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string) 
 		newFile := &File{
 			Id:        coredb.NewID(),
 			Binary:    fileByte,
-			Sum:       string(sum[:]),
+			Sum:       sum[:],
 			ForeignId: foreignId,
 			CreatedAt: coredb.CurrentTimestamp(),
 			UpdatedAt: coredb.CurrentTimestamp(),
 		}
-		stmt := fmt.Sprintf("INSERT INTO %s(%s) VALUES(?, ?, ?, ?, ?, ?)", FilesTableName, f.fileColumns)
-		args := []interface{}{newFile.Id, newFile.Binary, newFile.Sum, newFile.ForeignId, newFile.CreatedAt, newFile.UpdatedAt}
+		filterParam, err := coredb.AnyToQueryParam(newFile, true)
+		if err != nil {
+			return nil, err
+		}
+		columns, values := filterParam.ColumnsAndValues()
+		if len(columns) != len(values) {
+			return nil, fmt.Errorf("error: length mismatch: cols: %d, vals: %d", len(columns), len(values))
+		}
+		stmt, args, err := sq.Insert(FilesTableName).
+			Columns(columns...).
+			Values(values...).
+			ToSql()
 		if err = f.db.Exec(stmt, args...); err != nil {
 			return nil, err
 		}
 		qp.Params["id"] = newFile.Id
-
 	} else {
 		file, err := f.Get(&qp)
 		if err != nil {
 			return nil, err
 		}
 		sum := sha512.Sum512(fileByte)
-		if file.Sum == string(sum[:]) {
+		if string(file.Sum) == string(sum[:]) {
 			return file, nil
 		}
 		file.UpdatedAt = coredb.CurrentTimestamp()
-		file.Sum = string(sum[:])
+		file.Sum = sum[:]
 		file.Binary = fileByte
 		filterParam, err := coredb.AnyToQueryParam(file, true)
 		if err != nil {
@@ -118,7 +127,7 @@ func (f *FileDB) fileExists(query *coredb.QueryParams) (bool, error) {
 }
 
 func (f *FileDB) Get(query *coredb.QueryParams) (*File, error) {
-	baseStmt := sq.Select().From(FilesTableName)
+	baseStmt := sq.Select(f.fileColumns).From(FilesTableName)
 	for k, v := range query.Params {
 		baseStmt = baseStmt.Where(sq.Eq{k: v})
 	}
@@ -126,13 +135,13 @@ func (f *FileDB) Get(query *coredb.QueryParams) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
-	var nf *File
+	var nf File
 	doc, err := f.db.QueryOne(stmt, args...)
 	if err != nil {
 		return nil, err
 	}
-	if err = doc.StructScan(nf); err != nil {
+	if err = document.StructScan(doc.Doc, &nf); err != nil {
 		return nil, err
 	}
-	return nf, nil
+	return &nf, nil
 }

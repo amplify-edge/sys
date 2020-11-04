@@ -1,16 +1,20 @@
 package dao_test
 
 import (
+	"crypto/sha512"
+	b64 "encoding/base64"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"testing"
 )
 
 var (
-	fdb    *dao.FileDB
-	err    error
+	fdb *dao.FileDB
+	err error
 
 	project1ID = coredb.NewID()
 	org1ID     = coredb.NewID()
@@ -42,4 +46,27 @@ func TestAll(t *testing.T) {
 }
 
 func testUpsertFile(t *testing.T) {
+	f, err := ioutil.ReadFile("./testdata/59567750.png")
+	require.NoError(t, err)
+	destByte := b64.StdEncoding.EncodeToString(f)
+	fileSum := sha512.Sum512(f)
+
+	t.Log("inserting new file")
+	daoDestByte, err := b64.StdEncoding.DecodeString(destByte)
+	require.NoError(t, err)
+	avatarFile, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID)
+	require.NoError(t, err)
+	require.Equal(t, fileSum[:], avatarFile.Sum)
+
+	t.Log("upserting existing file")
+	f, err = ioutil.ReadFile("./testdata/footer-gopher.jpg")
+	require.NoError(t, err)
+	fileSum = sha512.Sum512(f)
+	destByte = b64.StdEncoding.EncodeToString(f)
+	daoDestByte, err = b64.StdEncoding.DecodeString(destByte)
+	require.NoError(t, err)
+	avatarUpdated, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID)
+	require.NoError(t, err)
+	require.Equal(t, fileSum[:], avatarFile.Sum)
+	require.Equal(t, avatarUpdated.Id, avatarFile.Id)
 }
