@@ -62,9 +62,9 @@ func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
 		chunk := req.GetChunk()
 		chunkSize := len(chunk)
 		fileSize += chunkSize
-		// if fileSize > maxFileSize {
-		// 	return status.Error(codes.Aborted, "file size exceeds maximum file size, aborting")
-		// }
+		if fileSize > maxFileSize {
+			return status.Error(codes.Aborted, "file size exceeds maximum file size, aborting")
+		}
 		_, err = fileBuf.Write(chunk)
 		if err != nil {
 			return status.Errorf(codes.Internal, "cannot write file data to buffer: %v", err)
