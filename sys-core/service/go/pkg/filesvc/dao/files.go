@@ -39,10 +39,10 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string) 
 		return nil, fmt.Errorf("no foreign id")
 	}
 	qp.Params["foreign_id"] = foreignId
+	sum := sha512.Sum512(fileByte)
 	// check existence
 	exists, err := f.fileExists(&qp)
 	if err != nil || !exists {
-		sum := sha512.Sum512(fileByte)
 		newFile := &File{
 			Id:        coredb.NewID(),
 			Binary:    fileByte,
@@ -72,14 +72,18 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string) 
 		if err != nil {
 			return nil, err
 		}
-		sum := sha512.Sum512(fileByte)
 		if string(file.Sum) == string(sum[:]) {
 			return file, nil
 		}
-		file.UpdatedAt = coredb.CurrentTimestamp()
-		file.Sum = sum[:]
-		file.Binary = fileByte
-		filterParam, err := coredb.AnyToQueryParam(file, true)
+		updFile := &File{
+			Id:        file.Id,
+			Binary:    fileByte,
+			Sum:       sum[:],
+			ForeignId: file.ForeignId,
+			CreatedAt: file.CreatedAt,
+			UpdatedAt: coredb.CurrentTimestamp(),
+		}
+		filterParam, err := coredb.AnyToQueryParam(updFile, true)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +124,7 @@ func (f *FileDB) fileExists(query *coredb.QueryParams) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if c.V.(int) != 0 {
+	if c.V.(int64) == 0 {
 		return false, nil
 	}
 	return true, nil

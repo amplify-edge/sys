@@ -3,6 +3,7 @@ package dao_test
 import (
 	"crypto/sha512"
 	b64 "encoding/base64"
+	"encoding/binary"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
@@ -61,12 +62,12 @@ func testUpsertFile(t *testing.T) {
 	t.Log("upserting existing file")
 	f, err = ioutil.ReadFile("./testdata/footer-gopher.jpg")
 	require.NoError(t, err)
-	fileSum = sha512.Sum512(f)
 	destByte = b64.StdEncoding.EncodeToString(f)
 	daoDestByte, err = b64.StdEncoding.DecodeString(destByte)
 	require.NoError(t, err)
 	avatarUpdated, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID)
 	require.NoError(t, err)
-	require.Equal(t, fileSum[:], avatarFile.Sum)
+	t.Logf("Binary size: %d", binary.Size(avatarUpdated.Binary))
 	require.Equal(t, avatarUpdated.Id, avatarFile.Id)
+	ioutil.WriteFile("./testdata/updatedAvatar.jpg", avatarUpdated.Binary, 0644)
 }

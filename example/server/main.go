@@ -18,6 +18,7 @@ const (
 	defaultPort                 = 8888
 	defaultSysCoreConfigPath    = "./config/syscore.yml"
 	defaultSysAccountConfigPath = "./config/sysaccount.yml"
+	defaultSysFileConfigPath    = "./config/sysfile.yml"
 	defaultLocalTLSCert         = "./certs/local.pem"
 	defaultLocalTLSKey          = "./certs/local.key.pem"
 	defaultTLSEnabled           = true
@@ -27,6 +28,7 @@ var (
 	rootCmd          = &cobra.Command{Use: "sys-ex-server"}
 	coreCfgPath      string
 	accountCfgPath   string
+	fileCfgPath      string
 	mainexPort       int
 	tlsEnabled       bool
 	localTlsCertPath string
@@ -37,6 +39,7 @@ func main() {
 	// persistent flags
 	rootCmd.PersistentFlags().StringVarP(&coreCfgPath, "sys-core-config-path", "c", defaultSysCoreConfigPath, "sys-core config path to use")
 	rootCmd.PersistentFlags().StringVarP(&accountCfgPath, "sys-account-config-path", "a", defaultSysAccountConfigPath, "sys-account config path to use")
+	rootCmd.PersistentFlags().StringVarP(&fileCfgPath, "sys-file-config-path", "f", defaultSysFileConfigPath, "sys-account config path to use")
 	rootCmd.PersistentFlags().StringVarP(&localTlsCertPath, "tls-cert-path", "t", defaultLocalTLSCert, "local TLS Cert path")
 	rootCmd.PersistentFlags().StringVarP(&localTlsKeyPath, "tls-key-path", "k", defaultLocalTLSKey, "local TLS Key path")
 	rootCmd.PersistentFlags().IntVarP(&mainexPort, "port", "p", defaultPort, "grpc port to run")
@@ -49,7 +52,7 @@ func main() {
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// configs
-		sspaths := pkg.NewServiceConfigPaths(coreCfgPath, accountCfgPath)
+		sspaths := pkg.NewServiceConfigPaths(coreCfgPath, fileCfgPath, accountCfgPath)
 		cbus := corebus.NewCoreBus()
 		sscfg, err := pkg.NewSysServiceConfig(logger, nil, sspaths, defaultPort, cbus)
 		if err != nil {

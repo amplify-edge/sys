@@ -1,23 +1,30 @@
 package filesvc
 
 import (
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+
+	sharedPkg "github.com/getcouragenow/sys-share/sys-core/service/go/rpc/v2"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/repo"
 )
 
-type SysFileSvc struct {
-	store *dao.FileDB
-	log   *logrus.Entry
+type SysFileService struct {
+	repo *repo.SysFileRepo
 }
 
-func NewSysFileSvc(db *coredb.CoreDB, log *logrus.Entry) (*SysFileSvc, error) {
-	store, err := dao.NewFileDB(db, log)
+func NewSysFileService(cfg *FileServiceConfig, l *logrus.Entry) (*SysFileService, error) {
+	db, err := coredb.NewCoreDB(l, &cfg.DBConfig, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &SysFileSvc{
-		store: store,
-		log:   log,
-	}, nil
+	fileRepo, err := repo.NewSysFileRepo(db, l)
+	if err != nil {
+		return nil, err
+	}
+	return &SysFileService{repo: fileRepo}, nil
+}
+
+func (s *SysFileService) RegisterService(srv *grpc.Server) {
+	sharedPkg.RegisterFileServiceService(srv, sharedPkg.NewFileServiceService(s.repo))
 }
