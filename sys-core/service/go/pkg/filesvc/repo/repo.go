@@ -99,7 +99,7 @@ func (s *SysFileRepo) Download(req *corepkg.FileDownloadRequest, stream corepkg.
 		partSize := int(math.Min(downloadChunkSize, float64(fileSize-(i*downloadChunkSize))))
 		s.log.Debugf("Sending partsize of size %d to client", partSize)
 		chunk := f.Binary[offset:(offset + partSize)]
-		if err = stream.Send(&corepkg.FileDownloadResponse{Chunk: chunk}); err != nil {
+		if err = stream.Send(&corepkg.FileDownloadResponse{Chunk: chunk, TotalSize: int64(fileSize)}); err != nil {
 			return status.Errorf(codes.Internal, "cannot send chunk to be downloaded: %v", err)
 		}
 	}
