@@ -13,6 +13,7 @@ type File struct {
 	Binary    []byte `json:"binary" genji:"binary"`
 	Sum       []byte `json:"sum" genji:"sum"`
 	ForeignId string `json:"foreignId" genji:"foreign_id"`
+	IsDir     bool   `json:"isDir" genji:"is_dir"`
 	CreatedAt int64  `json:"createdAt" genji:"created_at"`
 	UpdatedAt int64  `json:"updatedAt" genji:"updated_at"`
 }
@@ -27,7 +28,7 @@ func (f File) CreateSQL() []string {
 	return tbl.CreateTable()
 }
 
-func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string) (*File, error) {
+func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string, isDir bool) (*File, error) {
 	if len(fileByte) == 0 {
 		return nil, fmt.Errorf("empty file")
 	}
@@ -50,6 +51,9 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string) 
 			ForeignId: foreignId,
 			CreatedAt: coredb.CurrentTimestamp(),
 			UpdatedAt: coredb.CurrentTimestamp(),
+		}
+		if isDir {
+			newFile.IsDir = true
 		}
 		filterParam, err := coredb.AnyToQueryParam(newFile, true)
 		if err != nil {
@@ -82,6 +86,9 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string) 
 			ForeignId: file.ForeignId,
 			CreatedAt: file.CreatedAt,
 			UpdatedAt: coredb.CurrentTimestamp(),
+		}
+		if isDir {
+			updFile.IsDir = true
 		}
 		filterParam, err := coredb.AnyToQueryParam(updFile, true)
 		if err != nil {

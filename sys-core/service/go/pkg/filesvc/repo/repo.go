@@ -49,6 +49,7 @@ func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
 	if req.GetFileInfo().GetSysAccountProjectId() != "" {
 		foreignId = req.GetFileInfo().SysAccountProjectId
 	}
+	isDir := req.GetFileInfo().GetIsDir()
 	fileBuf := bytes.Buffer{}
 	fileSize := 0
 	for {
@@ -71,7 +72,7 @@ func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
 		}
 	}
 
-	f, err := s.store.UpsertFromUploadRequest(fileBuf.Bytes(), "", foreignId)
+	f, err := s.store.UpsertFromUploadRequest(fileBuf.Bytes(), "", foreignId, isDir)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot save file to db: %v", err)
 	}
@@ -99,7 +100,11 @@ func (s *SysFileRepo) Download(req *corepkg.FileDownloadRequest, stream corepkg.
 		partSize := int(math.Min(downloadChunkSize, float64(fileSize-(i*downloadChunkSize))))
 		s.log.Debugf("Sending partsize of size %d to client", partSize)
 		chunk := f.Binary[offset:(offset + partSize)]
-		if err = stream.Send(&corepkg.FileDownloadResponse{Chunk: chunk, TotalSize: int64(fileSize)}); err != nil {
+		resp := &corepkg.FileDownloadResponse{Chunk: chunk, TotalSize: int64(fileSize)}
+		if f.IsDir {
+			resp.IsCompressed = true
+		}
+		if err = stream.Send(resp); err != nil {
 			return status.Errorf(codes.Internal, "cannot send chunk to be downloaded: %v", err)
 		}
 	}

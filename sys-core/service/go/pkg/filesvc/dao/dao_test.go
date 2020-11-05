@@ -55,7 +55,7 @@ func testUpsertFile(t *testing.T) {
 	t.Log("inserting new file")
 	daoDestByte, err := b64.StdEncoding.DecodeString(destByte)
 	require.NoError(t, err)
-	avatarFile, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID)
+	avatarFile, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID, false)
 	require.NoError(t, err)
 	require.Equal(t, fileSum[:], avatarFile.Sum)
 
@@ -65,7 +65,7 @@ func testUpsertFile(t *testing.T) {
 	destByte = b64.StdEncoding.EncodeToString(f)
 	daoDestByte, err = b64.StdEncoding.DecodeString(destByte)
 	require.NoError(t, err)
-	avatarUpdated, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID)
+	avatarUpdated, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID, false)
 	require.NoError(t, err)
 	t.Logf("Binary size: %d", binary.Size(avatarUpdated.Binary))
 	require.Equal(t, avatarUpdated.Id, avatarFile.Id)
