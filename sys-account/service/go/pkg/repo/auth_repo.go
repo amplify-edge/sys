@@ -107,7 +107,9 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	go func() {
 		mailContent, err := ad.mailVerifyAccountTpl(acc.Email, vtoken)
 		if err != nil {
+			ad.log.Debugf("cannot create verify account email: %v", err)
 			errChan <- err
+			return
 		}
 		resp, err := ad.mail.SendMail(ctx, &corepkg.EmailRequest{
 			Subject: fmt.Sprintf("Verify Account %s Register", acc.Email),
@@ -117,12 +119,15 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			Content: mailContent,
 		})
 		if err != nil {
+			ad.log.Debugf("cannot send verify account email: %v", err)
 			errChan <- err
+			return
 		}
 		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
 	}()
 	if err = <-errChan; err != nil {
-		return nil, err
+		ad.log.Errorf("Cannot send email: %v", err)
+		// return nil, err
 	}
 	close(errChan)
 
@@ -190,6 +195,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		if err != nil {
 			ad.log.Debugf("error while marshal onLoginCreateInterceptor payload: %v", err)
 			errChan <- err
+			return
 		}
 		resp, err := ad.bus.Broadcast(ctx, &corepkg.EventRequest{
 			EventName:   "onLoginCreateInterceptor",
@@ -200,12 +206,13 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		if err != nil {
 			ad.log.Debugf("error while calling onLoginCreateInterceptor: %v", err)
 			errChan <- err
+			return
 		}
 		ad.log.Debugf("event response: %v", string(resp.Reply))
 	}()
-	close(errChan)
 	if err = <-errChan; err != nil {
-		return nil, err
+		ad.log.Errorf("cannot call onLoginCreateInterceptor event: %v", err)
+		// return nil, err
 	}
 	return &pkg.LoginResponse{
 		Success:      true,
@@ -237,6 +244,7 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 		mailContent, err := ad.mailForgotPassword(acc.Email, vtoken)
 		if err != nil {
 			errChan <- err
+			return
 		}
 		resp, err := ad.mail.SendMail(ctx, &corepkg.EmailRequest{
 			Subject: fmt.Sprintf("Reset %s Password", acc.Email),
@@ -247,11 +255,13 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 		})
 		if err != nil {
 			errChan <- err
+			return
 		}
 		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
 	}()
 	if err = <-errChan; err != nil {
-		return nil, err
+		ad.log.Errorf("Cannot send email: %v", err)
+		// return nil, err
 	}
 	close(errChan)
 

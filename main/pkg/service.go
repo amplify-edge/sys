@@ -17,6 +17,7 @@ import (
 	accountpkg "github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	corefilecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
 	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 )
 
@@ -38,16 +39,19 @@ type SysServices struct {
 	dbSvc         *coresvc.SysCoreProxyService
 	busSvc        *coresvc.SysBusProxyService
 	mailSvc       *coresvc.SysEmailProxyService
+	fileSvc       *corefilecfg.SysFileService
 }
 
 type ServiceConfigPaths struct {
 	core    string
+	file    string
 	account string
 }
 
-func NewServiceConfigPaths(core, account string) *ServiceConfigPaths {
+func NewServiceConfigPaths(core, file, account string) *ServiceConfigPaths {
 	return &ServiceConfigPaths{
 		core:    core,
+		file:    file,
 		account: account,
 	}
 }
@@ -56,6 +60,7 @@ func NewServiceConfigPaths(core, account string) *ServiceConfigPaths {
 type serviceConfigs struct {
 	account *accountpkg.SysAccountServiceConfig
 	core    *corecfg.SysCoreConfig
+	file    *corefilecfg.FileServiceConfig
 }
 
 // SysServiceConfig contains all the configuration
@@ -93,13 +98,17 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 		return nil, err
 	}
 
-	// configs
+	// file
+	fsc, err := corefilecfg.NewConfig(servicePaths.file)
+	if err != nil {
+		return nil, err
+	}
 
 	ssc := &SysServiceConfig{
 		logger:  l,
 		store:   db,
 		port:    port,
-		cfg:     &serviceConfigs{account: newSysAccountCfg, core: csc},
+		cfg:     &serviceConfigs{account: newSysAccountCfg, core: csc, file: fsc},
 		mailSvc: mailSvc,
 	}
 	return ssc, nil
@@ -127,6 +136,14 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	mailService := coresvc.NewSysMailProxyService(cfg.mailSvc)
 
 	// ========================================================================
+	// Sys-File
+	// ========================================================================
+	fileSvc, err := corefilecfg.NewSysFileService(cfg.cfg.file, cfg.logger)
+	if err != nil {
+		return nil, err
+	}
+
+	// ========================================================================
 
 	return &SysServices{
 		logger:        cfg.logger,
@@ -135,6 +152,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		dbSvc:         sysAccountSvc.DbProxyService,
 		busSvc:        sysAccountSvc.BusProxyService,
 		mailSvc:       mailService,
+		fileSvc:       fileSvc,
 	}, nil
 }
 
@@ -167,6 +185,8 @@ func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.sysAccountSvc.RegisterServices(srv)
 	s.dbSvc.RegisterSvc(srv)
 	s.busSvc.RegisterSvc(srv)
+	s.mailSvc.RegisterSvc(srv)
+	s.fileSvc.RegisterService(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {

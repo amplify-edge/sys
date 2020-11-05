@@ -23,7 +23,7 @@ func getStructTags(model interface{}) map[string]string {
 			fieldMap[genjiTag] = "BOOL"
 		case "map[string]interface {}":
 			fieldMap[genjiTag] = "TEXT"
-		case "[]byte":
+		case "[]byte", "[]uint8":
 			fieldMap[genjiTag] = "BLOB"
 		case "[]string", "[]int", "[]int32", "[]int64", "[]uint", "[]uint32", "[]uint64", "[]float64", "[]float32", "[]float", "[]double":
 			fieldMap[genjiTag] = "ARRAY"

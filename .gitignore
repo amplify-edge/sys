@@ -25,3 +25,5 @@ db
 /.srl
 /certs/
 /.token
+/sys-core/service/go/pkg/filesvc/dao/testdata/updatedAvatar.jpg
+testdata

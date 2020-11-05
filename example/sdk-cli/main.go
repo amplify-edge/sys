@@ -18,7 +18,9 @@ func main() {
 	// load up sdk cli
 	coreProxyCli := corepkg.NewSysCoreProxyClient()
 	busProxyCli := corepkg.NewSysBusProxyClient()
-	rootCmd.AddCommand(fake.SysAccountBench(), coreProxyCli.CobraCommand(), busProxyCli.CobraCommand())
+	mailProxyCli := corepkg.NewSysMailProxyClient()
+	fileProxyCli := corepkg.NewFileServiceClientCommand()
+	rootCmd.AddCommand(fake.SysAccountBench(), coreProxyCli.CobraCommand(), busProxyCli.CobraCommand(), mailProxyCli.CobraCommand(), fileProxyCli)
 
 	// starts proxy
 	if err := rootCmd.Execute(); err != nil {

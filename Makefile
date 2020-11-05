@@ -36,6 +36,8 @@ EXAMPLE_NEW_SUPER_EMAIL = gutterbacon@getcouragenow.org
 EXAMPLE_NEW_SUPER_PASSWORD = SmokeOnTheWater70s
 EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY   = yYz8Xjb4HBn4irGQpBWulURjQk2XmwES
 EXAMPLE_SYS_CORE_SENDGRID_API_KEY = SOME_SENDGRID_API_KEY
+EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY   = A9bhbid5ODrKQVvd9MY17P5MZ
+EXAMPLE_SYS_FILE_CFG_PATH = ./config/sysfile.yml
 EXAMPLE_SYS_CORE_CFG_PATH = ./config/syscore.yml
 EXAMPLE_SYS_ACCOUNT_CFG_PATH = ./config/sysaccount.yml
 EXAMPLE_SERVER_DIR = ./example/server
@@ -113,6 +115,8 @@ this-config-gen: this-config-delete this-config-dep
 	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet \
 		-V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) \
 		-V SYS_CORE_SENDGRID_API_KEY=$(EXAMPLE_SYS_CORE_SENDGRID_API_KEY) > $(EXAMPLE_SYS_CORE_CFG_PATH)
+	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysfile.jsonnet \
+		-V SYS_FILE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_FILE_CFG_PATH)
 
 this-config-dep:
 	cd $(EXAMPLE_SERVER_DIR) && jb install && jb update
