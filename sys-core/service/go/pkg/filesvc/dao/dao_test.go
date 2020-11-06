@@ -57,7 +57,7 @@ func testUpsertFile(t *testing.T) {
 	require.NoError(t, err)
 	avatarFile, err := fdb.UpsertFromUploadRequest(daoDestByte, "", account1ID, false)
 	require.NoError(t, err)
-	require.Equal(t, fileSum[:], avatarFile.Sum)
+	require.Equal(t, fileSum[:], avatarFile.ShaHash)
 
 	t.Log("upserting existing file")
 	f, err = ioutil.ReadFile("./testdata/footer-gopher.jpg")

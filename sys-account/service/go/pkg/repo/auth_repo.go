@@ -124,6 +124,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			return
 		}
 		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
+		return
 	}()
 	if err = <-errChan; err != nil {
 		ad.log.Errorf("Cannot send email: %v", err)

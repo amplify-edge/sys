@@ -9,26 +9,26 @@ import (
 )
 
 type File struct {
-	Id        string `json:"id" genji:"id" coredb:"primary"`
-	Binary    []byte `json:"binary" genji:"binary"`
-	Sum       []byte `json:"sum" genji:"sum"`
-	ForeignId string `json:"foreignId" genji:"foreign_id"`
-	IsDir     bool   `json:"isDir" genji:"is_dir"`
-	CreatedAt int64  `json:"createdAt" genji:"created_at"`
-	UpdatedAt int64  `json:"updatedAt" genji:"updated_at"`
+	Id         string `json:"id" genji:"id" coredb:"primary"`
+	Binary     []byte `json:"binary" genji:"binary"`
+	ShaHash    []byte `json:"shaHash" genji:"sha_hash"`
+	ResourceId string `json:"resourceId" genji:"resource_id"`
+	IsDir      bool   `json:"isDir" genji:"is_dir"`
+	CreatedAt  int64  `json:"createdAt" genji:"created_at"`
+	UpdatedAt  int64  `json:"updatedAt" genji:"updated_at"`
 }
 
-var (
-	filesUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_foreign_id ON %s(foreign_id)", FilesTableName, FilesTableName)
-)
+// var (
+// 	filesUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_resource_id ON %s(resource_id)", FilesTableName, FilesTableName)
+// )
 
 func (f File) CreateSQL() []string {
 	fields := coredb.GetStructTags(f)
-	tbl := coredb.NewTable(FilesTableName, fields, []string{filesUniqueIdx})
+	tbl := coredb.NewTable(FilesTableName, fields, []string{})
 	return tbl.CreateTable()
 }
 
-func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string, isDir bool) (*File, error) {
+func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, resourceId string, isDir bool) (*File, error) {
 	if len(fileByte) == 0 {
 		return nil, fmt.Errorf("empty file")
 	}
@@ -36,21 +36,21 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string, 
 	if id != "" {
 		qp.Params["id"] = id
 	}
-	if foreignId == "" {
-		return nil, fmt.Errorf("no foreign id")
+	if resourceId == "" {
+		return nil, fmt.Errorf("no resource id")
 	}
-	qp.Params["foreign_id"] = foreignId
-	sum := sha512.Sum512(fileByte)
+	qp.Params["resource_id"] = resourceId
+	shaHash := sha512.Sum512(fileByte)
 	// check existence
 	exists, err := f.fileExists(&qp)
 	if err != nil || !exists {
 		newFile := &File{
-			Id:        coredb.NewID(),
-			Binary:    fileByte,
-			Sum:       sum[:],
-			ForeignId: foreignId,
-			CreatedAt: coredb.CurrentTimestamp(),
-			UpdatedAt: coredb.CurrentTimestamp(),
+			Id:         coredb.NewID(),
+			Binary:     fileByte,
+			ShaHash:    shaHash[:],
+			ResourceId: resourceId,
+			CreatedAt:  coredb.CurrentTimestamp(),
+			UpdatedAt:  coredb.CurrentTimestamp(),
 		}
 		if isDir {
 			newFile.IsDir = true
@@ -76,16 +76,16 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string, 
 		if err != nil {
 			return nil, err
 		}
-		if string(file.Sum) == string(sum[:]) {
+		if string(file.ShaHash) == string(shaHash[:]) {
 			return file, nil
 		}
 		updFile := &File{
-			Id:        file.Id,
-			Binary:    fileByte,
-			Sum:       sum[:],
-			ForeignId: file.ForeignId,
-			CreatedAt: file.CreatedAt,
-			UpdatedAt: coredb.CurrentTimestamp(),
+			Id:         file.Id,
+			Binary:     fileByte,
+			ShaHash:    shaHash[:],
+			ResourceId: file.ResourceId,
+			CreatedAt:  file.CreatedAt,
+			UpdatedAt:  coredb.CurrentTimestamp(),
 		}
 		if isDir {
 			updFile.IsDir = true
@@ -95,7 +95,7 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, foreignId string, 
 			return nil, err
 		}
 		delete(filterParam.Params, "id")
-		delete(filterParam.Params, "foreign_id")
+		delete(filterParam.Params, "resource_id")
 		stmt, args, err := sq.Update(FilesTableName).SetMap(filterParam.Params).Where(sq.Eq{"id": file.Id}).ToSql()
 		if err != nil {
 			return nil, err

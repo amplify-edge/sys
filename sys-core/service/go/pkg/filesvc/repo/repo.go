@@ -84,7 +84,7 @@ func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
 	if err = stream.SendAndClose(resp); err != nil {
 		return status.Errorf(codes.Internal, "cannot encode upload resp: %v", err)
 	}
-	s.log.Debugf("Saved file, id: %s, sum: %v, size: %d", f.Id, f.Sum, fileSize)
+	s.log.Debugf("Saved file, id: %s, sum: %v, size: %d", f.Id, f.ShaHash, fileSize)
 	return nil
 }
 
