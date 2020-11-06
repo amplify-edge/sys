@@ -36,7 +36,11 @@ func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, err
 		}
 		pkgRoles = append(pkgRoles, pkgRole)
 	}
-	return acc.ToPkgAccount(pkgRoles)
+	avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
+	if err != nil {
+		return nil, err
+	}
+	return acc.ToPkgAccount(pkgRoles, avatar.Binary)
 }
 
 func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, orderBy string, limit, cursor int64) ([]*pkg.Account, *int64, error) {
@@ -61,7 +65,11 @@ func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, order
 			}
 			pkgRoles = append(pkgRoles, pkgRole)
 		}
-		account, err := acc.ToPkgAccount(pkgRoles)
+		avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
+		if err != nil {
+			return nil, nil, err
+		}
+		account, err := acc.ToPkgAccount(pkgRoles, avatar.Binary)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -77,4 +85,3 @@ func (ad *SysAccountRepo) getCursor(currentCursor string) (int64, error) {
 		return 0, nil
 	}
 }
-

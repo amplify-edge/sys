@@ -1,8 +1,9 @@
 package dao_test
 
 import (
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"testing"
+
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/stretchr/testify/assert"
 
@@ -12,20 +13,20 @@ import (
 var (
 	orgs = []*dao.Org{
 		{
-			Id:        org1ID,
-			Name:      "Org 1",
-			LogoUrl:   "https://avatars3.githubusercontent.com/u/59567775?s=200&v=4",
-			Contact:   "contact@example.com",
-			CreatedAt: 1603520049,
-			AccountId: account0ID,
+			Id:             org1ID,
+			Name:           "Org 1",
+			LogoResourceId: "https://avatars3.githubusercontent.com/u/59567775?s=200&v=4",
+			Contact:        "contact@example.com",
+			CreatedAt:      1603520049,
+			AccountId:      account0ID,
 		},
 		{
-			Id:        org2ID,
-			Name:      "Org 2",
-			LogoUrl:   "https://avatars3.githubusercontent.com/u/59567775?s=200&v=4",
-			Contact:   "contact2@example.com",
-			CreatedAt: 1603520780,
-			AccountId: account0ID,
+			Id:             org2ID,
+			Name:           "Org 2",
+			LogoResourceId: "https://avatars3.githubusercontent.com/u/59567775?s=200&v=3",
+			Contact:        "contact2@example.com",
+			CreatedAt:      1603520780,
+			AccountId:      account0ID,
 		},
 	}
 )

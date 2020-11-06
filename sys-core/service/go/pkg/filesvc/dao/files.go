@@ -11,20 +11,20 @@ import (
 type File struct {
 	Id         string `json:"id" genji:"id" coredb:"primary"`
 	Binary     []byte `json:"binary" genji:"binary"`
-	ShaHash    []byte `json:"shaHash" genji:"sha_hash"`
-	ResourceId string `json:"resourceId" genji:"resource_id"`
-	IsDir      bool   `json:"isDir" genji:"is_dir"`
-	CreatedAt  int64  `json:"createdAt" genji:"created_at"`
-	UpdatedAt  int64  `json:"updatedAt" genji:"updated_at"`
+	ShaHash    []byte `json:"sha_hash" genji:"sha_hash"`
+	ResourceId string `json:"resource_id" genji:"resource_id"`
+	IsDir      bool   `json:"is_dir" genji:"is_dir"`
+	CreatedAt  int64  `json:"created_at" genji:"created_at"`
+	UpdatedAt  int64  `json:"updated_at" genji:"updated_at"`
 }
 
-// var (
-// 	filesUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_resource_id ON %s(resource_id)", FilesTableName, FilesTableName)
-// )
+var (
+	filesUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_resource_id ON %s(resource_id)", FilesTableName, FilesTableName)
+)
 
 func (f File) CreateSQL() []string {
 	fields := coredb.GetStructTags(f)
-	tbl := coredb.NewTable(FilesTableName, fields, []string{})
+	tbl := coredb.NewTable(FilesTableName, fields, []string{filesUniqueIdx})
 	return tbl.CreateTable()
 }
 

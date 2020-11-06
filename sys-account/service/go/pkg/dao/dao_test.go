@@ -1,11 +1,9 @@
 package dao_test
 
 import (
-	"testing"
-	"time"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
@@ -24,43 +22,35 @@ var (
 	proj2ID    = coresvc.NewID()
 	proj3ID    = coresvc.NewID()
 	account0ID = coresvc.NewID()
+	now        = coresvc.CurrentTimestamp()
 	accs       = []dao.Account{
 		{
-			ID:       account0ID,
-			Email:    "2pac@example.com",
-			Password: "no_biggie",
-			Survey:   map[string]interface{}{},
-			UserDefinedFields: map[string]interface{}{
-				"City": "Compton",
-			},
-			CreatedAt: time.Now().UTC().Unix(),
-			UpdatedAt: time.Now().UTC().Unix(),
-			LastLogin: 0,
-			Disabled:  false,
+			ID:               account0ID,
+			Email:            "2pac@example.com",
+			Password:         "no_biggie",
+			CreatedAt:        now,
+			UpdatedAt:        now,
+			AvatarResourceId: "https://avatars3.githubusercontent.com/u/59567775?s=200&v=4",
+			LastLogin:        0,
+			Disabled:         false,
 		},
 		{
-			ID:       coresvc.NewID(),
-			Email:    "bigg@example.com",
-			Password: "two_packs",
-			Survey:   map[string]interface{}{},
-			UserDefinedFields: map[string]interface{}{
-				"City": "NY",
-			},
-			CreatedAt: time.Now().UTC().Unix(),
-			UpdatedAt: time.Now().UTC().Unix(),
-			LastLogin: 0,
-			Disabled:  false,
+			ID:               coresvc.NewID(),
+			Email:            "bigg@example.com",
+			Password:         "two_packs",
+			CreatedAt:        now,
+			UpdatedAt:        now,
+			AvatarResourceId: "https://avatars3.githubusercontent.com/u/59567775?s=200&v=3",
+			LastLogin:        0,
+			Disabled:         false,
 		},
 		{
-			ID:       coresvc.NewID(),
-			Email:    "shakur@example.com",
-			Password: "no_biggie",
-			Survey:   map[string]interface{}{},
-			UserDefinedFields: map[string]interface{}{
-				"City": "Compton LA",
-			},
-			CreatedAt:         time.Now().UTC().Unix(),
-			UpdatedAt:         time.Now().UTC().Unix(),
+			ID:                coresvc.NewID(),
+			Email:             "shakur@example.com",
+			Password:          "no_biggie",
+			AvatarResourceId:  "https://avatars3.githubusercontent.com/u/59567775?s=300&v=4",
+			CreatedAt:         now,
+			UpdatedAt:         now,
 			LastLogin:         0,
 			Disabled:          false,
 			VerificationToken: "blaharsoaiten",
@@ -76,7 +66,7 @@ func init() {
 	}
 	logger := log.New().WithField("test", "sys-account")
 	logger.Level = log.DebugLevel
-	testDb, err = coresvc.NewCoreDB(logger, csc, nil)
+	testDb, err = coresvc.NewCoreDB(logger, &csc.SysCoreConfig, nil)
 	if err != nil {
 		log.Fatalf("error creating CoreDB: %v", err)
 	}

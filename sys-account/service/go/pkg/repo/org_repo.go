@@ -17,6 +17,12 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
+	logo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
+	if err != nil {
+		return nil, err
+	}
+	// this is the key
+	in.LogoFilepath = logo.ResourceId
 	req, err := ad.store.FromPkgOrgRequest(in, "")
 	if err != nil {
 		ad.log.Debugf("unable to convert org request to dao object: %v", err)
@@ -32,34 +38,55 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 		ad.log.Debugf("unable to get new org from db: %v", err)
 		return nil, err
 	}
-	return org.ToPkgOrg(nil)
+	logoFile, err := ad.frepo.DownloadFile("", logo.ResourceId)
+	if err != nil {
+		return nil, err
+	}
+	return org.ToPkgOrg(nil, logoFile.Binary)
 }
 
 func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
-	projects, _, err := ad.store.ListProject(&coresvc.QueryParams{Params: map[string]interface{}{"org_id": org.Id}},
-		"name ASC", dao.DefaultLimit, 0)
+	orgLogo, err := ad.frepo.DownloadFile("", org.LogoResourceId)
+	if err != nil {
+		return nil, err
+	}
+	projects, _, err := ad.store.ListProject(
+		&coresvc.QueryParams{Params: map[string]interface{}{"org_id": org.Id}},
+		"name ASC", dao.DefaultLimit, 0,
+	)
 	if err != nil {
 		if err.Error() == "document not found" {
-			return org.ToPkgOrg(nil)
+			return org.ToPkgOrg(nil, orgLogo.Binary)
 		}
 		return nil, err
 	}
 	var pkgProjects []*pkg.Project
 	for _, p := range projects {
-		proj, err := p.ToPkgProject(nil)
+		projectLogo, err := ad.frepo.DownloadFile("", p.LogoResourceId)
+		if err != nil {
+			return nil, err
+		}
+		proj, err := p.ToPkgProject(nil, projectLogo.Binary)
 		if err != nil {
 			return nil, err
 		}
 		pkgProjects = append(pkgProjects, proj)
 	}
-	return org.ToPkgOrg(pkgProjects)
+	return org.ToPkgOrg(pkgProjects, orgLogo.Binary)
 }
 
 func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *pkg.IdRequest) (*pkg.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot get org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	params := map[string]interface{}{}
+	if in.Id != "" {
+		params["id"] = in.Id
+	}
+	if in.Name != "" {
+		params["name"] = in.Name
+	}
+	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: params})
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +139,12 @@ func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgUpdateReques
 	if in.Name != "" {
 		org.Name = in.Name
 	}
-	if in.LogoUrl != "" {
-		org.LogoUrl = in.LogoUrl
+	if in.LogoFilepath != "" && len(in.LogoUploadBytes) != 0 {
+		updatedLogo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
+		if err != nil {
+			return nil, err
+		}
+		org.LogoResourceId = updatedLogo.ResourceId
 	}
 	if in.Contact != "" {
 		org.Contact = in.Contact

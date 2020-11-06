@@ -188,7 +188,7 @@ func NewID() string {
 }
 
 func CurrentTimestamp() int64 {
-	return time.Now().UTC().Unix()
+	return sharedConfig.CurrentTimestamp()
 }
 
 func ToSnakeCase(s string) string {

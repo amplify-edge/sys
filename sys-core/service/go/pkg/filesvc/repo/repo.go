@@ -3,14 +3,17 @@ package repo
 import (
 	"bytes"
 	"encoding/binary"
-	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/rpc/v2"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
 	"math"
+
+	"github.com/getcouragenow/sys-share/sys-core/service/go/pkg/filehelper"
+	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/rpc/v2"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
 )
 
 const (
@@ -34,21 +37,48 @@ func NewSysFileRepo(db *coredb.CoreDB, log *logrus.Entry) (*SysFileRepo, error) 
 	}, nil
 }
 
+func (s *SysFileRepo) sharedUpload(content []byte, resourceId string, isDir bool) (*corepkg.FileUploadResponse, error) {
+	f, err := s.store.UpsertFromUploadRequest(content, "", resourceId, isDir)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot save file to db: %v", err)
+	}
+	resp := &corepkg.FileUploadResponse{
+		Success:    true,
+		Id:         f.Id,
+		ResourceId: f.ResourceId,
+		ErrorMsg:   "",
+	}
+	return resp, nil
+}
+
+// UploadFile for v2, Upload for v3
+func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*corepkg.FileUploadResponse, error) {
+	if filepath == "" && (content == nil || len(content) == 0) {
+		return nil, fmt.Errorf("invalid upload arguments")
+	}
+	var finfo *corepkg.FileInfo
+	var err error
+	fileContent := content
+	if filepath != "" && (content == nil || len(content) == 0) {
+		finfo, fileContent, err = filehelper.ReadFileFromPath(filepath)
+		if err != nil {
+			return nil, err
+		}
+	} else if filepath != "" && len(content) != 0 {
+		finfo, fileContent, err = filehelper.ReadFileFromBytes(filepath, content)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return s.sharedUpload(fileContent, finfo.GetResourceId(), finfo.GetIsDir())
+}
+
 func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
 	req, err := stream.Recv()
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "cannot upload file: %v", err)
 	}
-	var foreignId string
-	if req.GetFileInfo().GetSysAccountId() != "" {
-		foreignId = req.GetFileInfo().GetSysAccountId()
-	}
-	if req.GetFileInfo().GetSysAccountOrgId() != "" {
-		foreignId = req.GetFileInfo().GetSysAccountOrgId()
-	}
-	if req.GetFileInfo().GetSysAccountProjectId() != "" {
-		foreignId = req.GetFileInfo().SysAccountProjectId
-	}
+	resourceId := req.FileInfo.ResourceId
 	isDir := req.GetFileInfo().GetIsDir()
 	fileBuf := bytes.Buffer{}
 	fileSize := 0
@@ -72,26 +102,33 @@ func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
 		}
 	}
 
-	f, err := s.store.UpsertFromUploadRequest(fileBuf.Bytes(), "", foreignId, isDir)
-	if err != nil {
-		return status.Errorf(codes.Internal, "cannot save file to db: %v", err)
-	}
-	resp := &corepkg.FileUploadResponse{
-		Success:  true,
-		Id:       f.Id,
-		ErrorMsg: "",
-	}
+	resp, err := s.sharedUpload(fileBuf.Bytes(), resourceId, isDir)
 	if err = stream.SendAndClose(resp); err != nil {
 		return status.Errorf(codes.Internal, "cannot encode upload resp: %v", err)
 	}
-	s.log.Debugf("Saved file, id: %s, sum: %v, size: %d", f.Id, f.ShaHash, fileSize)
+	s.log.Debugf("Saved file, id: %s", resp.Id)
 	return nil
 }
 
-func (s *SysFileRepo) Download(req *corepkg.FileDownloadRequest, stream corepkg.FileService_DownloadServer) error {
-	f, err := s.store.Get(&coredb.QueryParams{Params: map[string]interface{}{"id": req.GetId()}})
+func (s *SysFileRepo) DownloadFile(fileId, resourceId string) (*dao.File, error) {
+	params := map[string]interface{}{}
+	if fileId != "" {
+		params["id"] = fileId
+	}
+	if resourceId != "" {
+		params["resource_id"] = resourceId
+	}
+	f, err := s.store.Get(&coredb.QueryParams{Params: params})
 	if err != nil {
-		return status.Errorf(codes.NotFound, "cannot found an object of id: %s => %v", req.GetId(), err)
+		return nil, status.Errorf(codes.NotFound, "cannot found an object of id: %s / resource_id: %s => %v", fileId, resourceId, err)
+	}
+	return f, nil
+}
+
+func (s *SysFileRepo) Download(req *corepkg.FileDownloadRequest, stream corepkg.FileService_DownloadServer) error {
+	f, err := s.DownloadFile(req.GetId(), "")
+	if err != nil {
+		return err
 	}
 	fileSize := binary.Size(f.Binary)
 	filePartsCount := fileSize/downloadChunkSize + 1

@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"encoding/json"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -13,16 +12,17 @@ import (
 )
 
 type Org struct {
-	Id        string `genji:"id" json:"id,omitempty" coredb:"primary"`
-	Name      string `genji:"name" json:"name,omitempty"`
-	LogoUrl   string `genji:"logo_url" json:"logo_url,omitempty"`
-	Contact   string `genji:"contact" json:"contact,omitempty"`
-	CreatedAt int64  `genji:"created_at" json:"created_at,omitempty"`
-	AccountId string `genji:"account_id" json:"account_id,omitempty"`
+	Id             string `genji:"id" json:"id,omitempty" coredb:"primary"`
+	Name           string `genji:"name" json:"name,omitempty"`
+	LogoResourceId string `genji:"logo_resource_id" json:"logo_resource_id,omitempty"`
+	Contact        string `genji:"contact" json:"contact,omitempty"`
+	CreatedAt      int64  `genji:"created_at" json:"created_at"`
+	AccountId      string `genji:"account_id" json:"account_id"`
 }
 
 var (
-	orgUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", OrgTableName, OrgTableName)
+	orgUniqueIndex     = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", OrgTableName, OrgTableName)
+	orgLogoUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_logo_resource_id ON %s(logo_resource_id)", OrgTableName, OrgTableName)
 )
 
 func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, error) {
@@ -31,43 +31,41 @@ func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, err
 		orgId = coresvc.NewID()
 	}
 	return &Org{
-		Id:        orgId,
-		Name:      org.Name,
-		LogoUrl:   org.LogoUrl,
-		Contact:   org.Contact,
-		CreatedAt: coresvc.CurrentTimestamp(),
-		AccountId: org.CreatorId,
+		Id:             orgId,
+		Name:           org.Name,
+		LogoResourceId: org.LogoFilepath,
+		Contact:        org.Contact,
+		CreatedAt:      coresvc.CurrentTimestamp(),
+		AccountId:      org.CreatorId,
 	}, nil
 }
 
 func (a *AccountDB) FromPkgOrgRequestToQueryFilter(org *pkg.OrgRequest) (*coresvc.QueryParams, error) {
-	params := map[string]interface{}{}
-	b, err := json.Marshal(&org)
+	qf, err := coresvc.AnyToQueryParam(org, false)
 	if err != nil {
 		return nil, err
 	}
-	if err = json.Unmarshal(b, &params); err != nil {
-		return nil, err
-	}
-	return &coresvc.QueryParams{Params: params}, nil
+	delete(qf.Params, "logo_upload_bytes")
+	return &qf, nil
 }
 
-func (o *Org) ToPkgOrg(projects []*pkg.Project) (*pkg.Org, error) {
+func (o *Org) ToPkgOrg(projects []*pkg.Project, logo []byte) (*pkg.Org, error) {
 	return &pkg.Org{
-		Id:        o.Id,
-		Name:      o.Name,
-		LogoUrl:   o.LogoUrl,
-		Contact:   o.Contact,
-		CreatedAt: o.CreatedAt,
-		CreatorId: o.AccountId,
-		Projects:  projects,
+		Id:             o.Id,
+		Name:           o.Name,
+		LogoResourceId: o.LogoResourceId,
+		Logo:           logo,
+		Contact:        o.Contact,
+		CreatedAt:      o.CreatedAt,
+		CreatorId:      o.AccountId,
+		Projects:       projects,
 	}, nil
 }
 
 func (o Org) CreateSQL() []string {
 	fields := coresvc.GetStructTags(o)
 	// tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
-	tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex})
+	tbl := coresvc.NewTable(OrgTableName, fields, []string{orgUniqueIndex, orgLogoUniqueIndex})
 	return tbl.CreateTable()
 }
 

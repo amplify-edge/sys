@@ -3,9 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -15,7 +16,7 @@ import (
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
@@ -57,8 +58,7 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 		}
 		pkgRoles = append(pkgRoles, pkgRole)
 	}
-
-	return acc.ToPkgAccount(pkgRoles)
+	return acc.ToPkgAccount(pkgRoles, nil)
 }
 
 // Register satisfies rpc.Register function on AuthService proto definition
@@ -71,26 +71,17 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	}
 	// New user will be assigned GUEST role and no Org / Project for now.
 	// TODO @gutterbacon: subject to change.
-	accountId := coredb.NewID()
-	now := timestampNow()
-	newAcc := &pkg.Account{
-		Id:       accountId,
+	newAcc := &pkg.AccountNewRequest{
 		Email:    in.Email,
 		Password: in.Password,
-		Role: []*pkg.UserRoles{
+		Roles: []*pkg.UserRoles{
 			{
 				Role: 1,
 				All:  false,
 			},
 		},
-		CreatedAt: now,
-		UpdatedAt: now,
-		Disabled:  false,
-		Fields:    &pkg.UserDefinedFields{},
-		Survey:    &pkg.UserDefinedFields{},
-		Verified:  false,
 	}
-	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc)
+	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false)
 	if err != nil {
 		return &pkg.RegisterResponse{
 			Success:     false,
