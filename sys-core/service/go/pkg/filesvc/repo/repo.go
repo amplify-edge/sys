@@ -53,9 +53,6 @@ func (s *SysFileRepo) sharedUpload(content []byte, resourceId string, isDir bool
 
 // UploadFile for v2, Upload for v3
 func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*corepkg.FileUploadResponse, error) {
-	if filepath == "" && (content == nil || len(content) == 0) {
-		return nil, fmt.Errorf("invalid upload arguments")
-	}
 	var finfo *corepkg.FileInfo
 	var err error
 	fileContent := content
@@ -64,12 +61,15 @@ func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*corepkg.File
 		if err != nil {
 			return nil, err
 		}
-	} else if filepath != "" && len(content) != 0 {
+	} else if filepath != "" && (content == nil || len(content) != 0) {
 		finfo, fileContent, err = filehelper.ReadFileFromBytes(filepath, content)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, fmt.Errorf("filepath: %s, content: %v", filepath, content)
 	}
+	s.log.Debugf("")
 	return s.sharedUpload(fileContent, finfo.GetResourceId(), finfo.GetIsDir())
 }
 

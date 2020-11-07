@@ -22,6 +22,7 @@ local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/serv
         {
            email: "test@example.com",
            password: "supertest",
+           avatar_filepath: "./testdata/avatar.png"
         },
     ],
     sysAccountConfig: {

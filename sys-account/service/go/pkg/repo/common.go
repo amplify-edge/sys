@@ -8,6 +8,7 @@ import (
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	fileDao "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
 )
 
 func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, error) {
@@ -36,11 +37,15 @@ func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, err
 		}
 		pkgRoles = append(pkgRoles, pkgRole)
 	}
-	avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
-	if err != nil {
-		return nil, err
+	var avatar *fileDao.File
+	if acc.AvatarResourceId != "" {
+		avatar, err = ad.frepo.DownloadFile("", acc.AvatarResourceId)
+		if err != nil {
+			return nil, err
+		}
+		return acc.ToPkgAccount(pkgRoles, avatar.Binary)
 	}
-	return acc.ToPkgAccount(pkgRoles, avatar.Binary)
+	return acc.ToPkgAccount(pkgRoles, nil)
 }
 
 func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, orderBy string, limit, cursor int64) ([]*pkg.Account, *int64, error) {
@@ -65,11 +70,17 @@ func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, order
 			}
 			pkgRoles = append(pkgRoles, pkgRole)
 		}
-		avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
-		if err != nil {
-			return nil, nil, err
+		var avatar *fileDao.File
+		var account *pkg.Account
+		if acc.AvatarResourceId != "" {
+			avatar, err = ad.frepo.DownloadFile("", acc.AvatarResourceId)
+			if err != nil {
+				return nil, nil, err
+			}
+			account, err = acc.ToPkgAccount(pkgRoles, nil)
+		} else {
+			account, err = acc.ToPkgAccount(pkgRoles, avatar.Binary)
 		}
-		account, err := acc.ToPkgAccount(pkgRoles, avatar.Binary)
 		if err != nil {
 			return nil, nil, err
 		}

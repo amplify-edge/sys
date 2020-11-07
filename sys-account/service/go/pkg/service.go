@@ -74,6 +74,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
 			Email:    users.Email,
 			Password: users.Password,
+			AvatarFilePath: users.AvatarFilepath,
 		})
 		if err != nil {
 			return nil, err

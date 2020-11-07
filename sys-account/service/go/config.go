@@ -28,8 +28,9 @@ type Config struct {
 }
 
 type SuperUser struct {
-	Email    string `json:"email" yaml:"email" mapstructure:"email"`
-	Password string `json:"password" yaml:"password" mapstructure:"password"`
+	Email          string `json:"email" yaml:"email" mapstructure:"email"`
+	Password       string `json:"password" yaml:"password" mapstructure:"password"`
+	AvatarFilepath string `json:"avatarFilepath" yaml:"avatarFilepath" mapstructure:"avatarFilepath"`
 }
 
 // TODO @gutterbacon: real validation
@@ -39,6 +40,9 @@ func (s SuperUser) Validate() error {
 	}
 	if s.Password == "" {
 		return fmt.Errorf("password is empty")
+	}
+	if s.AvatarFilepath == "" {
+		return fmt.Errorf("avatarFilepath is empty")
 	}
 	return nil
 }

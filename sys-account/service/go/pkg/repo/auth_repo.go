@@ -3,10 +3,9 @@ package repo
 import (
 	"context"
 	"fmt"
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -102,6 +101,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			errChan <- err
 			return
 		}
+		ad.log.Debugf("Email content: %s", string(mailContent))
 		resp, err := ad.mail.SendMail(ctx, &corepkg.EmailRequest{
 			Subject: fmt.Sprintf("Verify Account %s Register", acc.Email),
 			Recipients: map[string]string{
@@ -115,19 +115,17 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			return
 		}
 		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
-		return
+		close(errChan)
 	}()
 	if err = <-errChan; err != nil {
 		ad.log.Errorf("Cannot send email: %v", err)
-		// return nil, err
 	}
-	close(errChan)
-
 	return &pkg.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
 		ErrorReason: "",
 		TempUserId:  acc.ID,
+		VerifyToken: vtoken,
 	}, nil
 }
 
@@ -201,6 +199,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 			return
 		}
 		ad.log.Debugf("event response: %v", string(resp.Reply))
+		close(errChan)
 	}()
 	if err = <-errChan; err != nil {
 		ad.log.Errorf("cannot call onLoginCreateInterceptor event: %v", err)
@@ -250,12 +249,12 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 			return
 		}
 		ad.log.Debugf("Sent Email to %s => %v\n", acc.Email, resp)
+		close(errChan)
 	}()
 	if err = <-errChan; err != nil {
 		ad.log.Errorf("Cannot send email: %v", err)
 		// return nil, err
 	}
-	close(errChan)
 
 	return &pkg.ForgotPasswordResponse{
 		Success:                   true,

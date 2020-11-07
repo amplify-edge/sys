@@ -120,7 +120,7 @@ func accountToQueryParams(acc *Account) (res coresvc.QueryParams, err error) {
 // CreateSQL will only be called once by sys-core see sys-core API.
 func (a Account) CreateSQL() []string {
 	fields := coresvc.GetStructTags(a)
-	tbl := coresvc.NewTable(AccTableName, fields, []string{accountsUniqueIdx, accountAvatarUniqueIdx})
+	tbl := coresvc.NewTable(AccTableName, fields, []string{accountsUniqueIdx})
 	return tbl.CreateTable()
 }
 

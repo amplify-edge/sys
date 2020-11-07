@@ -160,8 +160,9 @@ func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *pkg.AssignA
 }
 
 type SuperAccountRequest struct {
-	Email    string `json:"string"`
-	Password string `json:"password"`
+	Email          string `json:"string"`
+	Password       string `json:"password"`
+	AvatarFilePath string `json:"avatar_filepath"`
 }
 
 // Initial User Creation via CLI only
@@ -169,12 +170,17 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 	if in == nil {
 		return fmt.Errorf("error unable to proceed, user is nil")
 	}
-	newAcc := &pkg.AccountNewRequest{
-		Email:    in.Email,
-		Password: in.Password,
-		Roles:    []*pkg.UserRoles{{Role: pkg.SUPERADMIN, All: true}},
+	avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, nil)
+	if err != nil {
+		return err
 	}
-	_, err := ad.store.InsertFromPkgAccountRequest(newAcc, true)
+	newAcc := &pkg.AccountNewRequest{
+		Email:          in.Email,
+		Password:       in.Password,
+		Roles:          []*pkg.UserRoles{{Role: pkg.SUPERADMIN, All: true}},
+		AvatarFilepath: avatar.GetResourceId(),
+	}
+	_, err = ad.store.InsertFromPkgAccountRequest(newAcc, true)
 	if err != nil {
 		ad.log.Debugf("error unable to create super-account request: %v", err)
 		return err
