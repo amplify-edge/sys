@@ -39,11 +39,23 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
+	params := map[string]interface{}{}
+	if in.OrgId != "" {
+		params["org_id"] = in.OrgId
+	}
+	if in.OrgName != "" {
+		params["org_name"] = in.OrgName
+	}
+	// check org existence
+	_, err := ad.store.GetOrg(&coresvc.QueryParams{Params: params})
+	if err != nil {
+		return nil, err
+	}
 	req, err := ad.store.FromPkgProject(in)
 	if err != nil {
 		return nil, err
 	}
-	if err := ad.store.InsertProject(req); err != nil {
+	if err = ad.store.InsertProject(req); err != nil {
 		return nil, err
 	}
 	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
