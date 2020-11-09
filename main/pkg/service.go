@@ -2,9 +2,10 @@ package pkg
 
 import (
 	"fmt"
+	"net/http"
+
 	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
-	"net/http"
 
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -16,8 +17,9 @@ import (
 
 	accountpkg "github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	corefilecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
+	corefile "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/repo"
 	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 )
 
@@ -39,7 +41,7 @@ type SysServices struct {
 	dbSvc         *coresvc.SysCoreProxyService
 	busSvc        *coresvc.SysBusProxyService
 	mailSvc       *coresvc.SysEmailProxyService
-	fileSvc       *corefilecfg.SysFileService
+	// fileSvc       *corefilecfg.SysFileService
 }
 
 type ServiceConfigPaths struct {
@@ -68,12 +70,13 @@ type serviceConfigs struct {
 // load up and provide sub grpc services.
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
-	store   *coredb.CoreDB // sys-core
-	port    int
-	logger  *logrus.Entry
-	cfg     *serviceConfigs
-	bus     *corebus.CoreBus
-	mailSvc *coremail.MailSvc
+	store    *coredb.CoreDB // sys-core
+	port     int
+	logger   *logrus.Entry
+	cfg      *serviceConfigs
+	bus      *corebus.CoreBus
+	mailSvc  *coremail.MailSvc
+	fileRepo *corefile.SysFileRepo
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
@@ -93,23 +96,35 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 		}
 	}
 	mailSvc := coremail.NewMailSvc(&csc.MailConfig, l)
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, bus, mailSvc)
-	if err != nil {
-		return nil, err
-	}
-
 	// file
 	fsc, err := corefilecfg.NewConfig(servicePaths.file)
 	if err != nil {
 		return nil, err
 	}
 
+	fileDb, err := coredb.NewCoreDB(l, &fsc.DBConfig, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	frepo, err := corefile.NewSysFileRepo(fileDb, l)
+	if err != nil {
+		return nil, err
+	}
+
+	// account
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, bus, mailSvc, frepo)
+	if err != nil {
+		return nil, err
+	}
+
 	ssc := &SysServiceConfig{
-		logger:  l,
-		store:   db,
-		port:    port,
-		cfg:     &serviceConfigs{account: newSysAccountCfg, core: csc, file: fsc},
-		mailSvc: mailSvc,
+		logger:   l,
+		store:    db,
+		port:     port,
+		cfg:      &serviceConfigs{account: newSysAccountCfg, core: csc, file: fsc},
+		mailSvc:  mailSvc,
+		fileRepo: frepo,
 	}
 	return ssc, nil
 }
@@ -138,10 +153,10 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-File
 	// ========================================================================
-	fileSvc, err := corefilecfg.NewSysFileService(cfg.cfg.file, cfg.logger)
-	if err != nil {
-		return nil, err
-	}
+	// fileSvc, err := corefilecfg.NewSysFileService(cfg.cfg.file, cfg.logger)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// ========================================================================
 
@@ -152,7 +167,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		dbSvc:         sysAccountSvc.DbProxyService,
 		busSvc:        sysAccountSvc.BusProxyService,
 		mailSvc:       mailService,
-		fileSvc:       fileSvc,
+		// fileSvc:       fileSvc,
 	}, nil
 }
 
@@ -186,7 +201,7 @@ func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.dbSvc.RegisterSvc(srv)
 	s.busSvc.RegisterSvc(srv)
 	s.mailSvc.RegisterSvc(srv)
-	s.fileSvc.RegisterService(srv)
+	// s.fileSvc.RegisterService(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {

@@ -11,6 +11,7 @@ local cfg = {
             {
                 email: "superadmin@getcouragenow.org",
                 password: "superadmin",
+                avatarFilepath: "./testdata/avatar.png",
             }
         ],
     }

@@ -25,6 +25,8 @@ EXAMPLE_CFG_DIR = ./config
 EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY = mostSuperSecretKeyPlausible34@
 EXAMPLE_SYS_CORE_CFG_PATH = $(EXAMPLE_CFG_DIR)/syscore.yml
 EXAMPLE_SYS_ACCOUNT_CFG_PATH = $(EXAMPLE_CFG_DIR)/sysaccount.yml
+EXAMPLE_SYS_CORE_SENDGRID_API_KEY = SOME_SENDGRID_API_KEY
+EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY   = A9bhbid5ODrKQVvd9MY17P5MZ
 
 EXAMPLE_SRC_DIR = ./example
 SERVER_DIR = $(EXAMPLE_SRC_DIR)/server/go
@@ -69,7 +71,11 @@ this-config-gen: this-config-clean this-config-dep
 	@echo Generating Config
 	@mkdir -p $(EXAMPLE_CFG_DIR)
 	jsonnet -S $(SERVER_DIR)/sysaccount.jsonnet > $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
-	jsonnet -S $(SERVER_DIR)/syscore.jsonnet -V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_CORE_CFG_PATH)
+	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet \
+		-V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) \
+		-V SYS_CORE_SENDGRID_API_KEY=$(shell echo ${SENDGRID_API_KEY}) > $(EXAMPLE_SYS_CORE_CFG_PATH)
+	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysfile.jsonnet \
+		-V SYS_FILE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_FILE_CFG_PATH)
 
 this-config-clean:
 	@echo Deleting previously generated config

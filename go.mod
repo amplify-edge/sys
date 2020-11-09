@@ -11,6 +11,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/genjidb/genji v0.8.0
 	github.com/genjidb/genji/engine/badgerengine v0.8.0
+	github.com/getcouragenow/mod v0.0.0-20201102154256-76639b41d618 // indirect
 	github.com/getcouragenow/sys-share v0.0.0-20201102093809-ef0efd93ad36
 	github.com/go-playground/validator v9.30.0+incompatible
 	github.com/golang/protobuf v1.4.3 // indirect

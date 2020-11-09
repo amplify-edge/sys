@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 
 	"google.golang.org/grpc/codes"
@@ -19,22 +20,42 @@ func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error
 	if err != nil {
 		return nil, err
 	}
-	pkgOrg, err := org.ToPkgOrg(nil)
+	orgLogo, err := ad.frepo.DownloadFile("", org.LogoResourceId)
 	if err != nil {
 		return nil, err
 	}
-	return req.ToPkgProject(pkgOrg)
+	pkgOrg, err := org.ToPkgOrg(nil, orgLogo.Binary)
+	if err != nil {
+		return nil, err
+	}
+	projectLogo, err := ad.frepo.DownloadFile("", req.LogoResourceId)
+	if err != nil {
+		return nil, err
+	}
+	return req.ToPkgProject(pkgOrg, projectLogo.Binary)
 }
 
 func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
+	params := map[string]interface{}{}
+	if in.OrgId != "" {
+		params["org_id"] = in.OrgId
+	}
+	if in.OrgName != "" {
+		params["org_name"] = in.OrgName
+	}
+	// check org existence
+	_, err := ad.store.GetOrg(&coresvc.QueryParams{Params: params})
+	if err != nil {
+		return nil, err
+	}
 	req, err := ad.store.FromPkgProject(in)
 	if err != nil {
 		return nil, err
 	}
-	if err := ad.store.InsertProject(req); err != nil {
+	if err = ad.store.InsertProject(req); err != nil {
 		return nil, err
 	}
 	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.Id}})
@@ -48,7 +69,14 @@ func (ad *SysAccountRepo) GetProject(ctx context.Context, in *pkg.IdRequest) (*p
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot get project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	params := map[string]interface{}{}
+	if in.Id != "" {
+		params["id"] = in.Id
+	}
+	if in.Name != "" {
+		params["name"] = in.Name
+	}
+	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: params})
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +129,12 @@ func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectUpda
 	if in.Name != "" {
 		proj.Name = in.Name
 	}
-	if in.LogoUrl != "" {
-		proj.LogoUrl = in.LogoUrl
+	if in.LogoFilepath != "" && len(in.LogoUploadBytes) != 0 {
+		updatedLogo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
+		if err != nil {
+			return nil, err
+		}
+		proj.LogoResourceId = updatedLogo.ResourceId
 	}
 	err = ad.store.UpdateProject(proj)
 	if err != nil {

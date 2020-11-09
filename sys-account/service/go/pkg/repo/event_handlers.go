@@ -74,3 +74,49 @@ func getEventIdMap(in *sharedCore.EventRequest, key string) (map[string]interfac
 	}
 	return requestMap, nil
 }
+
+func (ad *SysAccountRepo) onCheckProjectExists(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const projectIdKey = "sys_account_project_ref_id"
+	const projectNameKey = "sys_account_project_ref_name"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	rmap := map[string]interface{}{}
+	if requestMap[projectIdKey] != "" {
+		rmap["id"] = requestMap[projectIdKey]
+	}
+	if requestMap[projectNameKey] != "" {
+		rmap["name"] = requestMap[projectNameKey]
+	}
+	_, err = ad.store.GetProject(&coredb.QueryParams{Params: rmap})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"exists": true,
+	}, nil
+}
+
+func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const accountIdKey = "sys_account_user_ref_id"
+	const accountNameKey = "sys_account_user_ref_name"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	rmap := map[string]interface{}{}
+	if requestMap[accountIdKey] != "" {
+		rmap["id"] = requestMap[accountIdKey]
+	}
+	if requestMap[accountNameKey] != "" {
+		rmap["name"] = requestMap[accountNameKey]
+	}
+	_, err = ad.store.GetAccount(&coredb.QueryParams{Params: rmap})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"exists": true,
+	}, nil
+}

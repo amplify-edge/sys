@@ -162,6 +162,10 @@ func MarshalToBytes(any interface{}) ([]byte, error) {
 	return json.Marshal(&any)
 }
 
+func MarshalPretty(any interface{}) ([]byte, error) {
+	return json.MarshalIndent(&any, "", "  ")
+}
+
 func AnyToQueryParam(m interface{}, snakeCase bool) (res QueryParams, err error) {
 	jbytes, err := MarshalToBytes(&m)
 	if err != nil {
@@ -188,7 +192,7 @@ func NewID() string {
 }
 
 func CurrentTimestamp() int64 {
-	return time.Now().UTC().Unix()
+	return sharedConfig.CurrentTimestamp()
 }
 
 func ToSnakeCase(s string) string {

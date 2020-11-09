@@ -3,9 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
@@ -27,12 +28,19 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	return newCtx, acc, nil
 }
 
-func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
+func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequest) (*pkg.Account, error) {
 	if err := ad.allowNewAccount(ctx, in); err != nil {
 		ad.log.Debugf("creation of new account failed: %v", err)
 		return nil, err
 	}
-	acc, err := ad.store.InsertFromPkgAccountRequest(in)
+	fresp, err := ad.frepo.UploadFile(in.AvatarFilepath, in.AvatarUploadBytes)
+	if err != nil {
+		return nil, err
+	}
+	ad.log.Debugf("Uploaded File from path: %s, id: %s", in.AvatarFilepath, fresp.GetId())
+	// Remember this is the key to success
+	in.AvatarFilepath = fresp.ResourceId
+	acc, err := ad.store.InsertFromPkgAccountRequest(in, false)
 	if err != nil {
 		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
@@ -40,15 +48,20 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.Account) (*pkg
 	return ad.getAccountAndRole(acc.ID, "")
 }
 
-func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.GetAccountRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.IdRequest) (*pkg.Account, error) {
 	if in == nil {
 		return &pkg.Account{},
 			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	acc, err := ad.allowGetAccount(ctx, in.Id)
+	acc, err := ad.allowGetAccount(ctx, in)
 	if err != nil {
 		return nil, err
 	}
+	avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
+	if err != nil {
+		return nil, err
+	}
+	acc.Avatar = avatar.Binary
 	return acc, nil
 }
 
@@ -228,11 +241,11 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
 }
 
-func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*pkg.Account, error) {
+func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.AccountUpdateRequest) (*pkg.Account, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	cur, err := ad.allowGetAccount(ctx, in.Id)
+	cur, err := ad.allowGetAccount(ctx, &pkg.IdRequest{Id: in.Id})
 	if err != nil {
 		return nil, err
 	}
@@ -247,15 +260,17 @@ func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.Account) (*
 	if !in.Disabled {
 		acc.Disabled = false
 	}
-	if in.Fields != nil && in.Fields.Fields != nil {
-		cur.Fields = in.Fields
-	}
-	if in.Survey != nil && in.Survey.Fields != nil {
-		cur.Survey = in.Survey
-	}
 	if in.Verified {
 		acc.Verified = true
 	}
+	if in.AvatarFilepath != "" && len(in.AvatarUploadBytes) != 0 {
+		updatedAvatar, err := ad.frepo.UploadFile(in.AvatarFilepath, in.AvatarUploadBytes)
+		if err != nil {
+			return nil, err
+		}
+		acc.AvatarResourceId = updatedAvatar.ResourceId
+	}
+
 	acc.UpdatedAt = timestampNow()
 	err = ad.store.UpdateAccount(acc)
 	if err != nil {
@@ -269,7 +284,7 @@ func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAcc
 	if in == nil {
 		return &pkg.Account{}, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	acc, err := ad.allowGetAccount(ctx, in.AccountId)
+	acc, err := ad.allowGetAccount(ctx, &pkg.IdRequest{Id: in.AccountId})
 	if err != nil {
 		return nil, err
 	}

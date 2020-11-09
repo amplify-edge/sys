@@ -5,8 +5,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 	"net/http"
+
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
+	filerepo "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/repo"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
@@ -22,7 +25,7 @@ import (
 	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (
@@ -33,12 +36,14 @@ const (
 	defaultPort                 = 8888
 	defaultSysCoreConfigPath    = "./bin-all/config/syscore.yml"
 	defaultSysAccountConfigPath = "./bin-all/config/sysaccount.yml"
+	defaultSysFileConfigPath    = "./bin-all/config/sysfile.yml"
 )
 
 var (
 	rootCmd        = &cobra.Command{Use: "sys-account-srv"}
 	coreCfgPath    string
 	accountCfgPath string
+	fileCfgPath    string
 )
 
 func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
@@ -52,6 +57,7 @@ func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
 func main() {
 	rootCmd.PersistentFlags().StringVarP(&coreCfgPath, "sys-core-config-path", "c", defaultSysCoreConfigPath, "sys-core config path to use")
 	rootCmd.PersistentFlags().StringVarP(&accountCfgPath, "sys-account-config-path", "a", defaultSysAccountConfigPath, "sys-account config path to use")
+	rootCmd.PersistentFlags().StringVarP(&fileCfgPath, "sys-file-config-path", "a", defaultSysFileConfigPath, "sys-file config path to use")
 
 	log := logrus.New().WithField("svc", "sys-account")
 
@@ -66,9 +72,24 @@ func main() {
 			log.Fatalf(errSourcingConfig, err)
 		}
 
+		fileCfg, err := filesvc.NewConfig(fileCfgPath)
+		if err != nil {
+			log.Fatalf(errSourcingConfig, err)
+		}
+
+		fdb, err := coredb.NewCoreDB(log, &fileCfg.DBConfig, nil)
+		if err != nil {
+			log.Fatalf(errSourcingConfig, err)
+		}
+
+		frepo, err := filerepo.NewSysFileRepo(fdb, log)
+		if err != nil {
+			log.Fatalf(errSourcingConfig, err)
+		}
+
 		newMailSvc := mailer.NewMailSvc(&csc.MailConfig, log)
 
-		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath, corebus.NewCoreBus(), newMailSvc)
+		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath, corebus.NewCoreBus(), newMailSvc, frepo)
 		if err != nil {
 			log.Fatalf("error creating config: %v", err)
 		}

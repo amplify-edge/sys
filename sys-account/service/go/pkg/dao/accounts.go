@@ -3,11 +3,12 @@ package dao
 import (
 	"fmt"
 	"github.com/genjidb/genji/document"
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	log "github.com/sirupsen/logrus"
+
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
@@ -15,29 +16,29 @@ import (
 )
 
 var (
-	accountsUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email ON %s(email)", AccTableName)
+	accountsUniqueIdx      = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_email ON %s(email)", AccTableName, AccTableName)
+	accountAvatarUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_avatar_resource_id ON %s(avatar_resource_id)", AccTableName, AccTableName)
 )
 
 type Account struct {
-	ID                string                 `genji:"id" coredb:"primary"`
-	Email             string                 `genji:"email"`
-	Password          string                 `genji:"password"`
-	UserDefinedFields map[string]interface{} `genji:"user_defined_fields"`
-	Survey            map[string]interface{} `genji:"survey"`
-	CreatedAt         int64                  `genji:"created_at"`
-	UpdatedAt         int64                  `genji:"updated_at"`
-	LastLogin         int64                  `genji:"last_login"`
-	Disabled          bool                   `genji:"disabled"`
-	Verified          bool                   `genji:"verified"`
-	VerificationToken string                 `genji:"verification_token"`
+	ID                string `json:"id,omitempty" genji:"id" coredb:"primary"`
+	Email             string `json:"email,omitempty" genji:"email"`
+	Password          string `json:"password,omitempty" genji:"password"`
+	CreatedAt         int64  `json:"created_at" genji:"created_at"`
+	UpdatedAt         int64  `json:"updated_at" genji:"updated_at"`
+	LastLogin         int64  `json:"last_login" genji:"last_login"`
+	Disabled          bool   `json:"disabled" genji:"disabled"`
+	Verified          bool   `json:"verified" genji:"verified"`
+	VerificationToken string `json:"verification_token,omitempty" genji:"verification_token"`
+	AvatarResourceId  string `json:"avatar_resource_id,omitempty" genji:"avatar_resource_id"`
 }
 
-func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account, error) {
+func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, verified bool) (*Account, error) {
 	accountId := utilities.NewID()
 	var roles []*Role
-	if account.Role != nil && len(account.Role) > 0 {
+	if account.Roles != nil && len(account.Roles) > 0 {
 		a.log.Debugf("Convert and getting roles")
-		for _, pkgRole := range account.Role {
+		for _, pkgRole := range account.Roles {
 			role := a.FromPkgRoleRequest(pkgRole, accountId)
 			roles = append(roles, role)
 		}
@@ -57,25 +58,20 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account,
 			return nil, err
 		}
 	}
-	fields := map[string]interface{}{}
-	survey := map[string]interface{}{}
-	if account.Fields != nil && account.Fields.Fields != nil {
-		fields = account.Fields.Fields
-	}
-	if account.Survey != nil && account.Survey.Fields != nil {
-		survey = account.Survey.Fields
+	isVerified := false
+	if verified {
+		isVerified = verified
 	}
 	acc := &Account{
-		ID:                accountId,
-		Email:             account.Email,
-		Password:          account.Password,
-		UserDefinedFields: fields,
-		Survey:            survey,
-		CreatedAt:         account.CreatedAt,
-		UpdatedAt:         account.UpdatedAt,
-		LastLogin:         account.LastLogin,
-		Disabled:          account.Disabled,
-		Verified:          account.Verified,
+		ID:               accountId,
+		Email:            account.Email,
+		Password:         account.Password,
+		CreatedAt:        coresvc.CurrentTimestamp(),
+		UpdatedAt:        coresvc.CurrentTimestamp(),
+		LastLogin:        coresvc.CurrentTimestamp(),
+		Disabled:         false,
+		Verified:         isVerified,
+		AvatarResourceId: account.AvatarFilepath,
 	}
 
 	if err := a.InsertAccount(acc); err != nil {
@@ -86,35 +82,34 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.Account) (*Account,
 
 func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
 	return &Account{
-		ID:                account.Id,
-		Email:             account.Email,
-		Password:          account.Password,
-		UserDefinedFields: account.Fields.Fields,
-		Survey:            account.Survey.Fields,
-		CreatedAt:         account.CreatedAt,
-		UpdatedAt:         account.UpdatedAt,
-		LastLogin:         account.LastLogin,
-		Disabled:          account.Disabled,
-		Verified:          account.Verified,
+		ID:               account.Id,
+		Email:            account.Email,
+		Password:         account.Password,
+		CreatedAt:        account.CreatedAt,
+		UpdatedAt:        account.UpdatedAt,
+		LastLogin:        account.LastLogin,
+		Disabled:         account.Disabled,
+		Verified:         account.Verified,
+		AvatarResourceId: account.AvatarResourceId,
 	}, nil
 }
 
-func (a *Account) ToPkgAccount(roles []*pkg.UserRoles) (*pkg.Account, error) {
+func (a *Account) ToPkgAccount(roles []*pkg.UserRoles, avatar []byte) (*pkg.Account, error) {
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
 	return &pkg.Account{
-		Id:        a.ID,
-		Email:     a.Email,
-		Password:  a.Password,
-		Role:      roles,
-		CreatedAt: createdAt.Unix(),
-		UpdatedAt: updatedAt.Unix(),
-		LastLogin: lastLogin.Unix(),
-		Disabled:  a.Disabled,
-		Fields:    &pkg.UserDefinedFields{Fields: a.UserDefinedFields},
-		Survey:    &pkg.UserDefinedFields{Fields: a.Survey},
-		Verified:  a.Verified,
+		Id:               a.ID,
+		Email:            a.Email,
+		Password:         a.Password,
+		Role:             roles,
+		CreatedAt:        createdAt.Unix(),
+		UpdatedAt:        updatedAt.Unix(),
+		LastLogin:        lastLogin.Unix(),
+		Disabled:         a.Disabled,
+		Verified:         a.Verified,
+		AvatarResourceId: a.AvatarResourceId,
+		Avatar:           avatar,
 	}, nil
 }
 

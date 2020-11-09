@@ -13,56 +13,68 @@ import (
 )
 
 type Project struct {
-	Id        string `genji:"id" coredb:"primary"`
-	Name      string `genji:"name"`
-	LogoUrl   string `genji:"logo_url"`
-	CreatedAt int64  `genji:"created_at"`
-	AccountId string `genji:"account_id"`
-	OrgId     string `genji:"org_id"`
+	Id             string `json:"id" genji:"id" coredb:"primary"`
+	Name           string `json:"name,omitempty" genji:"name"`
+	LogoResourceId string `json:"logo_resource_id" genji:"logo_resource_id"`
+	CreatedAt      int64  `json:"created_at" genji:"created_at"`
+	AccountId      string `json:"account_id" genji:"account_id"`
+	OrgId          string `json:"org_id" genji:"org_id"`
+	OrgName        string `json:"org_name" genji:"org_name"`
 }
 
 var (
-	projectUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", ProjectTableName, ProjectTableName)
+	projectUniqueIndex     = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_name ON %s(name)", ProjectTableName, ProjectTableName)
+	projectLogoUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_logo_resource_id ON %s(logo_resource_id)", ProjectTableName, ProjectTableName)
 )
 
 func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
-	var orgId string
-	if p.OrgId == "" {
+	var orgId, orgName string
+	if p.OrgId == "" && p.OrgName == "" {
 		return nil, errors.New("project organization id required")
 	}
 	if p.OrgId != "" {
 		orgId = p.OrgId
 	}
+	if p.OrgName != "" {
+		orgName = p.OrgName
+	}
 	return &Project{
-		Id:        coresvc.NewID(),
-		Name:      p.Name,
-		LogoUrl:   p.LogoUrl,
-		CreatedAt: coresvc.CurrentTimestamp(),
-		AccountId: p.CreatorId,
-		OrgId:     orgId,
+		Id:             coresvc.NewID(),
+		Name:           p.Name,
+		LogoResourceId: p.LogoFilepath,
+		CreatedAt:      coresvc.CurrentTimestamp(),
+		AccountId:      p.CreatorId,
+		OrgId:          orgId,
+		OrgName:        orgName,
 	}, nil
 }
 
-func (p *Project) ToPkgProject(org *pkg.Org) (*pkg.Project, error) {
+func (p *Project) ToPkgProject(org *pkg.Org, logo []byte) (*pkg.Project, error) {
 	return &pkg.Project{
-		Id:        p.Id,
-		Name:      p.Name,
-		LogoUrl:   p.LogoUrl,
-		CreatedAt: p.CreatedAt,
-		CreatorId: p.AccountId,
-		OrgId:     p.OrgId,
-		Org:       org,
+		Id:             p.Id,
+		Name:           p.Name,
+		LogoResourceId: org.LogoResourceId,
+		Logo:           logo,
+		CreatedAt:      p.CreatedAt,
+		CreatorId:      p.AccountId,
+		OrgId:          p.OrgId,
+		OrgName:        p.OrgName,
+		Org:            org,
 	}, nil
 }
 
 func (p Project) CreateSQL() []string {
 	fields := coresvc.GetStructTags(p)
-	tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex})
+	tbl := coresvc.NewTable(ProjectTableName, fields, []string{projectUniqueIndex, projectLogoUniqueIndex})
 	return tbl.CreateTable()
 }
 
 func projectToQueryParam(p *Project) (res coresvc.QueryParams, err error) {
-	return coresvc.AnyToQueryParam(p, true)
+	qf, err := coresvc.AnyToQueryParam(p, true)
+	if err != nil {
+		return coresvc.QueryParams{}, err
+	}
+	return qf, nil
 }
 
 func (a *AccountDB) projectQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
@@ -151,6 +163,8 @@ func (a *AccountDB) UpdateProject(p *Project) error {
 		return err
 	}
 	delete(filterParam.Params, "id")
+	delete(filterParam.Params, "org_id")
+	delete(filterParam.Params, "org_name")
 	stmt, args, err := sq.Update(ProjectTableName).SetMap(filterParam.Params).
 		Where(sq.Eq{"id": p.Id}).ToSql()
 	if err != nil {
