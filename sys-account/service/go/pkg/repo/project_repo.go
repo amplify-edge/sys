@@ -41,16 +41,22 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	}
 	params := map[string]interface{}{}
 	if in.OrgId != "" {
-		params["org_id"] = in.OrgId
+		params["id"] = in.OrgId
 	}
 	if in.OrgName != "" {
-		params["org_name"] = in.OrgName
+		params["name"] = in.OrgName
 	}
 	// check org existence
 	_, err := ad.store.GetOrg(&coresvc.QueryParams{Params: params})
 	if err != nil {
 		return nil, err
 	}
+	logo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
+	if err != nil {
+		return nil, err
+	}
+	// this is the key
+	in.LogoFilepath = logo.ResourceId
 	req, err := ad.store.FromPkgProject(in)
 	if err != nil {
 		return nil, err

@@ -96,7 +96,7 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 	a.log.WithFields(log.Fields{
 		"queryStatement": selectStmt,
 		"arguments":      args,
-	}).Debug("Querying roles")
+	}).Debug("Querying projects")
 	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err

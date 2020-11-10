@@ -92,7 +92,7 @@ func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	a.log.WithFields(log.Fields{
 		"queryStatement": selectStmt,
 		"arguments":      args,
-	}).Debug("Querying roles")
+	}).Debug("Querying org")
 	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err

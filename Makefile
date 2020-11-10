@@ -169,7 +169,7 @@ this-ex-sdk-auth-verify:
 
 this-ex-sdk-accounts-new:
 	@echo Running Example New Account
-	$(SDK_BIN) sys-account account-service new-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --email gutterbacon@example.com --password gutterbacon123 --verified --created-at-seconds $(shell date +%s) --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
+	$(SDK_BIN) sys-account account-service new-account -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --email gutterbacon@example.com --password gutterbacon123 --avatar-filepath ./testdata/avatar.png --jwt-access-token $(shell awk '1' ./.token | tr -d '\n')
 
 this-ex-sdk-accounts-list:
 	@echo Running Example Accounts List
@@ -189,7 +189,7 @@ this-ex-sdk-accounts-assign-super:
 
 this-ex-sdk-org-new:
 	@echo Running Example Create Org
-	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') new-org --name "ORG 1" --logo-url "https://avatars3.githubusercontent.com/u/59567775?s=200&v=4"
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') new-org --name "ORG 1" --logo-filepath "./testdata/avatar.png"
 
 this-ex-sdk-org-get:
 	@echo Running Example Get Org
@@ -205,7 +205,7 @@ this-ex-sdk-org-update:
 
 this-ex-sdk-project-new:
 	@echo Running Example Create New Project
-	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') new-project --org-id $(EXAMPLE_ORG_ID) --name PROJECT1 --logo-url "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Go_Logo_Blue.svg/1200px-Go_Logo_Blue.svg.png"
+	$(SDK_BIN) sys-account org-proj-service -s $(EXAMPLE_SERVER_ADDRESS) --tls --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson --jwt-access-token $(shell awk '1' ./.token | tr -d '\n') new-project --org-id $(EXAMPLE_ORG_ID) --name PROJECT1 --logo-filepath "./testdata/avatar.png"
 
 this-ex-sdk-project-list:
 	@echo Running Example List Project
@@ -250,3 +250,4 @@ this-ex-sdk-list-backup:
 
 this-ex-sdk-restore:
 	$(SDK_BIN) db-admin-service restore --backup-file $(EXAMPLE_BACKUP_FILE) --tls -s $(EXAMPLE_SERVER_ADDRESS) --tls-ca-cert-file $(EXAMPLE_CA_ROOT_NAME) -o prettyjson
+
