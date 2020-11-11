@@ -34,6 +34,9 @@ func getStructTags(model interface{}) map[string]string {
 		if coredbTag == "primary" {
 			fieldMap[genjiTag] += " PRIMARY KEY"
 		}
+		if coredbTag == "not_null" {
+			fieldMap[genjiTag] += " NOT NULL"
+		}
 	}
 	return fieldMap
 }
@@ -50,4 +53,3 @@ func GetStructColumns(someStruct interface{}) string {
 	}
 	return strings.Join(structCols, ", ")
 }
-
