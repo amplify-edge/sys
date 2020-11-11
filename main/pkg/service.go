@@ -37,7 +37,7 @@ const (
 type SysServices struct {
 	logger        *logrus.Entry
 	port          int
-	sysAccountSvc *accountpkg.SysAccountService
+	SysAccountSvc *accountpkg.SysAccountService
 	dbSvc         *coresvc.SysCoreProxyService
 	busSvc        *coresvc.SysBusProxyService
 	mailSvc       *coresvc.SysEmailProxyService
@@ -147,7 +147,6 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-Mail
 	// ========================================================================
-
 	mailService := coresvc.NewSysMailProxyService(cfg.mailSvc)
 
 	// ========================================================================
@@ -163,7 +162,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	return &SysServices{
 		logger:        cfg.logger,
 		port:          cfg.port,
-		sysAccountSvc: sysAccountSvc,
+		SysAccountSvc: sysAccountSvc,
 		dbSvc:         sysAccountSvc.DbProxyService,
 		busSvc:        sysAccountSvc.BusProxyService,
 		mailSvc:       mailService,
@@ -192,12 +191,12 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 		grpcLogrus.StreamServerInterceptor(s.logger, logrusOpts...),
 	)
 	// inject grpc auth
-	unaryInterceptors, streamInterceptors = s.sysAccountSvc.InjectInterceptors(unaryInterceptors, streamInterceptors)
+	unaryInterceptors, streamInterceptors = s.SysAccountSvc.InjectInterceptors(unaryInterceptors, streamInterceptors)
 	return unaryInterceptors, streamInterceptors
 }
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
-	s.sysAccountSvc.RegisterServices(srv)
+	s.SysAccountSvc.RegisterServices(srv)
 	s.dbSvc.RegisterSvc(srv)
 	s.busSvc.RegisterSvc(srv)
 	s.mailSvc.RegisterSvc(srv)

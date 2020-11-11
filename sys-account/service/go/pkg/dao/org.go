@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
@@ -28,14 +29,14 @@ var (
 func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, error) {
 	orgId := id
 	if orgId == "" {
-		orgId = coresvc.NewID()
+		orgId = utilities.NewID()
 	}
 	return &Org{
 		Id:             orgId,
 		Name:           org.Name,
 		LogoResourceId: org.LogoFilepath,
 		Contact:        org.Contact,
-		CreatedAt:      coresvc.CurrentTimestamp(),
+		CreatedAt:      utilities.CurrentTimestamp(),
 		AccountId:      org.CreatorId,
 	}, nil
 }
@@ -92,7 +93,7 @@ func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	a.log.WithFields(log.Fields{
 		"queryStatement": selectStmt,
 		"arguments":      args,
-	}).Debug("Querying roles")
+	}).Debug("Querying org")
 	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err

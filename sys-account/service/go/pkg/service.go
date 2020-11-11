@@ -24,6 +24,7 @@ type SysAccountService struct {
 	proxyService        *pkg.SysAccountProxyService
 	DbProxyService      *coresvc.SysCoreProxyService
 	BusProxyService     *coresvc.SysBusProxyService
+	AuthRepo            *repo.SysAccountRepo
 }
 
 type SysAccountServiceConfig struct {
@@ -70,20 +71,21 @@ func NewSysAccountService(cfg *SysAccountServiceConfig) (*SysAccountService, err
 	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo, authRepo)
 	dbProxyService := coresvc.NewSysCoreProxyService(cfg.store)
 	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
-	for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
-		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
-			Email:    users.Email,
-			Password: users.Password,
-			AvatarFilePath: users.AvatarFilepath,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
+	// for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
+	// 	err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
+	// 		Email:          users.Email,
+	// 		Password:       users.Password,
+	// 		AvatarFilePath: users.AvatarFilepath,
+	// 	})
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
 		proxyService:        sysAccountProxy,
+		AuthRepo:            authRepo,
 		DbProxyService:      dbProxyService,
 		BusProxyService:     busProxyService,
 	}, nil

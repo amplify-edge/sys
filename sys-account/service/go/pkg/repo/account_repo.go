@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
@@ -167,7 +168,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 					ProjectId: r.ProjectId,
 					OrgId:     in.Role.OrgID,
 					CreatedAt: r.CreatedAt,
-					UpdatedAt: timestampNow(),
+					UpdatedAt: utilities.CurrentTimestamp(),
 				}); err != nil {
 					return nil, err
 				}
@@ -186,7 +187,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 					ProjectId: in.Role.ProjectID,
 					OrgId:     in.Role.OrgID,
 					CreatedAt: r.CreatedAt,
-					UpdatedAt: timestampNow(),
+					UpdatedAt: utilities.CurrentTimestamp(),
 				}); err != nil {
 					return nil, err
 				}
@@ -197,13 +198,13 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	// SUPERADMIN
 	if in.Role.Role == pkg.SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.Role) {
 		newRole := &dao.Role{
-			ID:        coresvc.NewID(),
+			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
 			Role:      int(in.Role.Role),
 			ProjectId: in.Role.ProjectID,
 			OrgId:     in.Role.OrgID,
-			CreatedAt: timestampNow(),
-			UpdatedAt: timestampNow(),
+			CreatedAt: utilities.CurrentTimestamp(),
+			UpdatedAt: utilities.CurrentTimestamp(),
 		}
 		ad.log.Debugf("to be updated roles: %v", *roles[0])
 		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
@@ -218,13 +219,13 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
 	} else if sharedAuth.IsSuperadmin(curAcc.Role) {
 		newRole := &dao.Role{
-			ID:        coresvc.NewID(),
+			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
 			Role:      int(in.Role.Role),
 			ProjectId: in.Role.ProjectID,
 			OrgId:     in.Role.OrgID,
-			CreatedAt: timestampNow(),
-			UpdatedAt: timestampNow(),
+			CreatedAt: utilities.CurrentTimestamp(),
+			UpdatedAt: utilities.CurrentTimestamp(),
 		}
 		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
 			ad.log.Debug("deleting user guest role")
@@ -271,7 +272,7 @@ func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.AccountUpda
 		acc.AvatarResourceId = updatedAvatar.ResourceId
 	}
 
-	acc.UpdatedAt = timestampNow()
+	acc.UpdatedAt = utilities.CurrentTimestamp()
 	err = ad.store.UpdateAccount(acc)
 	if err != nil {
 		ad.log.Debugf("unable to update account: %v", err)

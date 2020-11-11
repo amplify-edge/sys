@@ -44,12 +44,12 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 		}
 	} else {
 		roles = append(roles, &Role{
-			ID:        coresvc.NewID(),
+			ID:        utilities.NewID(),
 			AccountId: accountId,
 			Role:      int(pkg.GUEST),
 			ProjectId: "",
 			OrgId:     "",
-			CreatedAt: time.Now().UTC().Unix(),
+			CreatedAt: utilities.CurrentTimestamp(),
 		})
 	}
 	for _, daoRole := range roles {
@@ -66,9 +66,9 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 		ID:               accountId,
 		Email:            account.Email,
 		Password:         account.Password,
-		CreatedAt:        coresvc.CurrentTimestamp(),
-		UpdatedAt:        coresvc.CurrentTimestamp(),
-		LastLogin:        coresvc.CurrentTimestamp(),
+		CreatedAt:        utilities.CurrentTimestamp(),
+		UpdatedAt:        utilities.CurrentTimestamp(),
+		LastLogin:        utilities.CurrentTimestamp(),
 		Disabled:         false,
 		Verified:         isVerified,
 		AvatarResourceId: account.AvatarFilepath,

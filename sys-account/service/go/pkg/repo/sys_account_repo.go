@@ -47,5 +47,7 @@ func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, b
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
 	bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)
 	bus.RegisterAction("onDeleteProject", repo.onDeleteProject)
+	bus.RegisterAction("onCheckProjectExists", repo.onCheckProjectExists)
+	bus.RegisterAction("onCheckAccountExists", repo.onCheckAccountExists)
 	return repo, nil
 }

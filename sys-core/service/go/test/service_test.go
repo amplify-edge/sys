@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
@@ -56,7 +57,7 @@ func get(id string) (*SomeData, error) {
 func testCoreDBService(t *testing.T) {
 	var err error
 	logger := logrus.New().WithField("sys-db", "test")
-	sysCoreSvc, err = coresvc.NewCoreDB(logger, sysCoreCfg)
+	sysCoreSvc, err = coresvc.NewCoreDB(logger, &sysCoreCfg.SysCoreConfig, nil)
 	assert.NoError(t, err)
 
 	t.Logf("sys-core-svc: %v", *sysCoreSvc)
@@ -72,8 +73,8 @@ func testTableCreation(t *testing.T) {
 }
 
 func testTableInsert(t *testing.T) {
-	id := coresvc.NewID()
-	foreignID := coresvc.NewID()
+	id := sharedConfig.NewID()
+	foreignID := sharedConfig.NewID()
 	err := insertSomeDatas(id, foreignID, "blahblah")
 	assert.NoError(t, err)
 	sd, err := get(id)

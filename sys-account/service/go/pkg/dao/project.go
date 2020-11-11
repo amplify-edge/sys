@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
@@ -39,10 +40,10 @@ func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
 		orgName = p.OrgName
 	}
 	return &Project{
-		Id:             coresvc.NewID(),
+		Id:             sharedConfig.NewID(),
 		Name:           p.Name,
 		LogoResourceId: p.LogoFilepath,
-		CreatedAt:      coresvc.CurrentTimestamp(),
+		CreatedAt:      sharedConfig.CurrentTimestamp(),
 		AccountId:      p.CreatorId,
 		OrgId:          orgId,
 		OrgName:        orgName,
@@ -96,7 +97,7 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 	a.log.WithFields(log.Fields{
 		"queryStatement": selectStmt,
 		"arguments":      args,
-	}).Debug("Querying roles")
+	}).Debug("Querying projects")
 	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err

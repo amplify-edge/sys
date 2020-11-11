@@ -83,18 +83,43 @@ func (ad *SysAccountRepo) onCheckProjectExists(ctx context.Context, in *sharedCo
 		return nil, err
 	}
 	rmap := map[string]interface{}{}
-	if requestMap[projectIdKey] != "" {
+	if requestMap[projectIdKey] != nil && requestMap[projectIdKey].(string) != "" {
 		rmap["id"] = requestMap[projectIdKey]
 	}
-	if requestMap[projectNameKey] != "" {
+	if requestMap[projectNameKey] != nil && requestMap[projectNameKey].(string) != "" {
 		rmap["name"] = requestMap[projectNameKey]
 	}
-	_, err = ad.store.GetProject(&coredb.QueryParams{Params: rmap})
+	proj, err := ad.store.GetProject(&coredb.QueryParams{Params: rmap})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"exists":     true,
+		projectIdKey: proj.Id,
+	}, nil
+}
+
+func (ad *SysAccountRepo) onCheckOrgExists(_ context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const orgIdKey = "sys_account_org_ref_id"
+	const orgNameKey = "sys_account_org_ref_name"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	rmap := map[string]interface{}{}
+	if requestMap[orgIdKey] != nil && requestMap[orgIdKey].(string) != "" {
+		rmap["id"] = requestMap[orgIdKey]
+	}
+	if requestMap[orgNameKey] != nil && requestMap[orgNameKey].(string) != "" {
+		rmap["name"] = requestMap[orgNameKey]
+	}
+	org, err := ad.store.GetOrg(&coredb.QueryParams{Params: rmap})
 	if err != nil {
 		return nil, err
 	}
 	return map[string]interface{}{
 		"exists": true,
+		orgIdKey: org.Id,
 	}, nil
 }
 
@@ -106,17 +131,18 @@ func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCo
 		return nil, err
 	}
 	rmap := map[string]interface{}{}
-	if requestMap[accountIdKey] != "" {
+	if requestMap[accountIdKey] != nil && requestMap[accountIdKey].(string) != "" {
 		rmap["id"] = requestMap[accountIdKey]
 	}
-	if requestMap[accountNameKey] != "" {
+	if requestMap[accountNameKey] != nil && requestMap[accountNameKey].(string) != "" {
 		rmap["name"] = requestMap[accountNameKey]
 	}
-	_, err = ad.store.GetAccount(&coredb.QueryParams{Params: rmap})
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: rmap})
 	if err != nil {
 		return nil, err
 	}
 	return map[string]interface{}{
-		"exists": true,
+		"exists":     true,
+		accountIdKey: acc.ID,
 	}, nil
 }

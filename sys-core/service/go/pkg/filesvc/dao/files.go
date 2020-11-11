@@ -5,6 +5,8 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
+
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
@@ -45,12 +47,12 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, resourceId string,
 	exists, err := f.fileExists(&qp)
 	if err != nil || !exists {
 		newFile := &File{
-			Id:         coredb.NewID(),
+			Id:         utilities.NewID(),
 			Binary:     fileByte,
 			ShaHash:    shaHash[:],
 			ResourceId: resourceId,
-			CreatedAt:  coredb.CurrentTimestamp(),
-			UpdatedAt:  coredb.CurrentTimestamp(),
+			CreatedAt:  utilities.CurrentTimestamp(),
+			UpdatedAt:  utilities.CurrentTimestamp(),
 		}
 		if isDir {
 			newFile.IsDir = true
@@ -85,7 +87,7 @@ func (f *FileDB) UpsertFromUploadRequest(fileByte []byte, id, resourceId string,
 			ShaHash:    shaHash[:],
 			ResourceId: file.ResourceId,
 			CreatedAt:  file.CreatedAt,
-			UpdatedAt:  coredb.CurrentTimestamp(),
+			UpdatedAt:  utilities.CurrentTimestamp(),
 		}
 		if isDir {
 			updFile.IsDir = true

@@ -152,7 +152,7 @@ func (qp *QueryParams) ColumnsAndValues() ([]string, []interface{}) {
 
 func UnmarshalToMap(b []byte) (map[string]interface{}, error) {
 	m := map[string]interface{}{}
-	if err := json.Unmarshal(b, &m); err != nil {
+	if err := sharedConfig.UnmarshalJson(b, &m); err != nil {
 		return nil, err
 	}
 	return m, nil
@@ -163,7 +163,7 @@ func MarshalToBytes(any interface{}) ([]byte, error) {
 }
 
 func MarshalPretty(any interface{}) ([]byte, error) {
-	return json.MarshalIndent(&any, "", "  ")
+	return sharedConfig.MarshalPretty(any)
 }
 
 func AnyToQueryParam(m interface{}, snakeCase bool) (res QueryParams, err error) {
@@ -185,14 +185,6 @@ func AnyToQueryParam(m interface{}, snakeCase bool) (res QueryParams, err error)
 	}
 	res.Params = params
 	return res, err
-}
-
-func NewID() string {
-	return sharedConfig.NewID()
-}
-
-func CurrentTimestamp() int64 {
-	return sharedConfig.CurrentTimestamp()
 }
 
 func ToSnakeCase(s string) string {

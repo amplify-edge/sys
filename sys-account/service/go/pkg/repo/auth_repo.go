@@ -3,9 +3,11 @@ package repo
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -132,7 +134,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 func (ad *SysAccountRepo) genVerificationToken(param *coredb.QueryParams) (string, *dao.Account, error) {
 	// TODO @gutterbacon: verification token, replace this with anything else
 	// like OTP or anything
-	vtoken, err := pass.GenHash(coredb.NewID())
+	vtoken, err := pass.GenHash(utilities.NewID())
 	if err != nil {
 		return "", nil, err
 	}
@@ -175,7 +177,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 	if err != nil {
 		return nil, err
 	}
-	req.LastLogin = timestampNow()
+	req.LastLogin = utilities.CurrentTimestamp()
 	if err := ad.store.UpdateAccount(req); err != nil {
 		return nil, err
 	}
@@ -226,7 +228,7 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 			Success:                   false,
 			SuccessMsg:                "",
 			ErrorReason:               err.Error(),
-			ForgotPasswordRequestedAt: timestampNow(),
+			ForgotPasswordRequestedAt: utilities.CurrentTimestamp(),
 		}, err
 	}
 	ad.log.Debugf("Generated Verification Token for ForgotPassword: %s", vtoken)
@@ -259,7 +261,7 @@ func (ad *SysAccountRepo) ForgotPassword(ctx context.Context, in *pkg.ForgotPass
 	return &pkg.ForgotPasswordResponse{
 		Success:                   true,
 		SuccessMsg:                "Reset password token sent",
-		ForgotPasswordRequestedAt: timestampNow(),
+		ForgotPasswordRequestedAt: utilities.CurrentTimestamp(),
 	}, nil
 }
 
@@ -280,7 +282,7 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 			Success:                  false,
 			SuccessMsg:               "",
 			ErrorReason:              err.Error(),
-			ResetPasswordRequestedAt: timestampNow(),
+			ResetPasswordRequestedAt: utilities.CurrentTimestamp(),
 		}, err
 	}
 	ad.log.Debugf("reset password account: %v", *acc)
@@ -290,7 +292,7 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 			Success:                  false,
 			SuccessMsg:               "",
 			ErrorReason:              "verification token mismatch",
-			ResetPasswordRequestedAt: timestampNow(),
+			ResetPasswordRequestedAt: utilities.CurrentTimestamp(),
 		}, err
 	}
 	newPasswd, err := pass.GenHash(in.Password)
@@ -299,7 +301,7 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 			Success:                  false,
 			SuccessMsg:               "",
 			ErrorReason:              err.Error(),
-			ResetPasswordRequestedAt: timestampNow(),
+			ResetPasswordRequestedAt: utilities.CurrentTimestamp(),
 		}, err
 	}
 	acc.Password = newPasswd
@@ -309,14 +311,14 @@ func (ad *SysAccountRepo) ResetPassword(ctx context.Context, in *pkg.ResetPasswo
 			Success:                  false,
 			SuccessMsg:               "",
 			ErrorReason:              err.Error(),
-			ResetPasswordRequestedAt: timestampNow(),
+			ResetPasswordRequestedAt: utilities.CurrentTimestamp(),
 		}, err
 	}
 	return &pkg.ResetPasswordResponse{
 		Success:                  true,
 		SuccessMsg:               "successfully reset password",
 		ErrorReason:              "",
-		ResetPasswordRequestedAt: timestampNow(),
+		ResetPasswordRequestedAt: utilities.CurrentTimestamp(),
 	}, nil
 }
 
