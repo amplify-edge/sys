@@ -187,14 +187,6 @@ func AnyToQueryParam(m interface{}, snakeCase bool) (res QueryParams, err error)
 	return res, err
 }
 
-func NewID() string {
-	return sharedConfig.NewID()
-}
-
-func CurrentTimestamp() int64 {
-	return sharedConfig.CurrentTimestamp()
-}
-
 func ToSnakeCase(s string) string {
 	return helper.ToSnakeCase(s)
 }

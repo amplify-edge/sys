@@ -3,8 +3,8 @@ package dao_test
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
@@ -17,7 +17,7 @@ var (
 			AccountId: account0ID,
 			Role:      3, // 3 is Admin
 			OrgId:     org1ID,
-			CreatedAt: time.Now().UTC().Unix(),
+			CreatedAt: utilities.CurrentTimestamp(),
 		},
 		{
 			// Member of an Org
@@ -26,7 +26,7 @@ var (
 			Role:      2, // 2 is member
 			ProjectId: proj1ID,
 			OrgId:     org2ID,
-			CreatedAt: time.Now().UTC().Unix(),
+			CreatedAt: utilities.CurrentTimestamp(),
 		},
 	}
 )

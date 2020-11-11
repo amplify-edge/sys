@@ -3,11 +3,10 @@ package dao
 import (
 	"errors"
 	"fmt"
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	log "github.com/sirupsen/logrus"
-	"time"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	sq "github.com/Masterminds/squirrel"
@@ -31,7 +30,7 @@ func (a *AccountDB) FromPkgRoleRequest(role *pkg.UserRoles, accountId string) *R
 		Role:      int(role.Role),
 		ProjectId: role.ProjectID,
 		OrgId:     role.OrgID,
-		CreatedAt: time.Now().UTC().Unix(),
+		CreatedAt: utilities.CurrentTimestamp(),
 	}
 }
 

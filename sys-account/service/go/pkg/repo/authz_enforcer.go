@@ -5,17 +5,12 @@ import (
 	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"time"
 
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 )
-
-func timestampNow() int64 {
-	return time.Now().UTC().Unix()
-}
 
 func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *pkg.AccountNewRequest) error {
 	ad.log.Debugf("getting permission for new account creation")

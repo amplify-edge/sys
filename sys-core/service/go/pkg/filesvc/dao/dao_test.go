@@ -4,22 +4,24 @@ import (
 	"crypto/sha512"
 	b64 "encoding/base64"
 	"encoding/binary"
-	coredb "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"testing"
+
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	corecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
+	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
 )
 
 var (
 	fdb *dao.FileDB
 	err error
 
-	project1ID = coredb.NewID()
-	org1ID     = coredb.NewID()
-	account1ID = coredb.NewID()
+	project1ID = utilities.NewID()
+	org1ID     = utilities.NewID()
+	account1ID = utilities.NewID()
 )
 
 func init() {

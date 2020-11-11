@@ -47,7 +47,7 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 		params["name"] = in.OrgName
 	}
 	// check org existence
-	_, err := ad.store.GetOrg(&coresvc.QueryParams{Params: params})
+	o, err := ad.store.GetOrg(&coresvc.QueryParams{Params: params})
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +57,7 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	}
 	// this is the key
 	in.LogoFilepath = logo.ResourceId
+	in.OrgId = o.Id
 	req, err := ad.store.FromPkgProject(in)
 	if err != nil {
 		return nil, err

@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -14,15 +15,15 @@ var (
 	testDb     *coresvc.CoreDB
 	accdb      *dao.AccountDB
 	err        error
-	role1ID    = coresvc.NewID()
-	role2ID    = coresvc.NewID()
-	org1ID     = coresvc.NewID()
-	org2ID     = coresvc.NewID()
-	proj1ID    = coresvc.NewID()
-	proj2ID    = coresvc.NewID()
-	proj3ID    = coresvc.NewID()
-	account0ID = coresvc.NewID()
-	now        = coresvc.CurrentTimestamp()
+	role1ID    = utilities.NewID()
+	role2ID    = utilities.NewID()
+	org1ID     = utilities.NewID()
+	org2ID     = utilities.NewID()
+	proj1ID    = utilities.NewID()
+	proj2ID    = utilities.NewID()
+	proj3ID    = utilities.NewID()
+	account0ID = utilities.NewID()
+	now        = utilities.CurrentTimestamp()
 	accs       = []dao.Account{
 		{
 			ID:               account0ID,
@@ -35,7 +36,7 @@ var (
 			Disabled:         false,
 		},
 		{
-			ID:               coresvc.NewID(),
+			ID:               utilities.NewID(),
 			Email:            "bigg@example.com",
 			Password:         "two_packs",
 			CreatedAt:        now,
@@ -45,7 +46,7 @@ var (
 			Disabled:         false,
 		},
 		{
-			ID:                coresvc.NewID(),
+			ID:                utilities.NewID(),
 			Email:             "shakur@example.com",
 			Password:          "no_biggie",
 			AvatarResourceId:  "https://avatars3.githubusercontent.com/u/59567775?s=300&v=4",
