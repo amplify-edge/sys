@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -115,15 +114,15 @@ func (c *CoreDB) ListBackup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.
 func (c *CoreDB) listBackups() ([]string, error) {
 	backupDir := c.config.CronConfig.BackupDir
 	c.logger.Info("backup dir: " + backupDir)
-	files, err := ioutil.ReadDir(backupDir)
+	fileInfos, err := sharedConfig.ListFiles(backupDir)
 	if err != nil {
 		return nil, err
 	}
-	var fileInfos []string
-	for _, f := range files {
-		fileInfos = append(fileInfos, f.Name())
+	var filenames []string
+	for _, f := range fileInfos {
+		filenames = append(filenames, f.Name())
 	}
-	return fileInfos, nil
+	return filenames, nil
 }
 
 func (c *CoreDB) createBackupFile() (io.WriteCloser, string, error) {
