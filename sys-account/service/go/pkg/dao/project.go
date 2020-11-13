@@ -51,16 +51,20 @@ func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
 }
 
 func (p *Project) ToPkgProject(org *pkg.Org, logo []byte) (*pkg.Project, error) {
+	porg := &pkg.Org{}
+	if org != nil {
+		porg = org
+	}
 	return &pkg.Project{
 		Id:             p.Id,
 		Name:           p.Name,
-		LogoResourceId: org.LogoResourceId,
+		LogoResourceId: p.LogoResourceId,
 		Logo:           logo,
 		CreatedAt:      p.CreatedAt,
 		CreatorId:      p.AccountId,
 		OrgId:          p.OrgId,
 		OrgName:        p.OrgName,
-		Org:            org,
+		Org:            porg,
 	}, nil
 }
 

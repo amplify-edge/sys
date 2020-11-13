@@ -60,19 +60,22 @@ func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
 		}
 		return nil, err
 	}
-	var pkgProjects []*pkg.Project
-	for _, p := range projects {
-		projectLogo, err := ad.frepo.DownloadFile("", p.LogoResourceId)
-		if err != nil {
-			return nil, err
+	if len(projects) > 0 {
+		var pkgProjects []*pkg.Project
+		for _, p := range projects {
+			projectLogo, err := ad.frepo.DownloadFile("", p.LogoResourceId)
+			if err != nil {
+				return nil, err
+			}
+			proj, err := p.ToPkgProject(nil, projectLogo.Binary)
+			if err != nil {
+				return nil, err
+			}
+			pkgProjects = append(pkgProjects, proj)
 		}
-		proj, err := p.ToPkgProject(nil, projectLogo.Binary)
-		if err != nil {
-			return nil, err
-		}
-		pkgProjects = append(pkgProjects, proj)
+		return org.ToPkgOrg(pkgProjects, orgLogo.Binary)
 	}
-	return org.ToPkgOrg(pkgProjects, orgLogo.Binary)
+	return org.ToPkgOrg(nil, orgLogo.Binary)
 }
 
 func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *pkg.IdRequest) (*pkg.Org, error) {
