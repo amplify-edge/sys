@@ -3,38 +3,28 @@ module github.com/getcouragenow/sys
 go 1.15
 
 require (
-	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2
-	github.com/dgraph-io/ristretto v0.0.3 // indirect
-	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
-	github.com/genjidb/genji v0.8.0
-	github.com/genjidb/genji/engine/badgerengine v0.8.0
-	github.com/getcouragenow/mod v0.0.0-20201102154256-76639b41d618 // indirect
-	github.com/getcouragenow/sys-share v0.0.0-20201102093809-ef0efd93ad36
-	github.com/go-playground/validator v9.30.0+incompatible
-	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/golang/snappy v0.0.2 // indirect
+	github.com/genjidb/genji v0.9.0
+	github.com/genjidb/genji/engine/badgerengine v0.9.0
+	github.com/getcouragenow/sys-share v0.0.0-20201113132352-54ff99aa8d59
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/improbable-eng/grpc-web v0.13.0
 	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0 // indirect
-	github.com/segmentio/encoding v0.2.0
+	github.com/segmentio/encoding v0.2.2
 	github.com/sendgrid/rest v2.6.2+incompatible // indirect
-	github.com/sendgrid/sendgrid-go v3.7.0+incompatible
+	github.com/sendgrid/sendgrid-go v3.7.1+incompatible
 	github.com/sirupsen/logrus v1.7.0
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/crypto v0.0.0-20200930160638-afb6bcd081ae
-	golang.org/x/net v0.0.0-20201029221708-28c70e62bb1d
-	golang.org/x/sys v0.0.0-20201029080932-201ba4db2418 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.32.0
-	google.golang.org/grpc/examples v0.0.0-20200925170654-e6c98a478e62 // indirect
+	golang.org/x/crypto v0.0.0-20201116153603-4be66e5b6582
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	google.golang.org/grpc v1.33.2
+	google.golang.org/grpc/examples v0.0.0-20201117005946-20636e76a99a // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v2 v2.3.0
 )
-
-replace github.com/getcouragenow/sys-share => ../sys-share/

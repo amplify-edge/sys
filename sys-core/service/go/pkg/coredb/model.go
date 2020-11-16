@@ -2,6 +2,7 @@ package coredb
 
 import (
 	"bytes"
+	"context"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/genjidb/genji"
 	"github.com/genjidb/genji/document"
@@ -70,7 +71,7 @@ func newGenjiStore(path, encKey string, keyRotationSchedule int) (*genji.DB, *ba
 	if err != nil {
 		return nil, nil, err
 	}
-	store, err := genji.New(engine)
+	store, err := genji.New(context.Background(), engine)
 	if err != nil {
 		return nil, nil, err
 	}
