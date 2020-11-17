@@ -134,6 +134,16 @@ func (a *AccountDB) accountQueryFilter(filter *coresvc.QueryParams) sq.SelectBui
 	return baseStmt
 }
 
+func (a *AccountDB) accountLikeFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
+	baseStmt := sq.Select(a.accountColumns).From(AccTableName)
+	if filter != nil && filter.Params != nil {
+		for k, v := range filter.Params {
+			baseStmt = baseStmt.Where(sq.Like{k: v})
+		}
+	}
+	return baseStmt
+}
+
 func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, error) {
 	var acc Account
 	selectStmt, args, err := a.accountQueryFilter(filterParams).ToSql()
@@ -150,7 +160,7 @@ func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, err
 
 func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
 	var accs []*Account
-	baseStmt := a.accountQueryFilter(filterParams)
+	baseStmt := a.accountLikeFilter(filterParams)
 	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
 	if err != nil {
 		return nil, 0, err

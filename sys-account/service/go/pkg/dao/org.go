@@ -84,6 +84,16 @@ func (a *AccountDB) orgQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder
 	return baseStmt
 }
 
+func (a *AccountDB) orgLikeFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
+	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
+	if filter != nil && filter.Params != nil {
+		for k, v := range filter.Params {
+			baseStmt = baseStmt.Where(sq.Like{k: v})
+		}
+	}
+	return baseStmt
+}
+
 func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	var o Org
 	selectStmt, args, err := a.orgQueryFilter(filterParam).ToSql()
@@ -100,7 +110,7 @@ func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 
 func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Org, int64, error) {
 	var orgs []*Org
-	baseStmt := a.orgQueryFilter(filterParam)
+	baseStmt := a.orgLikeFilter(filterParam)
 	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
 	if err != nil {
 		return nil, 0, err
