@@ -92,6 +92,16 @@ func (a *AccountDB) projectQueryFilter(filter *coresvc.QueryParams) sq.SelectBui
 	return baseStmt
 }
 
+func (a *AccountDB) projectLikeFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
+	baseStmt := sq.Select(a.projectColumns).From(ProjectTableName)
+	if filter != nil && filter.Params != nil {
+		for k, v := range filter.Params {
+			baseStmt = baseStmt.Where(sq.Like{k: "%" + v.(string) + "%"})
+		}
+	}
+	return baseStmt
+}
+
 func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, error) {
 	var p Project
 	selectStmt, args, err := a.projectQueryFilter(filterParam).ToSql()
@@ -112,11 +122,15 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 
 func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Project, int64, error) {
 	var projs []*Project
-	baseStmt := a.projectQueryFilter(filterParam)
+	baseStmt := a.projectLikeFilter(filterParam)
 	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
 	if err != nil {
 		return nil, 0, err
 	}
+	a.log.WithFields(log.Fields{
+		"queryStatement": selectStmt,
+		"arguments":      args,
+	}).Debug("List projects")
 	res, err := a.db.Query(selectStmt, args...)
 	if err != nil {
 		return nil, 0, err

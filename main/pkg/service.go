@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"fmt"
 	"net/http"
 
 	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
@@ -19,8 +18,6 @@ import (
 	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 	corefilecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
-	corefile "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/repo"
-	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
 )
 
 const (
@@ -38,22 +35,18 @@ type SysServices struct {
 	logger        *logrus.Entry
 	port          int
 	SysAccountSvc *accountpkg.SysAccountService
-	dbSvc         *coresvc.SysCoreProxyService
-	busSvc        *coresvc.SysBusProxyService
-	mailSvc       *coresvc.SysEmailProxyService
+	// dbSvc         *coresvc.SysCoreProxyService
+	busSvc *coresvc.SysBusProxyService
+	// mailSvc       *coresvc.SysEmailProxyService
 	// fileSvc       *corefilecfg.SysFileService
 }
 
 type ServiceConfigPaths struct {
-	core    string
-	file    string
 	account string
 }
 
-func NewServiceConfigPaths(core, file, account string) *ServiceConfigPaths {
+func NewServiceConfigPaths(account string) *ServiceConfigPaths {
 	return &ServiceConfigPaths{
-		core:    core,
-		file:    file,
 		account: account,
 	}
 }
@@ -70,61 +63,26 @@ type serviceConfigs struct {
 // load up and provide sub grpc services.
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy then call it here.
 type SysServiceConfig struct {
-	store    *coredb.CoreDB // sys-core
-	port     int
-	logger   *logrus.Entry
-	cfg      *serviceConfigs
-	bus      *corebus.CoreBus
-	mailSvc  *coremail.MailSvc
-	fileRepo *corefile.SysFileRepo
+	store  *coredb.CoreDB // sys-core
+	port   int
+	logger *logrus.Entry
+	cfg    *serviceConfigs
+	bus    *corebus.CoreBus
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
 func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int, bus *corebus.CoreBus) (*SysServiceConfig, error) {
 	var err error
-	csc, err := corecfg.NewConfig(servicePaths.core)
-	if err != nil {
-		return nil, err
-	}
-	if db == nil {
-		if servicePaths.core == "" {
-			return nil, fmt.Errorf("error neither db nor sys-core config path is provided")
-		}
-		db, err = coredb.NewCoreDB(l, &csc.SysCoreConfig, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
-	mailSvc := coremail.NewMailSvc(&csc.MailConfig, l)
-	// file
-	fsc, err := corefilecfg.NewConfig(servicePaths.file)
-	if err != nil {
-		return nil, err
-	}
-
-	fileDb, err := coredb.NewCoreDB(l, &fsc.DBConfig, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	frepo, err := corefile.NewSysFileRepo(fileDb, l)
-	if err != nil {
-		return nil, err
-	}
-
 	// account
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, db, servicePaths.account, bus, mailSvc, frepo)
+	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, servicePaths.account, bus)
 	if err != nil {
 		return nil, err
 	}
-
 	ssc := &SysServiceConfig{
-		logger:   l,
-		store:    db,
-		port:     port,
-		cfg:      &serviceConfigs{account: newSysAccountCfg, core: csc, file: fsc},
-		mailSvc:  mailSvc,
-		fileRepo: frepo,
+		logger: l,
+		store:  db,
+		port:   port,
+		cfg:    &serviceConfigs{account: newSysAccountCfg},
 	}
 	return ssc, nil
 }
@@ -147,7 +105,7 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 	// ========================================================================
 	// Sys-Mail
 	// ========================================================================
-	mailService := coresvc.NewSysMailProxyService(cfg.mailSvc)
+	// mailService := coresvc.NewSysMailProxyService(cfg.mailSvc)
 
 	// ========================================================================
 	// Sys-File
@@ -163,10 +121,8 @@ func NewService(cfg *SysServiceConfig) (*SysServices, error) {
 		logger:        cfg.logger,
 		port:          cfg.port,
 		SysAccountSvc: sysAccountSvc,
-		dbSvc:         sysAccountSvc.DbProxyService,
-		busSvc:        sysAccountSvc.BusProxyService,
-		mailSvc:       mailService,
-		// fileSvc:       fileSvc,
+		// dbSvc:         sysAccountSvc.DbProxyService,
+		busSvc: sysAccountSvc.BusProxyService,
 	}, nil
 }
 
@@ -197,9 +153,9 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.SysAccountSvc.RegisterServices(srv)
-	s.dbSvc.RegisterSvc(srv)
+	// s.dbSvc.RegisterSvc(srv)
 	s.busSvc.RegisterSvc(srv)
-	s.mailSvc.RegisterSvc(srv)
+	// s.mailSvc.RegisterSvc(srv)
 	// s.fileSvc.RegisterService(srv)
 }
 

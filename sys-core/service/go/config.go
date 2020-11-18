@@ -18,7 +18,7 @@ type SysCoreConfig struct {
 }
 
 func (s *SysCoreConfig) Validate() error {
-	if err := s.MailConfig.validate(); err != nil {
+	if err := s.MailConfig.Validate(); err != nil {
 		return err
 	}
 	return s.SysCoreConfig.Validate()
@@ -42,7 +42,7 @@ type MailConfig struct {
 	TroubleContact string `json:"troubleContact,omitempty" yaml:"troubleContact"`
 }
 
-func (m *MailConfig) validate() error {
+func (m *MailConfig) Validate() error {
 	if m.SendgridApiKey == "" {
 		return fmt.Errorf(errParsingConfig, "no sendgrid api key provided")
 	}

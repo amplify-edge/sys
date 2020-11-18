@@ -111,12 +111,15 @@ this-build-delete:
 this-config-gen: this-config-delete this-config-dep
 	@echo Generating Config
 	@mkdir -p ./config
-	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysaccount.jsonnet > $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
-	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet \
-		-V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) \
-		-V SYS_CORE_SENDGRID_API_KEY=$(shell echo ${SENDGRID_API_KEY}) > $(EXAMPLE_SYS_CORE_CFG_PATH)
-	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysfile.jsonnet \
-		-V SYS_FILE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_FILE_CFG_PATH)
+	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysaccount.jsonnet \
+		-V SYS_ACCOUNT_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) \
+		-V SYS_ACCOUNT_FILEDB_ENCRYPT_KEY=$(EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY) \
+        -V SYS_ACCOUNT_SENDGRID_API_KEY=$(shell echo ${SENDGRID_API_KEY}) > $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
+#	jsonnet -S $(EXAMPLE_SERVER_DIR)/syscore.jsonnet \
+#		-V SYS_CORE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_CORE_DB_ENCRYPT_KEY) \
+#		-V SYS_CORE_SENDGRID_API_KEY=$(shell echo ${SENDGRID_API_KEY}) > $(EXAMPLE_SYS_CORE_CFG_PATH)
+#	jsonnet -S $(EXAMPLE_SERVER_DIR)/sysfile.jsonnet \
+#		-V SYS_FILE_DB_ENCRYPT_KEY=$(EXAMPLE_SYS_FILE_DB_ENCRYPT_KEY) > $(EXAMPLE_SYS_FILE_CFG_PATH)
 
 this-config-dep:
 	cd $(EXAMPLE_SERVER_DIR) && jb install && jb update
@@ -146,7 +149,7 @@ this-ex-sdk-run:
 
 this-ex-server-run:
 	mkdir -p db
-	$(SERVER_BIN) -p $(EXAMPLE_SERVER_PORT) -a $(EXAMPLE_SYS_ACCOUNT_CFG_PATH) -c $(EXAMPLE_SYS_CORE_CFG_PATH)
+	$(SERVER_BIN) -p $(EXAMPLE_SERVER_PORT) -a $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
 
 this-ex-sdk-auth-signup:
 	@echo Running Example Register Client
