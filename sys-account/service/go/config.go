@@ -6,6 +6,7 @@ import (
 
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
+	coresvc "github.com/getcouragenow/sys/sys-core/service/go"
 )
 
 const (
@@ -22,9 +23,12 @@ func (s *SysAccountConfig) Validate() error {
 }
 
 type Config struct {
-	InitialSuperUsers     []SuperUser `json:"initialSuperUsers" yaml:"initialSuperUsers" mapstructure:"initialSuperUsers"`
-	UnauthenticatedRoutes []string    `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
-	JWTConfig             JWTConfig   `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+	InitialSuperUsers     []SuperUser        `json:"initialSuperUsers" yaml:"initialSuperUsers" mapstructure:"initialSuperUsers"`
+	UnauthenticatedRoutes []string           `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
+	JWTConfig             JWTConfig          `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+	SysCoreConfig         commonCfg.Config   `yaml:"sysCoreConfig" mapstructure:"sysCoreConfig"`
+	SysFileConfig         commonCfg.Config   `yaml:"sysFileConfig" mapstructure:"sysFileConfig"`
+	MailConfig            coresvc.MailConfig `yaml:"mailConfig" mapstructure:"mailConfig"`
 }
 
 type SuperUser struct {
@@ -58,6 +62,15 @@ func (c Config) validate() error {
 		}
 	}
 	if err := c.JWTConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.MailConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.SysCoreConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.SysFileConfig.Validate(); err != nil {
 		return err
 	}
 	return nil
