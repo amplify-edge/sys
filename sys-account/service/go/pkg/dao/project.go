@@ -117,7 +117,10 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 		return nil, err
 	}
 	err = doc.StructScan(&p)
-	return &p, err
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
 
 func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Project, int64, error) {
@@ -166,6 +169,10 @@ func (a *AccountDB) InsertProject(p *Project) error {
 	if len(columns) != len(values) {
 		return fmt.Errorf("error: length mismatch: cols: %d, vals: %d", len(columns), len(values))
 	}
+	a.log.WithFields(log.Fields{
+		"columns": columns,
+		"values":  values,
+	}).Debug("insert into projects table")
 	stmt, args, err := sq.Insert(ProjectTableName).
 		Columns(columns...).
 		Values(values...).

@@ -101,6 +101,7 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	var limit, cursor int64
+	limit = in.PerPageEntries
 	orderBy := in.OrderBy
 	var err error
 	filter := &coresvc.QueryParams{Params: in.Filters}

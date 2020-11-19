@@ -72,6 +72,7 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 	if in == nil {
 		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
+	limit = in.PerPageEntries
 	filter, err := ad.allowListAccount(ctx)
 	if err != nil {
 		return nil, err

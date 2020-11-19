@@ -95,6 +95,7 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	var limit, cursor int64
+	limit = in.PerPageEntries
 	orderBy := in.OrderBy
 	var err error
 	filter := &coresvc.QueryParams{Params: in.Filters}
