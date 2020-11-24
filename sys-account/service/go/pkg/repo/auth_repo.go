@@ -75,12 +75,15 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	newAcc := &pkg.AccountNewRequest{
 		Email:    in.Email,
 		Password: in.Password,
-		Roles: []*pkg.UserRoles{
-			{
-				Role: 1,
-				All:  false,
-			},
-		},
+		Roles:    []*pkg.UserRoles{},
+	}
+	if in.UserRoles != nil {
+		newAcc.Roles = append(newAcc.Roles, in.UserRoles)
+	} else {
+		newAcc.Roles = append(newAcc.Roles, &pkg.UserRoles{
+			Role: 1,
+			All:  false,
+		})
 	}
 	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false)
 	if err != nil {
