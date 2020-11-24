@@ -137,11 +137,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 func (ad *SysAccountRepo) genVerificationToken(param *coredb.QueryParams) (string, *dao.Account, error) {
 	// TODO @gutterbacon: verification token, replace this with anything else
 	// like OTP or anything
-	vtoken, err := pass.GenHash(utilities.NewID())
-	if err != nil {
-		return "", nil, err
-	}
-	// TODO @gutterbacon: this is the part where we do email to user (verification) normally
+	vtoken := utilities.NewID()
 	// update user's account table's verification_token
 	acc, err := ad.store.GetAccount(param)
 	if err != nil {
