@@ -135,7 +135,7 @@ func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCo
 		rmap["id"] = requestMap[accountIdKey]
 	}
 	if requestMap[accountNameKey] != nil && requestMap[accountNameKey].(string) != "" {
-		rmap["name"] = requestMap[accountNameKey]
+		rmap["email"] = requestMap[accountNameKey]
 	}
 	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: rmap})
 	if err != nil {
