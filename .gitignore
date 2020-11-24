@@ -27,3 +27,4 @@ db
 /.token
 /sys-core/service/go/pkg/filesvc/dao/testdata/updatedAvatar.jpg
 testdata
+/sys-core/service/go/pkg/mailer/mailer_test.go

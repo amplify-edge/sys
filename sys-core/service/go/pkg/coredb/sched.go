@@ -19,6 +19,14 @@ const (
 	backupFormat = "%s_%s.bak"
 )
 
+func (c *CoreDB) RegisterCronFunction(funcSpec string, function func()) error {
+	_, err := c.crony.AddFunc(funcSpec, function)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *CoreDB) scheduleBackup() error {
 	crony := cron.New()
 

@@ -33,18 +33,56 @@ type DbConfig struct {
 }
 
 type MailConfig struct {
-	SendgridApiKey string `json:"sendgridApiKey,omitempty" yaml:"sendgridApiKey"`
-	SenderName     string `json:"senderName,omitempty" yaml:"senderName"`
-	SenderMail     string `json:"senderMail,omitempty" yaml:"senderMail"`
-	ProductName    string `json:"productName,omitempty" yaml:"productName"`
-	LogoUrl        string `json:"logoUrl,omitempty" yaml:"logoUrl"`
-	Copyright      string `json:"copyright,omitempty" yaml:"copyright"`
-	TroubleContact string `json:"troubleContact,omitempty" yaml:"troubleContact"`
+	SenderName     string     `json:"senderName,omitempty" yaml:"senderName"`
+	SenderMail     string     `json:"senderMail,omitempty" yaml:"senderMail"`
+	ProductName    string     `json:"productName,omitempty" yaml:"productName"`
+	LogoUrl        string     `json:"logoUrl,omitempty" yaml:"logoUrl"`
+	Copyright      string     `json:"copyright,omitempty" yaml:"copyright"`
+	TroubleContact string     `json:"troubleContact,omitempty" yaml:"troubleContact"`
+	Sendgrid       Sendgrid   `json:"sendgrid,omitempty" yaml:"sendgrid"`
+	Smtp           SmtpConfig `json:"smtp,omitempty" yaml:"smtp"`
+}
+
+type Sendgrid struct {
+	ApiKey string `json:"apiKey,omitempty" yaml:"apiKey,omitempty"`
+}
+
+func (s *Sendgrid) validate() error {
+	// if s.ApiKey == "" {
+	// 	return fmt.Errorf(errParsingConfig, "no sendgrid api key provided")
+	// }
+	return nil
+}
+
+type SmtpConfig struct {
+	Host     string `json:"host,omitempty" yaml:"host,omitempty"`
+	Port     int    `json:"port,omitempty" yaml:"port,omitempty"`
+	Email    string `json:"email,omitempty" yaml:"email,omitempty"`
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
+}
+
+func (s *SmtpConfig) validate() error {
+	if s.Host == "" {
+		return fmt.Errorf(errParsingConfig, "smtp host is empty")
+	}
+	if s.Port == 0 {
+		s.Port = 587
+	}
+	if s.Email == "" {
+		return fmt.Errorf(errParsingConfig, "smtp email is empty")
+	}
+	if s.Password == "" {
+		return fmt.Errorf(errParsingConfig, "smtp password is empty")
+	}
+	return nil
 }
 
 func (m *MailConfig) Validate() error {
-	if m.SendgridApiKey == "" {
-		return fmt.Errorf(errParsingConfig, "no sendgrid api key provided")
+	if &m.Smtp != nil {
+		return m.Smtp.validate()
+	}
+	if &m.Sendgrid != nil {
+		return m.Sendgrid.validate()
 	}
 	return nil
 }
