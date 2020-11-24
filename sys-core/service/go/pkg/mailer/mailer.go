@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"context"
+	"fmt"
 	"github.com/matcornic/hermes/v2"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -35,9 +36,6 @@ func NewMailSvc(mcfg *service.MailConfig, l *logrus.Entry) *MailSvc {
 			TroubleText: mcfg.TroubleContact,
 		},
 	}
-	if &mcfg.Sendgrid != nil && mcfg.Sendgrid.ApiKey != "" {
-		mailSvc.client = sendgrid.NewSendClient(mcfg.Sendgrid.ApiKey)
-	}
 	if &mcfg.Smtp != nil {
 		mailSvc.dialer = gomail.NewDialer(
 			mcfg.Smtp.Host,
@@ -47,6 +45,10 @@ func NewMailSvc(mcfg *service.MailConfig, l *logrus.Entry) *MailSvc {
 		)
 		// mailSvc.smtpCfg = &mcfg.Smtp
 	}
+	if &mcfg.Sendgrid != nil && mcfg.Sendgrid.ApiKey != "" {
+		mailSvc.client = sendgrid.NewSendClient(mcfg.Sendgrid.ApiKey)
+	}
+
 	return mailSvc
 }
 
@@ -55,6 +57,27 @@ func (m *MailSvc) GetHermesProduct() hermes.Product {
 }
 
 func (m *MailSvc) SendMail(ctx context.Context, in *corepkg.EmailRequest) (*corepkg.EmailResponse, error) {
+	if m.dialer != nil {
+		for name, address := range in.Recipients {
+			msg := gomail.NewMessage()
+			msg.SetAddressHeader("To", address, name)
+			msg.SetAddressHeader("From", m.senderMail, m.senderName)
+			msg.SetHeader("Subject", in.Subject)
+			msg.SetBody("text/html", string(in.Content))
+			if err := m.dialer.DialAndSend(msg); err != nil {
+				return &corepkg.EmailResponse{
+					Success:        false,
+					ErrMessage:     err.Error(),
+					SuccessMessage: "",
+				}, err
+			}
+		}
+		return &corepkg.EmailResponse{
+			Success:        false,
+			ErrMessage:     "",
+			SuccessMessage: "Successfully sent all emails",
+		}, nil
+	}
 	if m.client != nil {
 		sender := mail.NewEmail(m.senderName, m.senderMail)
 		content := string(in.Content)
@@ -76,23 +99,5 @@ func (m *MailSvc) SendMail(ctx context.Context, in *corepkg.EmailRequest) (*core
 			SuccessMessage: "Successfully sent all emails",
 		}, nil
 	}
-	for name, address := range in.Recipients {
-		msg := gomail.NewMessage()
-		msg.SetAddressHeader("To", address, name)
-		msg.SetAddressHeader("From", m.senderMail, m.senderName)
-		msg.SetHeader("Subject", in.Subject)
-		msg.SetBody("text/html", string(in.Content))
-		if err := m.dialer.DialAndSend(msg); err != nil {
-			return &corepkg.EmailResponse{
-				Success:        false,
-				ErrMessage:     err.Error(),
-				SuccessMessage: "",
-			}, err
-		}
-	}
-	return &corepkg.EmailResponse{
-		Success:        false,
-		ErrMessage:     "",
-		SuccessMessage: "Successfully sent all emails",
-	}, nil
+	return nil, fmt.Errorf("error: all alternative email sender is nil")
 }
