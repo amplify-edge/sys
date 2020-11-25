@@ -98,6 +98,10 @@ func (a *Account) ToPkgAccount(roles []*pkg.UserRoles, avatar []byte) (*pkg.Acco
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
+	avt := avatar
+	if avt == nil {
+		avt = []byte{}
+	}
 	return &pkg.Account{
 		Id:               a.ID,
 		Email:            a.Email,
@@ -109,7 +113,7 @@ func (a *Account) ToPkgAccount(roles []*pkg.UserRoles, avatar []byte) (*pkg.Acco
 		Disabled:         a.Disabled,
 		Verified:         a.Verified,
 		AvatarResourceId: a.AvatarResourceId,
-		Avatar:           avatar,
+		Avatar:           avt,
 	}, nil
 }
 

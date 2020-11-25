@@ -77,9 +77,9 @@ func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, order
 			if err != nil {
 				return nil, nil, err
 			}
-			account, err = acc.ToPkgAccount(pkgRoles, nil)
-		} else {
 			account, err = acc.ToPkgAccount(pkgRoles, avatar.Binary)
+		} else {
+			account, err = acc.ToPkgAccount(pkgRoles, nil)
 		}
 		if err != nil {
 			return nil, nil, err

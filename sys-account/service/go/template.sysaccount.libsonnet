@@ -25,7 +25,7 @@ local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/serv
       },
       smtp: {
         host: "smtp.gmail.com",
-        port: 587,
+        port: 465,
         email: "winwisely268@gmail.com",
         password: "blablabla",
       }
