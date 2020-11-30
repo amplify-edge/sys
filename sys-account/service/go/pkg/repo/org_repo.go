@@ -132,6 +132,42 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 	}, nil
 }
 
+func (ad *SysAccountRepo) ListNonSubscribedOrgs(ctx context.Context, in *pkg.ListRequest) (*pkg.ListResponse, error) {
+	if in == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	var limit, cursor int64
+	limit = in.PerPageEntries
+	orderBy := in.OrderBy
+	var err error
+	filter := &coresvc.QueryParams{Params: in.Filters}
+	if in.IsDescending {
+		orderBy += " DESC"
+	} else {
+		orderBy += " ASC"
+	}
+	cursor, err = ad.getCursor(in.CurrentPageId)
+	if err != nil {
+		return nil, err
+	}
+	if limit == 0 {
+		limit = dao.DefaultLimit
+	}
+	orgs, next, err := ad.store.ListNonSubbed(in.AccountId, filter, orderBy, limit, cursor)
+	var pkgOrgs []*pkg.Org
+	for _, org := range orgs {
+		pkgOrg, err := ad.orgFetchProjects(org)
+		if err != nil {
+			return nil, err
+		}
+		pkgOrgs = append(pkgOrgs, pkgOrg)
+	}
+	return &pkg.ListResponse{
+		Orgs:       pkgOrgs,
+		NextPageId: fmt.Sprintf("%d", next),
+	}, nil
+}
+
 func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgUpdateRequest) (*pkg.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})

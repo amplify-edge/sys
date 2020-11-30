@@ -88,7 +88,7 @@ func (a *AccountDB) orgLikeFilter(filter *coresvc.QueryParams) sq.SelectBuilder 
 	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
 	if filter != nil && filter.Params != nil {
 		for k, v := range filter.Params {
-			baseStmt = baseStmt.Where(sq.Like{k: v})
+			baseStmt = baseStmt.Where(sq.Like{k: a.BuildSearchQuery(v.(string))})
 		}
 	}
 	return baseStmt
@@ -131,6 +131,60 @@ func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, li
 		return nil, 0, err
 	}
 	res.Close()
+	return orgs, orgs[len(orgs)-1].CreatedAt, nil
+}
+
+func (a *AccountDB) ListNonSubbed(accountId string, filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Org, int64, error) {
+	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
+	if accountId != "" {
+		roles, err := a.FetchRoles(accountId)
+		if err != nil {
+			return nil, 0, err
+		}
+		orgIdMap := map[string]string{}
+		for _, r := range roles {
+			if r.OrgId != "" {
+				// dedup
+				orgIdMap[r.OrgId] = r.OrgId
+			}
+		}
+		var orgIdList []string
+		if len(orgIdMap) != 0 {
+			for k, _ := range orgIdMap {
+				orgIdList = append(orgIdList, k)
+			}
+			baseStmt = baseStmt.Where("id NOT IN ?", orgIdList)
+		}
+	}
+	if filterParams != nil && filterParams.Params != nil {
+		for k, v := range filterParams.Params {
+			baseStmt = baseStmt.Where(sq.Like{k: a.BuildSearchQuery(v.(string))})
+		}
+	}
+	var orgs []*Org
+	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
+	if err != nil {
+		return nil, 0, err
+	}
+	res, err := a.db.Query(selectStmt, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	err = res.Iterate(func(d document.Document) error {
+		var org Org
+		if err = document.StructScan(d, &org); err != nil {
+			return err
+		}
+		orgs = append(orgs, &org)
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	res.Close()
+	if len(orgs) == 1 {
+		return orgs, 0, nil
+	}
 	return orgs, orgs[len(orgs)-1].CreatedAt, nil
 }
 
