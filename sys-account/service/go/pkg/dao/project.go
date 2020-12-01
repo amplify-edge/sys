@@ -108,9 +108,9 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Project, int64, error) {
 	var projs []*Project
 	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, ProjectTableName, a.projectColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.ILike{k: a.BuildSearchQuery(v.(string))}
+		return sq.Like{k: a.BuildSearchQuery(v.(string))}
 	})
-	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, ProjectTableName)
+	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err
 	}

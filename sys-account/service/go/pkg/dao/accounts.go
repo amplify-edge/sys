@@ -152,7 +152,7 @@ func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, err
 func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
 	var accs []*Account
 	baseStmt := coresvc.BaseQueryBuilder(filterParams.Params, AccTableName, a.accountColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.ILike{k: a.BuildSearchQuery(v.(string))}
+		return sq.Like{k: a.BuildSearchQuery(v.(string))}
 	})
 	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
