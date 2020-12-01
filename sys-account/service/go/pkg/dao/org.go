@@ -74,29 +74,11 @@ func orgToQueryParam(org *Org) (res coresvc.QueryParams, err error) {
 	return coresvc.AnyToQueryParam(org, true)
 }
 
-func (a *AccountDB) orgQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
-	if filter != nil && filter.Params != nil {
-		for k, v := range filter.Params {
-			baseStmt = baseStmt.Where(sq.Eq{k: v})
-		}
-	}
-	return baseStmt
-}
-
-func (a *AccountDB) orgLikeFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
-	if filter != nil && filter.Params != nil {
-		for k, v := range filter.Params {
-			baseStmt = baseStmt.Where(sq.Like{k: a.BuildSearchQuery(v.(string))})
-		}
-	}
-	return baseStmt
-}
-
 func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	var o Org
-	selectStmt, args, err := a.orgQueryFilter(filterParam).ToSql()
+	selectStmt, args, err := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, func(k string, v interface{}) coresvc.StmtIFacer {
+		return sq.Eq{k: v}
+	}).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +92,10 @@ func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 
 func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Org, int64, error) {
 	var orgs []*Org
-	baseStmt := a.orgLikeFilter(filterParam)
-	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
+	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, func(k string, v interface{}) coresvc.StmtIFacer {
+		return sq.ILike{k: a.BuildSearchQuery(v.(string))}
+	})
+	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -162,7 +146,7 @@ func (a *AccountDB) ListNonSubbed(accountId string, filterParams *coresvc.QueryP
 		}
 	}
 	var orgs []*Org
-	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
+	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err
 	}

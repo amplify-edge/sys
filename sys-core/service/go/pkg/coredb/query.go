@@ -1,6 +1,7 @@
 package coredb
 
 import (
+	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji"
 )
 
@@ -61,3 +62,26 @@ func (c *CoreDB) BulkExec(stmtMap map[string][]interface{}) error {
 	})
 }
 
+type StmtIFacer interface {
+	ToSql() (string, []interface{}, error)
+}
+
+func BaseQueryBuilder(filter map[string]interface{}, tableName, tableColumns string, stmtBuilderFunc func(k string, v interface{}) StmtIFacer) sq.SelectBuilder {
+	baseStmt := sq.Select(tableColumns).From(tableName)
+	if filter != nil {
+		for k, v := range filter {
+			baseStmt = baseStmt.Where(stmtBuilderFunc(k, v))
+		}
+	}
+	return baseStmt
+}
+
+func ListSelectStatement(baseStmt sq.SelectBuilder, orderBy string, limit int64, cursor *int64, cursorName string) (string, []interface{}, error) {
+	csr := *cursor
+	if cursor == nil {
+		csr = 0
+	}
+	baseStmt = baseStmt.Where(sq.Gt{cursorName: csr})
+	baseStmt = baseStmt.Limit(uint64(limit)).OrderBy(orderBy)
+	return baseStmt.ToSql()
+}
