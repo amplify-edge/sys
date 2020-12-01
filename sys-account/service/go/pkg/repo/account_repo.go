@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -300,4 +301,19 @@ func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAcc
 		return nil, err
 	}
 	return acc, nil
+}
+
+func (ad *SysAccountRepo) DeleteAccount(ctx context.Context, in *pkg.DisableAccountRequest) (*emptypb.Empty, error) {
+	if in == nil {
+		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+	}
+	_, err := ad.allowGetAccount(ctx, &pkg.IdRequest{Id: in.AccountId})
+	if err != nil {
+		return nil, err
+	}
+	err = ad.store.DeleteAccount(in.AccountId)
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
