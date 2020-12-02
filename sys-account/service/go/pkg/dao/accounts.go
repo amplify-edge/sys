@@ -134,9 +134,7 @@ func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, err
 		filterParams.Params,
 		AccTableName,
 		a.accountColumns,
-		func(k string, v interface{}) coresvc.StmtIFacer {
-			return sq.Eq{k: v}
-		},
+		"eq",
 	).ToSql()
 	if err != nil {
 		return nil, err
@@ -149,11 +147,12 @@ func (a *AccountDB) GetAccount(filterParams *coresvc.QueryParams) (*Account, err
 	return &acc, err
 }
 
-func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Account, int64, error) {
+func (a *AccountDB) ListAccount(filterParams *coresvc.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*Account, int64, error) {
 	var accs []*Account
-	baseStmt := coresvc.BaseQueryBuilder(filterParams.Params, AccTableName, a.accountColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.Like{k: a.BuildSearchQuery(v.(string))}
-	})
+	if sqlMatcher == "" {
+		sqlMatcher = "like"
+	}
+	baseStmt := coresvc.BaseQueryBuilder(filterParams.Params, AccTableName, a.accountColumns, sqlMatcher)
 	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err

@@ -76,9 +76,7 @@ func orgToQueryParam(org *Org) (res coresvc.QueryParams, err error) {
 
 func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	var o Org
-	selectStmt, args, err := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.Eq{k: v}
-	}).ToSql()
+	selectStmt, args, err := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, "eq").ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -90,11 +88,12 @@ func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	return &o, err
 }
 
-func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Org, int64, error) {
+func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*Org, int64, error) {
 	var orgs []*Org
-	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.Like{k: a.BuildSearchQuery(v.(string))}
-	})
+	if sqlMatcher == "" {
+		sqlMatcher = "like"
+	}
+	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, sqlMatcher)
 	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err
@@ -115,6 +114,9 @@ func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, li
 		return nil, 0, err
 	}
 	_ = res.Close()
+	if len(orgs) == 1 {
+		return orgs, orgs[0].CreatedAt, nil
+	}
 	return orgs, orgs[len(orgs)-1].CreatedAt, nil
 }
 

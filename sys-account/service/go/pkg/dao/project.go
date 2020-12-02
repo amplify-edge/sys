@@ -84,9 +84,7 @@ func projectToQueryParam(p *Project) (res coresvc.QueryParams, err error) {
 
 func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, error) {
 	var p Project
-	selectStmt, args, err := coresvc.BaseQueryBuilder(filterParam.Params, ProjectTableName, a.projectColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.Eq{k: v}
-	}).ToSql()
+	selectStmt, args, err := coresvc.BaseQueryBuilder(filterParam.Params, ProjectTableName, a.projectColumns, "eq").ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +103,12 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 	return &p, nil
 }
 
-func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Project, int64, error) {
+func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*Project, int64, error) {
 	var projs []*Project
-	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, ProjectTableName, a.projectColumns, func(k string, v interface{}) coresvc.StmtIFacer {
-		return sq.Like{k: a.BuildSearchQuery(v.(string))}
-	})
+	if sqlMatcher == "" {
+		sqlMatcher = "like"
+	}
+	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, ProjectTableName, a.projectColumns, sqlMatcher)
 	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err

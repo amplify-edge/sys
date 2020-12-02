@@ -72,7 +72,7 @@ func testProjList(t *testing.T) {
 	}
 	var allProjects [][]*dao.Project
 	for _, qp := range qps {
-		projs, next, err := accdb.ListProject(qp, "name", 2, 0)
+		projs, next, err := accdb.ListProject(qp, "name", 2, 0, "like")
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, next)
 		assert.NotEqual(t, nil, projs)
