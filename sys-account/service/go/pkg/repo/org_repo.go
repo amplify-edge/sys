@@ -52,7 +52,7 @@ func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
 	}
 	projects, _, err := ad.store.ListProject(
 		&coresvc.QueryParams{Params: map[string]interface{}{"org_id": org.Id}},
-		"name ASC", dao.DefaultLimit, 0,
+		"name ASC", dao.DefaultLimit, 0, "eq",
 	)
 	if err != nil {
 		if err.Error() == "document not found" {
@@ -117,7 +117,7 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 	if limit == 0 {
 		limit = dao.DefaultLimit
 	}
-	orgs, next, err := ad.store.ListOrg(filter, orderBy, limit, cursor)
+	orgs, next, err := ad.store.ListOrg(filter, orderBy, limit, cursor, in.Matcher)
 	var pkgOrgs []*pkg.Org
 	for _, org := range orgs {
 		pkgOrg, err := ad.orgFetchProjects(org)

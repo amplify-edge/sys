@@ -111,7 +111,7 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 	if limit == 0 {
 		limit = dao.DefaultLimit
 	}
-	projects, next, err := ad.store.ListProject(filter, orderBy, limit, cursor)
+	projects, next, err := ad.store.ListProject(filter, orderBy, limit, cursor, in.Matcher)
 	var pkgProjects []*pkg.Project
 	for _, p := range projects {
 		pkgProject, err := ad.projectFetchOrg(p)

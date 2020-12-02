@@ -93,7 +93,7 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 		limit = dao.DefaultLimit
 	}
 
-	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor)
+	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor, in.Matcher)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 	if in.SearchParam.PerPageEntries == 0 {
 		limit = dao.DefaultLimit
 	}
-	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor)
+	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor, in.SearchParam.Matcher)
 	if err != nil {
 		return nil, err
 	}

@@ -48,8 +48,8 @@ func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, err
 	return acc.ToPkgAccount(pkgRoles, nil)
 }
 
-func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, orderBy string, limit, cursor int64) ([]*pkg.Account, *int64, error) {
-	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor)
+func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*pkg.Account, *int64, error) {
+	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor, sqlMatcher)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -74,29 +74,9 @@ func orgToQueryParam(org *Org) (res coresvc.QueryParams, err error) {
 	return coresvc.AnyToQueryParam(org, true)
 }
 
-func (a *AccountDB) orgQueryFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
-	if filter != nil && filter.Params != nil {
-		for k, v := range filter.Params {
-			baseStmt = baseStmt.Where(sq.Eq{k: v})
-		}
-	}
-	return baseStmt
-}
-
-func (a *AccountDB) orgLikeFilter(filter *coresvc.QueryParams) sq.SelectBuilder {
-	baseStmt := sq.Select(a.orgColumns).From(OrgTableName)
-	if filter != nil && filter.Params != nil {
-		for k, v := range filter.Params {
-			baseStmt = baseStmt.Where(sq.Like{k: a.BuildSearchQuery(v.(string))})
-		}
-	}
-	return baseStmt
-}
-
 func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	var o Org
-	selectStmt, args, err := a.orgQueryFilter(filterParam).ToSql()
+	selectStmt, args, err := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, "eq").ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -108,10 +88,13 @@ func (a *AccountDB) GetOrg(filterParam *coresvc.QueryParams) (*Org, error) {
 	return &o, err
 }
 
-func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64) ([]*Org, int64, error) {
+func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*Org, int64, error) {
 	var orgs []*Org
-	baseStmt := a.orgLikeFilter(filterParam)
-	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
+	if sqlMatcher == "" {
+		sqlMatcher = "like"
+	}
+	baseStmt := coresvc.BaseQueryBuilder(filterParam.Params, OrgTableName, a.orgColumns, sqlMatcher)
+	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -130,7 +113,10 @@ func (a *AccountDB) ListOrg(filterParam *coresvc.QueryParams, orderBy string, li
 	if err != nil {
 		return nil, 0, err
 	}
-	res.Close()
+	_ = res.Close()
+	if len(orgs) == 1 {
+		return orgs, orgs[0].CreatedAt, nil
+	}
 	return orgs, orgs[len(orgs)-1].CreatedAt, nil
 }
 
@@ -162,7 +148,7 @@ func (a *AccountDB) ListNonSubbed(accountId string, filterParams *coresvc.QueryP
 		}
 	}
 	var orgs []*Org
-	selectStmt, args, err := a.listSelectStatements(baseStmt, orderBy, limit, &cursor)
+	selectStmt, args, err := coresvc.ListSelectStatement(baseStmt, orderBy, limit, &cursor, DefaultCursor)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -181,7 +167,7 @@ func (a *AccountDB) ListNonSubbed(accountId string, filterParams *coresvc.QueryP
 	if err != nil {
 		return nil, 0, err
 	}
-	res.Close()
+	_ = res.Close()
 	if len(orgs) == 1 {
 		return orgs, 0, nil
 	}

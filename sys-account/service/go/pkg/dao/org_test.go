@@ -65,7 +65,7 @@ func testOrgList(t *testing.T) {
 	}
 	var allOrgs [][]*dao.Org
 	for _, qp := range qps {
-		orgs, next, err := accdb.ListOrg(qp, "name", 2, 0)
+		orgs, next, err := accdb.ListOrg(qp, "name", 2, 0, "like")
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, next)
 		assert.NotEqual(t, nil, orgs)
