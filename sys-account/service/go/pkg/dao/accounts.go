@@ -42,6 +42,25 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 			role := a.FromPkgRoleRequest(pkgRole, accountId)
 			roles = append(roles, role)
 		}
+	} else if account.NewUserRoles != nil && len(account.NewUserRoles) > 0 {
+		a.log.Debugf("Convert and getting new roles")
+		for _, pkgNewRole := range account.NewUserRoles {
+			param := map[string]interface{}{}
+			if pkgNewRole.ProjectName != "" {
+				param["name"] = pkgNewRole.ProjectName
+			}
+			if pkgNewRole.ProjectID != "" {
+				param["id"] = pkgNewRole.ProjectID
+			}
+			project, err := a.GetProject(&coresvc.QueryParams{Params: param})
+			if err != nil {
+				return nil, err
+			}
+			pkgNewRole.ProjectID = project.Id
+			pkgNewRole.OrgID = project.OrgId
+			role := a.FromPkgNewRoleRequest(pkgNewRole, accountId)
+			roles = append(roles, role)
+		}
 	} else {
 		roles = append(roles, &Role{
 			ID:        utilities.NewID(),

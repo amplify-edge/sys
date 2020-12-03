@@ -82,7 +82,6 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	} else {
 		newAcc.Roles = append(newAcc.Roles, &pkg.UserRoles{
 			Role: 1,
-			All:  false,
 		})
 	}
 	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false)
