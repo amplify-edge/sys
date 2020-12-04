@@ -99,7 +99,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 
 	errChan := make(chan error, 1)
 	go func() {
-		mailContent, err := ad.mailVerifyAccountTpl(acc.Email, vtoken)
+		mailContent, err := ad.mailVerifyAccountTpl(acc.Email, vtoken, acc.ID)
 		if err != nil {
 			ad.log.Debugf("cannot create verify account email: %v", err)
 			errChan <- err

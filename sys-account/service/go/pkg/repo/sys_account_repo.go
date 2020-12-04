@@ -24,10 +24,11 @@ type (
 		bus                   *corebus.CoreBus
 		mail                  *coremail.MailSvc
 		frepo                 *corefile.SysFileRepo
+		domain                string
 	}
 )
 
-func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo) (*SysAccountRepo, error) {
+func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db, l)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)
@@ -43,6 +44,7 @@ func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, b
 		bus:                   bus,
 		mail:                  mail,
 		frepo:                 frepo,
+		domain:                domain,
 	}
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
 	bus.RegisterAction("onDeleteAccount", repo.onDeleteAccount)

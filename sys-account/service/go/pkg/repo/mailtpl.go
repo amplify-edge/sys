@@ -7,7 +7,7 @@ import (
 	"github.com/getcouragenow/sys-share/sys-core/service/go/pkg/mailhelper"
 )
 
-func (ad *SysAccountRepo) mailVerifyAccountTpl(emailAddr string, verifyToken string) ([]byte, error) {
+func (ad *SysAccountRepo) mailVerifyAccountTpl(emailAddr string, verifyToken string, id string) ([]byte, error) {
 	hb := hermes.Body{
 		Name: emailAddr,
 		Intros: []string{
@@ -15,8 +15,13 @@ func (ad *SysAccountRepo) mailVerifyAccountTpl(emailAddr string, verifyToken str
 		},
 		Actions: []hermes.Action{
 			{
-				Instructions: "Put the following code to the verify account input",
-				InviteCode:   verifyToken,
+				Instructions: "Put the following code to the verify account inputs",
+				Button: hermes.Button{
+					Color: "#22BC66", // Optional action button color
+					Text:  "Input the verification code here",
+					Link:  fmt.Sprintf("https://%s%s/%s", ad.domain, "sys-account/verify", id),
+				},
+				InviteCode: verifyToken,
 			},
 		},
 		Title: "Verify Account",
