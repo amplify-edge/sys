@@ -78,6 +78,9 @@ func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *pkg.Id
 	if sharedAuth.IsSuperadmin(curAcc.Role) {
 		return in, nil
 	}
+	if allowed := sharedAuth.AllowSelf(curAcc, in.Id); allowed {
+		return in, nil
+	}
 	if hasOrgIds(curAcc) && !hasProjectIds(curAcc) {
 		for _, r := range in.Role {
 			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, r.OrgID)
@@ -86,7 +89,7 @@ func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *pkg.Id
 			}
 		}
 		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
-	} else if !hasOrgIds(curAcc) && hasProjectIds(curAcc) {
+	} else if hasOrgIds(curAcc) && hasProjectIds(curAcc) {
 		for _, r := range in.Role {
 			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, r.OrgID, r.ProjectID)
 			if allowed && err != nil {
@@ -95,9 +98,7 @@ func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *pkg.Id
 		}
 		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	if allowed := sharedAuth.AllowSelf(curAcc, in.Id); !allowed {
-		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
-	}
+
 	return in, nil
 }
 
