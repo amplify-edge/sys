@@ -34,6 +34,17 @@ func (a *AccountDB) FromPkgRoleRequest(role *pkg.UserRoles, accountId string) *R
 	}
 }
 
+func (a *AccountDB) FromPkgNewRoleRequest(role *pkg.NewUserRoles, accountId string) *Role {
+	return &Role{
+		ID:        utilities.NewID(),
+		AccountId: accountId,
+		Role:      int(role.Role),
+		ProjectId: role.ProjectID,
+		OrgId:     role.OrgID,
+		CreatedAt: utilities.CurrentTimestamp(),
+	}
+}
+
 func (a *AccountDB) FetchRoles(accountId string) ([]*Role, error) {
 	queryParam := &coresvc.QueryParams{Params: map[string]interface{}{
 		"account_id": accountId,
@@ -59,12 +70,6 @@ func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
 	}
 	if p.ProjectId != "" {
 		userRole.ProjectID = p.ProjectId
-	}
-	if pkg.Roles(role) == 4 {
-		userRole.All = true
-	}
-	if pkg.Roles(role) == 1 {
-		userRole.All = false
 	}
 	return userRole, nil
 }

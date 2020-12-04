@@ -172,7 +172,7 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 	newAcc := &pkg.AccountNewRequest{
 		Email:          in.Email,
 		Password:       in.Password,
-		Roles:          []*pkg.UserRoles{{Role: pkg.SUPERADMIN, All: true}},
+		Roles:          []*pkg.UserRoles{{Role: pkg.SUPERADMIN}},
 		AvatarFilepath: avatar.GetResourceId(),
 	}
 	_, err = ad.store.InsertFromPkgAccountRequest(newAcc, true)
