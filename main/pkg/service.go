@@ -90,14 +90,14 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 // NewService will create new SysServices
 // this SysServices could be passed around to other mod-* and maintemplates-*
 // or could be run independently using Run method below
-func NewService(cfg *SysServiceConfig) (*SysServices, error) {
+func NewService(cfg *SysServiceConfig, domain string) (*SysServices, error) {
 	// load up the sub grpc Services
 	cfg.logger.Println("Initializing GRPC Services")
 
 	// ========================================================================
 	// Sys-Account
 	// ========================================================================
-	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.cfg.account)
+	sysAccountSvc, err := accountpkg.NewSysAccountService(cfg.cfg.account, domain)
 	if err != nil {
 		return nil, err
 	}
