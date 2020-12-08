@@ -35,7 +35,12 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 		ad.log.Debugf("creation of new account failed: %v", err)
 		return nil, err
 	}
-	fresp, err := ad.frepo.UploadFile(in.AvatarFilepath, in.AvatarUploadBytes)
+	var logoBytes []byte
+	var err error
+	if in.AvatarUploadBytes != "" {
+		logoBytes, err = utilities.DecodeB64(in.AvatarUploadBytes)
+	}
+	fresp, err := ad.frepo.UploadFile(in.AvatarFilepath, logoBytes)
 	if err != nil {
 		return nil, err
 	}

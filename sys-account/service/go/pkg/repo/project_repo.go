@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 
 	"google.golang.org/grpc/codes"
@@ -51,7 +52,11 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	if err != nil {
 		return nil, err
 	}
-	logo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
+	var logoBytes []byte
+	if in.LogoUploadBytes != "" {
+		logoBytes, err = sharedConfig.DecodeB64(in.LogoUploadBytes)
+	}
+	logo, err := ad.frepo.UploadFile(in.LogoFilepath, logoBytes)
 	if err != nil {
 		return nil, err
 	}
