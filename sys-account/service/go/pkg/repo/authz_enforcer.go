@@ -159,6 +159,7 @@ type SuperAccountRequest struct {
 	Email          string `json:"string"`
 	Password       string `json:"password"`
 	AvatarFilePath string `json:"avatar_filepath"`
+	AvatarBytes    []byte `json:"avatar_bytes"`
 }
 
 // Initial User Creation via CLI only
@@ -166,7 +167,7 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 	if in == nil {
 		return fmt.Errorf("error unable to proceed, user is nil")
 	}
-	avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, nil)
+	avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, in.AvatarBytes)
 	if err != nil {
 		return err
 	}
