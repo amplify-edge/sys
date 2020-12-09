@@ -9,6 +9,7 @@ import (
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
@@ -17,7 +18,12 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	logo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
+	var err error
+	var logoBytes []byte
+	if in.LogoUploadBytes != "" {
+		logoBytes, err = sharedConfig.DecodeB64(in.LogoUploadBytes)
+	}
+	logo, err := ad.frepo.UploadFile(in.LogoFilepath, logoBytes)
 	if err != nil {
 		return nil, err
 	}

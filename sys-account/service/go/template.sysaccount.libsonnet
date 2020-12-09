@@ -62,7 +62,7 @@ local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/serv
         {
            email: "test@example.com",
            password: "supertest",
-           avatar_filepath: "./bootstrap-data/default/avatar.png"
+           avatar: "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkAQMAAABKLAcXAAAABlBMVEUuXT1CB5MPWvsYAAAALUlEQVR4nGJABfX///9vYGBgkP////+DUd6Q442C4QsGUzob5VGYNwEBAAD//34m/hCjepStAAAAAElFTkSuQmCC",
         },
     ],
     sysAccountConfig: {

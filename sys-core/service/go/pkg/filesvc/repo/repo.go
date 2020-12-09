@@ -56,12 +56,12 @@ func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*corepkg.File
 	var finfo *corepkg.FileInfo
 	var err error
 	fileContent := content
-	if filepath != "" && (content == nil || len(content) == 0) {
+	if filepath != "" && (content == nil && len(content) == 0) {
 		finfo, fileContent, err = filehelper.ReadFileFromPath(filepath)
 		if err != nil {
 			return nil, err
 		}
-	} else if filepath != "" && (content == nil || len(content) != 0) {
+	} else if filepath == "" && (content != nil && len(content) != 0) {
 		finfo, fileContent, err = filehelper.ReadFileFromBytes(filepath, content)
 		if err != nil {
 			return nil, err

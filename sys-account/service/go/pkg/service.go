@@ -84,9 +84,9 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
 	for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
 		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
-			Email:          users.Email,
-			Password:       users.Password,
-			AvatarFilePath: users.AvatarFilepath,
+			Email:       users.Email,
+			Password:    users.Password,
+			AvatarBytes: users.Avatar,
 		})
 		if err != nil {
 			return nil, err

@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
@@ -159,6 +160,7 @@ type SuperAccountRequest struct {
 	Email          string `json:"string"`
 	Password       string `json:"password"`
 	AvatarFilePath string `json:"avatar_filepath"`
+	AvatarBytes    string `json:"avatar_bytes"`
 }
 
 // Initial User Creation via CLI only
@@ -166,7 +168,15 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 	if in == nil {
 		return fmt.Errorf("error unable to proceed, user is nil")
 	}
-	avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, nil)
+	var avatarBytes []byte
+	var err error
+	if in.AvatarBytes != "" {
+		avatarBytes, err = utilities.DecodeB64(in.AvatarBytes)
+		if err != nil {
+			return err
+		}
+	}
+	avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, avatarBytes)
 	if err != nil {
 		return err
 	}
