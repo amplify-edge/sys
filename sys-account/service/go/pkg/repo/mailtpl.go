@@ -19,7 +19,7 @@ func (ad *SysAccountRepo) mailVerifyAccountTpl(emailAddr string, verifyToken str
 				Button: hermes.Button{
 					Color: "#22BC66", // Optional action button color
 					Text:  "Input the verification code here",
-					Link:  fmt.Sprintf("https://%s%s/%s", ad.domain, "/sys-account/verify", id),
+					Link:  fmt.Sprintf("https://%s%s/%s", ad.domain, "/#/sys-account/verify", id),
 				},
 				InviteCode: verifyToken,
 			},
