@@ -8,7 +8,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/genjidb/genji v0.9.0
 	github.com/genjidb/genji/engine/badgerengine v0.9.0
-	github.com/getcouragenow/sys-share v0.0.0-20201210073032-056b76a9a358
+	github.com/getcouragenow/sys-share v0.0.0-20201211115435-35b645d047ee
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
@@ -32,4 +32,4 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
-//replace github.com/getcouragenow/sys-share => ../sys-share/
+replace github.com/getcouragenow/sys-share => ../sys-share/
