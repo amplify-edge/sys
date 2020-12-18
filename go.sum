@@ -134,8 +134,6 @@ github.com/genjidb/genji/engine/badgerengine v0.9.0 h1:ZXx9e9KKDuTKfjujYSHMMP1FF
 github.com/genjidb/genji/engine/badgerengine v0.9.0/go.mod h1:90edUmjDTx6HlYRQPJ3aPXIwHWPZo+tRRdL6kKTG+1E=
 github.com/getcouragenow/protoc-gen-cobra v0.3.1-0.20201005114840-ccc8cd57bcdc h1:AGuZQalELVZdKscISFlkxMBMphAs6dP1rNks/VKF8nE=
 github.com/getcouragenow/protoc-gen-cobra v0.3.1-0.20201005114840-ccc8cd57bcdc/go.mod h1:pjFq8AmUJaFNjYKJIq3EBBw2aH8/QUmCfz4nnZBLrLE=
-github.com/getcouragenow/sys-share v0.0.0-20201210073032-056b76a9a358 h1:C85YHKBfSwsD4H6QalGvtunMSGgQDMagxAq4g/Htbg0=
-github.com/getcouragenow/sys-share v0.0.0-20201210073032-056b76a9a358/go.mod h1:ptiLlmwzPA0FQ6zQeRjvur3bXdid8pYjypIghhGxLRk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
