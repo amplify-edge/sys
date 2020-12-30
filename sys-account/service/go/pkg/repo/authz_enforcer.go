@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -168,28 +169,43 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 	if in == nil {
 		return fmt.Errorf("error unable to proceed, user is nil")
 	}
-	var avatarBytes []byte
-	var err error
-	if in.AvatarBytes != "" {
-		avatarBytes, err = utilities.DecodeB64(in.AvatarBytes)
+	acc, err := ad.store.GetAccount(&coresvc.QueryParams{Params: map[string]interface{}{
+		"email": in.Email,
+	}})
+	if err != nil {
+		var avatarBytes []byte
+		if in.AvatarBytes != "" {
+			avatarBytes, err = utilities.DecodeB64(in.AvatarBytes)
+			if err != nil {
+				return err
+			}
+		}
+		avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, avatarBytes)
 		if err != nil {
 			return err
 		}
+		newAcc := &pkg.AccountNewRequest{
+			Email:          in.Email,
+			Password:       in.Password,
+			Roles:          []*pkg.UserRoles{{Role: pkg.SUPERADMIN}},
+			AvatarFilepath: avatar.GetResourceId(),
+		}
+		_, err = ad.store.InsertFromPkgAccountRequest(newAcc, true)
+		if err != nil {
+			ad.log.Debugf("error unable to create super-account request: %v", err)
+			return err
+		}
+		return nil
+	} else {
+		passwd, err := pass.GenHash(acc.Password)
+		if err != nil {
+			return err
+		}
+		acc.Password = passwd
+		acc.UpdatedAt = utilities.CurrentTimestamp()
+		if err = ad.store.UpdateAccount(acc); err != nil {
+			return err
+		}
+		return nil
 	}
-	avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, avatarBytes)
-	if err != nil {
-		return err
-	}
-	newAcc := &pkg.AccountNewRequest{
-		Email:          in.Email,
-		Password:       in.Password,
-		Roles:          []*pkg.UserRoles{{Role: pkg.SUPERADMIN}},
-		AvatarFilepath: avatar.GetResourceId(),
-	}
-	_, err = ad.store.InsertFromPkgAccountRequest(newAcc, true)
-	if err != nil {
-		ad.log.Debugf("error unable to create super-account request: %v", err)
-		return err
-	}
-	return nil
 }
