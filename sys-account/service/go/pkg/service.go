@@ -75,7 +75,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus
 func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAccountService, error) {
 	cfg.logger.Infoln("Initializing Sys-Account Service")
 
-	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain)
+	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain, cfg.Cfg.SysAccountConfig.InitialSuperUsers)
 	if err != nil {
 		return nil, err
 	}
