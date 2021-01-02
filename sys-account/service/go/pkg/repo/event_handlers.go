@@ -146,3 +146,11 @@ func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCo
 		accountIdKey: acc.ID,
 	}, nil
 }
+
+func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	err := ad.store.ResetAll(ad.initialSuperusersMail)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{}, nil
+}
