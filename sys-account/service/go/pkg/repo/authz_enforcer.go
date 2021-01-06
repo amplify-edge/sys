@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -169,7 +168,7 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 	if in == nil {
 		return fmt.Errorf("error unable to proceed, user is nil")
 	}
-	acc, err := ad.store.GetAccount(&coresvc.QueryParams{Params: map[string]interface{}{
+	_, err := ad.store.GetAccount(&coresvc.QueryParams{Params: map[string]interface{}{
 		"email": in.Email,
 	}})
 	if err != nil {
@@ -197,15 +196,15 @@ func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
 		}
 		return nil
 	} else {
-		passwd, err := pass.GenHash(acc.Password)
-		if err != nil {
-			return err
-		}
-		acc.Password = passwd
-		acc.UpdatedAt = utilities.CurrentTimestamp()
-		if err = ad.store.UpdateAccount(acc); err != nil {
-			return err
-		}
+		// passwd, err := pass.GenHash(acc.Password)
+		// if err != nil {
+		// 	return err
+		// }
+		// acc.Password = passwd
+		// acc.UpdatedAt = utilities.CurrentTimestamp()
+		// if err = ad.store.UpdateAccount(acc); err != nil {
+		// 	return err
+		// }
 		return nil
 	}
 }
