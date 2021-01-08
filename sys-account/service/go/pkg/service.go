@@ -2,6 +2,7 @@ package accountpkg
 
 import (
 	"context"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -23,6 +24,7 @@ type SysAccountService struct {
 	BusProxyService     *coresvc.SysBusProxyService
 	MailProxyService    *coresvc.SysEmailProxyService
 	AuthRepo            *repo.SysAccountRepo
+	BusinessTelemetry   *telemetry.SysAccountMetrics
 }
 
 type SysAccountServiceConfig struct {
@@ -93,6 +95,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		}
 	}
 	mailSvc := coresvc.NewSysMailProxyService(cfg.mail)
+	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
 
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
@@ -101,6 +104,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		DbProxyService:      dbProxyService,
 		BusProxyService:     busProxyService,
 		MailProxyService:    mailSvc,
+		BusinessTelemetry:   sysAccountMetrics,
 	}, nil
 }
 

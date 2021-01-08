@@ -167,6 +167,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	// ORG ADMIN
 	if in.Role.OrgID != "" && in.Role.ProjectID == "" {
 		for _, r := range roles {
+			// can only assign for their own org
 			if r.OrgId == in.Role.OrgID {
 				if err := ad.store.UpdateRole(&dao.Role{
 					ID:        r.ID,
@@ -184,8 +185,9 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 	}
 	// PROJECT ADMIN
-	if in.Role.OrgID != "" && in.Role.ProjectID != "" {
+	if (in.Role.OrgID != "" && in.Role.ProjectID != "") || (in.Role.OrgID == "" && in.Role.ProjectID != "") {
 		for _, r := range roles {
+			// can only assign for their own project
 			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
 				if err := ad.store.UpdateRole(&dao.Role{
 					ID:        r.ID,
@@ -246,6 +248,34 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
 	}
+
+	// Regular Users can only allow themselves to be regular user in other project
+	if sharedAuth.AllowSelf(curAcc, in.AssignedAccountId) {
+		requestedRole := in.Role.Role
+		if requestedRole != pkg.USER {
+			return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
+		}
+		for _, r := range roles {
+			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+				return ad.getAccountAndRole(in.AssignedAccountId, "")
+			}
+		}
+		if err = ad.store.InsertRole(&dao.Role{
+			ID:        utilities.NewID(),
+			AccountId: in.AssignedAccountId,
+			Role:      int(requestedRole),
+			ProjectId: in.Role.ProjectID,
+			OrgId:     in.Role.OrgID,
+			CreatedAt: utilities.CurrentTimestamp(),
+			UpdatedAt: utilities.CurrentTimestamp(),
+		}); err != nil {
+			return nil, status.Errorf(codes.Internal, "cannot append role: %v", err)
+		}
+		go func() {
+
+		}()
+	}
+
 	return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
 }
 

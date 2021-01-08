@@ -3,6 +3,8 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/VictoriaMetrics/metrics"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
@@ -124,6 +126,10 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 	if err = <-errChan; err != nil {
 		ad.log.Errorf("Cannot send email: %v", err)
 	}
+	registeredUserMetrics := metrics.GetOrCreateCounter(telemetry.METRICS_REGISTERED_USERS)
+	go func() {
+		registeredUserMetrics.Inc()
+	}()
 	return &pkg.RegisterResponse{
 		Success:     true,
 		SuccessMsg:  fmt.Sprintf("Successfully created user: %s as Guest", in.Email),
@@ -336,6 +342,10 @@ func (ad *SysAccountRepo) VerifyAccount(ctx context.Context, in *pkg.VerifyAccou
 	if err != nil {
 		return nil, err
 	}
+	verifiedUserMetrics := metrics.GetOrCreateCounter(telemetry.METRICS_REGISTERED_USERS)
+	go func() {
+		verifiedUserMetrics.Inc()
+	}()
 	return &emptypb.Empty{}, nil
 }
 
