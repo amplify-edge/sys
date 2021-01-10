@@ -67,12 +67,12 @@ func (c *CoreDB) scheduleBackup() error {
 	return nil
 }
 
-func (c *CoreDB) Backup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.BackupResult, error) {
+func (c *CoreDB) Backup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.SingleBackupResult, error) {
 	filename, err := c.backup()
 	if err != nil {
 		return nil, err
 	}
-	return &sharedPkg.BackupResult{BackupFile: filename}, nil
+	return &sharedPkg.SingleBackupResult{BackupFile: filename}, nil
 }
 
 func (c *CoreDB) backup() (string, error) {
@@ -94,7 +94,7 @@ func (c *CoreDB) backup() (string, error) {
 	return filename, nil
 }
 
-func (c *CoreDB) Restore(_ context.Context, in *sharedPkg.RestoreRequest) (*sharedPkg.RestoreResult, error) {
+func (c *CoreDB) SingleRestore(_ context.Context, in *sharedPkg.SingleRestoreRequest) (*sharedPkg.SingleRestoreResult, error) {
 	badgerDB := c.engine.DB
 	f, err := c.openFile(in.BackupFile)
 	if err != nil {
@@ -104,19 +104,19 @@ func (c *CoreDB) Restore(_ context.Context, in *sharedPkg.RestoreRequest) (*shar
 	if err != nil {
 		return nil, err
 	}
-	return &sharedPkg.RestoreResult{Result: fmt.Sprintf("successfully restore db: %s", in.BackupFile)}, nil
+	return &sharedPkg.SingleRestoreResult{Result: fmt.Sprintf("successfully restore db: %s", in.BackupFile)}, nil
 }
 
-func (c *CoreDB) ListBackup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.ListBackupResult, error) {
-	var bfiles []*sharedPkg.BackupResult
+func (c *CoreDB) SingleListBackup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.ListBackupResult, error) {
+	var bfiles []*sharedPkg.SingleBackupResult
 	listFiles, err := c.listBackups()
 	if err != nil {
 		return nil, err
 	}
 	for _, f := range listFiles {
-		bfiles = append(bfiles, &sharedPkg.BackupResult{BackupFile: f})
+		bfiles = append(bfiles, &sharedPkg.SingleBackupResult{BackupFile: f})
 	}
-	return &sharedPkg.ListBackupResult{BackupFiles: bfiles}, nil
+	return &sharedPkg.SingleListBackupResult{BackupFiles: bfiles}, nil
 }
 
 func (c *CoreDB) listBackups() ([]string, error) {

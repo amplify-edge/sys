@@ -21,6 +21,7 @@ import (
 
 const (
 	day = 24 * time.Hour
+	week = 24 * time.Hour * 7
 )
 
 // CoreDB is the exported struct
