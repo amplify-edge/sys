@@ -114,6 +114,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		BusProxyService:     busProxyService,
 		MailProxyService:    mailSvc,
 		BusinessTelemetry:   sysAccountMetrics,
+		AllDBs:              cfg.allDbs,
 	}, nil
 }
 
