@@ -276,7 +276,7 @@ func getVersion(filename string) string {
 	if len(fslice) == 3 {
 		versionSlice := strings.Split(fslice[0], "-")
 		if len(versionSlice) == 2 {
-			return versionSlice[0]
+			return versionSlice[1]
 		}
 	}
 	return ""
