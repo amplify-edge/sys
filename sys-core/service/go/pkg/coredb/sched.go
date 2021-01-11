@@ -129,7 +129,7 @@ func (c *CoreDB) singleRestore(_ context.Context, in *sharedPkg.SingleRestoreReq
 }
 
 func (a *AllDBService) Restore(ctx context.Context, in *sharedPkg.RestoreAllRequest) (*sharedPkg.RestoreAllResult, error) {
-	if in.RestoreVersion == "" || (in.BackupFiles == nil || len(in.BackupFiles) == 0) {
+	if in.RestoreVersion == "" && (in.BackupFiles == nil || len(in.BackupFiles) == 0) {
 		return nil, status.Errorf(codes.InvalidArgument, "restore version or specific backup files has to be specified")
 	}
 	var singleRestoreResults []*sharedPkg.SingleRestoreResult
