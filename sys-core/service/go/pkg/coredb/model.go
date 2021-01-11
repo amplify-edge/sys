@@ -20,9 +20,31 @@ import (
 )
 
 const (
-	day = 24 * time.Hour
+	day  = 24 * time.Hour
 	week = 24 * time.Hour * 7
 )
+
+type AllDBService struct {
+	RegisteredDBs []*CoreDB
+}
+
+
+func NewAllDBService() *AllDBService {
+	return &AllDBService{}
+}
+
+func (a *AllDBService) RegisterCoreDB(cdb *CoreDB) {
+	a.RegisteredDBs = append(a.RegisteredDBs, cdb)
+}
+
+func (a *AllDBService) FindCoreDB(name string) *CoreDB {
+	for _, cdb := range a.RegisteredDBs {
+		if cdb.config.DbConfig.Name == name {
+			return cdb
+		}
+	}
+	return nil
+}
 
 // CoreDB is the exported struct
 type CoreDB struct {

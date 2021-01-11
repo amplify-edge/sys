@@ -7,10 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
-	filerepo "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/repo"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
-
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -24,8 +20,6 @@ import (
 
 	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (
@@ -62,39 +56,12 @@ func main() {
 	log := logrus.New().WithField("svc", "sys-account")
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		csc, err := corecfg.NewConfig(coreCfgPath)
-		if err != nil {
-			log.Fatalf(errSourcingConfig, err)
-		}
-
-		gdb, err := coredb.NewCoreDB(log, &csc.SysCoreConfig, nil)
-		if err != nil {
-			log.Fatalf(errSourcingConfig, err)
-		}
-
-		fileCfg, err := filesvc.NewConfig(fileCfgPath)
-		if err != nil {
-			log.Fatalf(errSourcingConfig, err)
-		}
-
-		fdb, err := coredb.NewCoreDB(log, &fileCfg.DBConfig, nil)
-		if err != nil {
-			log.Fatalf(errSourcingConfig, err)
-		}
-
-		frepo, err := filerepo.NewSysFileRepo(fdb, log)
-		if err != nil {
-			log.Fatalf(errSourcingConfig, err)
-		}
-
-		newMailSvc := mailer.NewMailSvc(&csc.MailConfig, log)
-
-		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, gdb, accountCfgPath, corebus.NewCoreBus(), newMailSvc, frepo)
+		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, accountCfgPath, corebus.NewCoreBus())
 		if err != nil {
 			log.Fatalf("error creating config: %v", err)
 		}
 
-		svc, err := accountpkg.NewSysAccountService(sysAccountConfig)
+		svc, err := accountpkg.NewSysAccountService(sysAccountConfig, "127.0.0.1:8080")
 		if err != nil {
 			log.Fatalf("error creating sys-account service: %v", err)
 		}
