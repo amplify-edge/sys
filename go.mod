@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/VictoriaMetrics/metrics v1.12.3
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/genjidb/genji v0.9.0

@@ -153,6 +153,9 @@ func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *pkg.AssignA
 		}
 		return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
+	if sharedAuth.AllowSelf(curAcc, in.AssignedAccountId) {
+		return nil
+	}
 	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
 

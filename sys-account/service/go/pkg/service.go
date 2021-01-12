@@ -2,6 +2,7 @@ package accountpkg
 
 import (
 	"context"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -23,6 +24,8 @@ type SysAccountService struct {
 	BusProxyService     *coresvc.SysBusProxyService
 	MailProxyService    *coresvc.SysEmailProxyService
 	AuthRepo            *repo.SysAccountRepo
+	BusinessTelemetry   *telemetry.SysAccountMetrics
+	AllDBs              *coredb.AllDBService
 }
 
 type SysAccountServiceConfig struct {
@@ -32,6 +35,7 @@ type SysAccountServiceConfig struct {
 	mail     *coremail.MailSvc
 	logger   *logrus.Entry
 	fileRepo *corefile.SysFileRepo
+	allDbs   *coredb.AllDBService
 }
 
 func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
@@ -61,6 +65,11 @@ func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus
 		return nil, err
 	}
 
+	allDb := coredb.NewAllDBService()
+	sysAccountLogger.Info("registering sys-accounts db & filedb to allDb service")
+	allDb.RegisterCoreDB(db)
+	allDb.RegisterCoreDB(fileDb)
+
 	sasc := &SysAccountServiceConfig{
 		store:    db,
 		Cfg:      accountCfg,
@@ -68,6 +77,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus
 		logger:   sysAccountLogger,
 		mail:     mailSvc,
 		fileRepo: fileRepo,
+		allDbs:   allDb,
 	}
 	return sasc, nil
 }
@@ -80,7 +90,8 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		return nil, err
 	}
 	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo, authRepo)
-	dbProxyService := coresvc.NewSysCoreProxyService(cfg.store)
+
+	dbProxyService := coresvc.NewSysCoreProxyService(cfg.allDbs)
 	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
 	for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
 		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
@@ -93,6 +104,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		}
 	}
 	mailSvc := coresvc.NewSysMailProxyService(cfg.mail)
+	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
 
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
@@ -101,6 +113,8 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		DbProxyService:      dbProxyService,
 		BusProxyService:     busProxyService,
 		MailProxyService:    mailSvc,
+		BusinessTelemetry:   sysAccountMetrics,
+		AllDBs:              cfg.allDbs,
 	}, nil
 }
 
