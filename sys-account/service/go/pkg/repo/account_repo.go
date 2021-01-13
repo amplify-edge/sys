@@ -3,6 +3,8 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/VictoriaMetrics/metrics"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -206,27 +208,48 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	}
 	// SUPERADMIN
 	if in.Role.Role == pkg.SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.Role) {
+		for _, r := range roles {
+			if err = ad.store.DeleteRole(r.ID); err != nil {
+				return nil, err
+			}
+		}
 		newRole := &dao.Role{
 			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
 			Role:      int(in.Role.Role),
-			ProjectId: in.Role.ProjectID,
-			OrgId:     in.Role.OrgID,
+			ProjectId: "",
+			OrgId:     "",
 			CreatedAt: utilities.CurrentTimestamp(),
 			UpdatedAt: utilities.CurrentTimestamp(),
-		}
-		ad.log.Debugf("to be updated roles: %v", *roles[0])
-		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
-			ad.log.Debug("deleting user guest role")
-			if err = ad.store.DeleteRole(roles[0].ID); err != nil {
-				return nil, err
-			}
 		}
 		if err = ad.store.InsertRole(newRole); err != nil {
 			return nil, err
 		}
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
 	} else if sharedAuth.IsSuperadmin(curAcc.Role) {
+		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
+			ad.log.Debug("deleting user guest role")
+			if err := ad.store.DeleteRole(roles[0].ID); err != nil {
+				return nil, err
+			}
+		}
+		for _, r := range roles {
+			// if exists, update current record
+			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+				if err = ad.store.UpdateRole(&dao.Role{
+					ID:        r.ID,
+					AccountId: r.AccountId,
+					Role:      int(in.Role.Role),
+					ProjectId: r.ProjectId,
+					OrgId:     r.OrgId,
+					CreatedAt: r.CreatedAt,
+					UpdatedAt: utilities.CurrentTimestamp(),
+				}); err != nil {
+					return nil, err
+				}
+				return ad.getAccountAndRole(in.AssignedAccountId, "")
+			}
+		}
 		newRole := &dao.Role{
 			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
@@ -236,15 +259,15 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			CreatedAt: utilities.CurrentTimestamp(),
 			UpdatedAt: utilities.CurrentTimestamp(),
 		}
-		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
-			ad.log.Debug("deleting user guest role")
-			if err := ad.store.DeleteRole(roles[0].ID); err != nil {
-				return nil, err
-			}
-		}
 		if err := ad.store.InsertRole(newRole); err != nil {
 			return nil, err
 		}
+		go func() {
+			joinedProjectMetrics := metrics.GetOrCreateHistogram(
+				fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID),
+			)
+			joinedProjectMetrics.Update(1.0)
+		}()
 
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
 	}
@@ -272,7 +295,10 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			return nil, status.Errorf(codes.Internal, "cannot append role: %v", err)
 		}
 		go func() {
-
+			joinedProjectMetrics := metrics.GetOrCreateHistogram(
+				fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID),
+			)
+			joinedProjectMetrics.Update(1.0)
 		}()
 	}
 

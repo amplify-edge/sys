@@ -2,7 +2,9 @@ package dao
 
 import (
 	"fmt"
+	"github.com/VictoriaMetrics/metrics"
 	"github.com/genjidb/genji/document"
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -56,6 +58,10 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 			if err != nil {
 				return nil, err
 			}
+			joinedProjectMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, project.OrgId, project.Id))
+			go func() {
+				joinedProjectMetrics.Inc()
+			}()
 			pkgNewRole.ProjectID = project.Id
 			pkgNewRole.OrgID = project.OrgId
 			role := a.FromPkgNewRoleRequest(pkgNewRole, accountId)
