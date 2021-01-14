@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	l "github.com/sirupsen/logrus"
 
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
@@ -27,10 +28,11 @@ type (
 		frepo                 *corefile.SysFileRepo
 		domain                string
 		initialSuperusersMail []string
+		bizmetrics            *telemetry.SysAccountMetrics
 	}
 )
 
-func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string, supes []accSvcCfg.SuperUser) (*SysAccountRepo, error) {
+func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string, supes []accSvcCfg.SuperUser, bizmetrics *telemetry.SysAccountMetrics) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db, l)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)
@@ -51,6 +53,7 @@ func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, b
 		frepo:                 frepo,
 		domain:                domain,
 		initialSuperusersMail: initialSuperMails,
+		bizmetrics:            bizmetrics,
 	}
 	// Register Bus Dispatchers
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)
