@@ -47,7 +47,7 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 	ad.log.Debugf("Uploaded File from path: %s, id: %s", in.AvatarFilepath, fresp.GetId())
 	// Remember this is the key to success
 	in.AvatarFilepath = fresp.ResourceId
-	acc, err := ad.store.InsertFromPkgAccountRequest(in, false)
+	acc, err := ad.store.InsertFromPkgAccountRequest(in, false, ad.bizmetrics.UserJoinedProjectMetrics)
 	if err != nil {
 		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
@@ -206,27 +206,48 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	}
 	// SUPERADMIN
 	if in.Role.Role == pkg.SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.Role) {
+		for _, r := range roles {
+			if err = ad.store.DeleteRole(r.ID); err != nil {
+				return nil, err
+			}
+		}
 		newRole := &dao.Role{
 			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
 			Role:      int(in.Role.Role),
-			ProjectId: in.Role.ProjectID,
-			OrgId:     in.Role.OrgID,
+			ProjectId: "",
+			OrgId:     "",
 			CreatedAt: utilities.CurrentTimestamp(),
 			UpdatedAt: utilities.CurrentTimestamp(),
-		}
-		ad.log.Debugf("to be updated roles: %v", *roles[0])
-		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
-			ad.log.Debug("deleting user guest role")
-			if err = ad.store.DeleteRole(roles[0].ID); err != nil {
-				return nil, err
-			}
 		}
 		if err = ad.store.InsertRole(newRole); err != nil {
 			return nil, err
 		}
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
 	} else if sharedAuth.IsSuperadmin(curAcc.Role) {
+		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
+			ad.log.Debug("deleting user guest role")
+			if err := ad.store.DeleteRole(roles[0].ID); err != nil {
+				return nil, err
+			}
+		}
+		for _, r := range roles {
+			// if exists, update current record
+			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+				if err = ad.store.UpdateRole(&dao.Role{
+					ID:        r.ID,
+					AccountId: r.AccountId,
+					Role:      int(in.Role.Role),
+					ProjectId: r.ProjectId,
+					OrgId:     r.OrgId,
+					CreatedAt: r.CreatedAt,
+					UpdatedAt: utilities.CurrentTimestamp(),
+				}); err != nil {
+					return nil, err
+				}
+				return ad.getAccountAndRole(in.AssignedAccountId, "")
+			}
+		}
 		newRole := &dao.Role{
 			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
@@ -236,15 +257,13 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			CreatedAt: utilities.CurrentTimestamp(),
 			UpdatedAt: utilities.CurrentTimestamp(),
 		}
-		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
-			ad.log.Debug("deleting user guest role")
-			if err := ad.store.DeleteRole(roles[0].ID); err != nil {
-				return nil, err
-			}
-		}
 		if err := ad.store.InsertRole(newRole); err != nil {
 			return nil, err
 		}
+		go func() {
+			joinedMetrics := ad.bizmetrics.UserJoinedProjectMetrics
+			joinedMetrics.WithLabelValues(in.Role.OrgID, in.Role.ProjectID).Inc()
+		}()
 
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
 	}
@@ -271,9 +290,12 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}); err != nil {
 			return nil, status.Errorf(codes.Internal, "cannot append role: %v", err)
 		}
-		go func() {
 
+		go func() {
+			joinedMetrics := ad.bizmetrics.UserJoinedProjectMetrics
+			joinedMetrics.WithLabelValues(in.Role.OrgID, in.Role.ProjectID).Inc()
 		}()
+
 	}
 
 	return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")

@@ -85,7 +85,11 @@ func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus
 func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAccountService, error) {
 	cfg.logger.Infoln("Initializing Sys-Account Service")
 
-	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain, cfg.Cfg.SysAccountConfig.InitialSuperUsers)
+	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
+	sysAccountMetrics.RegisterMetrics()
+
+	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain,
+		cfg.Cfg.SysAccountConfig.InitialSuperUsers, sysAccountMetrics)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +108,6 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 		}
 	}
 	mailSvc := coresvc.NewSysMailProxyService(cfg.mail)
-	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
 
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,

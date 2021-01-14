@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"github.com/genjidb/genji/document"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -33,7 +34,7 @@ type Account struct {
 	AvatarResourceId  string `json:"avatar_resource_id,omitempty" genji:"avatar_resource_id"`
 }
 
-func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, verified bool) (*Account, error) {
+func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, verified bool, userJoinedMetrics *prom.CounterVec) (*Account, error) {
 	accountId := utilities.NewID()
 	var roles []*Role
 	if account.Roles != nil && len(account.Roles) > 0 {
@@ -56,6 +57,10 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 			if err != nil {
 				return nil, err
 			}
+			go func() {
+				userJoinedMetrics.WithLabelValues(project.OrgId, project.Id).Inc()
+			}()
+
 			pkgNewRole.ProjectID = project.Id
 			pkgNewRole.OrgID = project.OrgId
 			role := a.FromPkgNewRoleRequest(pkgNewRole, accountId)
