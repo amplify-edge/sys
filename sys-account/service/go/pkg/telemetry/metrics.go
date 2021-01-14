@@ -6,10 +6,9 @@ import (
 )
 
 const (
-	METRICS_REGISTERED_USERS = "sys_account_registered_users"
-	METRICS_VERIFIED_USERS   = "sys_account_verified_users"
-	METRICS_JOINED_PROJECT   = "sys_account_joined_projects"
-	JoinProjectLabel         = "%s{org_id=%s, project_id=%s}"
+	metricsRegisteredUsers = "sys_account_RegisteredUsers"
+	metricsVerifiedUsers   = "sys_account_VerifiedUsers"
+	metricsJoinedProject   = "sys_account_JoinedProjects"
 )
 
 type SysAccountMetrics struct {
@@ -22,15 +21,15 @@ func NewSysAccountMetrics(logger *logrus.Entry) *SysAccountMetrics {
 	logger.Infof("Registering Sys-Account Metrics")
 	return &SysAccountMetrics{
 		RegisteredUserMetrics: prom.NewCounter(prom.CounterOpts{
-			Name: METRICS_REGISTERED_USERS,
+			Name: metricsRegisteredUsers,
 			Help: "sys-account metrics for registered users (a counter)",
 		}),
 		VerifiedUserMetrics: prom.NewCounter(prom.CounterOpts{
-			Name: METRICS_VERIFIED_USERS,
+			Name: metricsVerifiedUsers,
 			Help: "sys-account metrics for verified users ( a counter)",
 		}),
 		UserJoinedProjectMetrics: prom.NewCounterVec(prom.CounterOpts{
-			Name: METRICS_JOINED_PROJECT,
+			Name: metricsJoinedProject,
 			Help: "sys-account metrics for whenever user joined project (a categorized counter)",
 		}, []string{"project_id", "org_id"}),
 	}
