@@ -84,7 +84,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			Role: 1,
 		})
 	}
-	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false)
+	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false, ad.bizmetrics.UserJoinedProjectMetrics)
 	if err != nil {
 		return &pkg.RegisterResponse{
 			Success:     false,
