@@ -86,7 +86,6 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 	cfg.logger.Infoln("Initializing Sys-Account Service")
 
 	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
-	sysAccountMetrics.RegisterMetrics()
 
 	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain,
 		cfg.Cfg.SysAccountConfig.InitialSuperUsers, sysAccountMetrics)
