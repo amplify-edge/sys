@@ -3,8 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/VictoriaMetrics/metrics"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -49,7 +47,7 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 	ad.log.Debugf("Uploaded File from path: %s, id: %s", in.AvatarFilepath, fresp.GetId())
 	// Remember this is the key to success
 	in.AvatarFilepath = fresp.ResourceId
-	acc, err := ad.store.InsertFromPkgAccountRequest(in, false)
+	acc, err := ad.store.InsertFromPkgAccountRequest(in, false, ad.bizmetrics.UserJoinedProjectMetrics)
 	if err != nil {
 		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
@@ -263,10 +261,8 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			return nil, err
 		}
 		go func() {
-			joinedProjectMetrics := metrics.GetOrCreateHistogram(
-				fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID),
-			)
-			joinedProjectMetrics.Update(1.0)
+			joinedMetrics := ad.bizmetrics.UserJoinedProjectMetrics
+			joinedMetrics.WithLabelValues(in.Role.OrgID, in.Role.ProjectID).Inc()
 		}()
 
 		return ad.getAccountAndRole(in.AssignedAccountId, "")
@@ -294,12 +290,12 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}); err != nil {
 			return nil, status.Errorf(codes.Internal, "cannot append role: %v", err)
 		}
+
 		go func() {
-			joinedProjectMetrics := metrics.GetOrCreateHistogram(
-				fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID),
-			)
-			joinedProjectMetrics.Update(1.0)
+			joinedMetrics := ad.bizmetrics.UserJoinedProjectMetrics
+			joinedMetrics.WithLabelValues(in.Role.OrgID, in.Role.ProjectID).Inc()
 		}()
+
 	}
 
 	return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
