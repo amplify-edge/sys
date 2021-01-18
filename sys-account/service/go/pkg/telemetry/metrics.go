@@ -6,9 +6,11 @@ import (
 )
 
 const (
-	metricsRegisteredUsers = "sys_account_RegisteredUsers"
-	metricsVerifiedUsers   = "sys_account_VerifiedUsers"
-	metricsJoinedProject   = "sys_account_JoinedProjects"
+
+	METRICS_REGISTERED_USERS = "sys_account_registered_users"
+	METRICS_VERIFIED_USERS   = "sys_account_verified_users"
+	METRICS_JOINED_PROJECT   = "sys_account_joined_projects"
+	JoinProjectLabel         = `%s{org_id="%s", project_id="%s"}`
 )
 
 type SysAccountMetrics struct {
