@@ -22,6 +22,13 @@ var (
 	accountAvatarUniqueIdx = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_avatar_resource_id ON %s(avatar_resource_id)", AccTableName, AccTableName)
 )
 
+type LoginAttempt struct {
+	OriginIP      string `json:"origin_ip" genji:"origin_ip" coredb:"primary"`
+	AccountEmail  string `json:"account_email,omitempty" genji:"account_email"`
+	TotalAttempts uint   `json:"total_attempts" genji:"total_attempts"`
+	BanPeriod     int64  `json:"ban_period" genji:"ban_period"`
+}
+
 type Account struct {
 	ID                string `json:"id,omitempty" genji:"id" coredb:"primary"`
 	Email             string `json:"email,omitempty" genji:"email"`
@@ -259,4 +266,73 @@ func (a *AccountDB) DeleteAccount(id string) error {
 		stmt:  args,
 		rstmt: rargs,
 	})
+}
+
+func (a *AccountDB) UpsertLoginAttempt(originIp string, accountEmail string, attempt uint, banPeriod int64) (*LoginAttempt, error) {
+	newLoginAttempt := &LoginAttempt{
+		OriginIP:      originIp,
+		AccountEmail:  accountEmail,
+		TotalAttempts: attempt,
+		BanPeriod: banPeriod,
+	}
+	queryParam, err := coresvc.AnyToQueryParam(newLoginAttempt, true)
+	if err != nil {
+		return nil, err
+	}
+	columns, values := queryParam.ColumnsAndValues()
+
+	_, err = a.GetLoginAttempt(originIp)
+	if err != nil {
+		return a.insertLoginAttempt(originIp, columns, values)
+	}
+	return a.updateLoginAttempt(originIp, queryParam.Params)
+}
+
+func (a *AccountDB) GetLoginAttempt(originIp string) (*LoginAttempt, error) {
+	var la LoginAttempt
+	selectStmt, args, err := coresvc.BaseQueryBuilder(map[string]interface{}{"origin_ip": originIp}, LoginAttemptsTableName, a.loginAttemptColumns, "eq").ToSql()
+	if err != nil {
+		return nil, err
+	}
+	res, err := a.db.QueryOne(selectStmt, args...)
+	if err != nil {
+		return nil, err
+	}
+	if err = res.StructScan(&la); err != nil {
+		return nil, err
+	}
+	return &la, nil
+}
+
+func (a *AccountDB) insertLoginAttempt(originIp string, columns []string, values []interface{}) (*LoginAttempt, error) {
+	stmt, args, err := sq.Insert(LoginAttemptsTableName).
+		Columns(columns...).
+		Values(values...).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+	if err = a.db.Exec(stmt, args...); err != nil {
+		return nil, err
+	}
+	return a.GetLoginAttempt(originIp)
+}
+
+func (a *AccountDB) updateLoginAttempt(originIp string, requestMap map[string]interface{}) (*LoginAttempt, error) {
+	stmt, args, err := sq.Update(LoginAttemptsTableName).
+		SetMap(requestMap).ToSql()
+	if err != nil {
+		return nil, err
+	}
+	if err = a.db.Exec(stmt, args...); err != nil {
+		return nil, err
+	}
+	return a.GetLoginAttempt(originIp)
+}
+
+// CreateSQL will only be called once by sys-core see sys-core API.
+func (l LoginAttempt) CreateSQL() []string {
+	fields := coresvc.GetStructTags(l)
+	tbl := coresvc.NewTable(LoginAttemptsTableName, fields, []string{})
+	return tbl.CreateTable()
 }
