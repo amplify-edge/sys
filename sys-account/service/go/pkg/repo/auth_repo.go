@@ -3,7 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"net"
+	"time"
 
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
@@ -18,6 +21,10 @@ import (
 
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
 	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+)
+
+const (
+	banDuration = 1 * time.Hour
 )
 
 func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
@@ -84,7 +91,7 @@ func (ad *SysAccountRepo) Register(ctx context.Context, in *pkg.RegisterRequest)
 			Role: 1,
 		})
 	}
-	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false, ad.bizmetrics.UserJoinedProjectMetrics)
+	acc, err := ad.store.InsertFromPkgAccountRequest(newAcc, false)
 	if err != nil {
 		return &pkg.RegisterResponse{
 			Success:     false,
@@ -158,10 +165,34 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 	if in == nil {
 		return &pkg.LoginResponse{}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
+	peer, ok := peer.FromContext(ctx)
+	if !ok {
+		return &pkg.LoginResponse{}, status.Errorf(codes.Internal, "Unable to get user's ip")
+	}
+	peerIp := peer.Addr.String()
+	clientIp, _, err := net.SplitHostPort(peerIp)
+	if err != nil {
+		return &pkg.LoginResponse{}, status.Errorf(codes.Internal, "Unable to get user's ip and port")
+	}
+	loginAttempts, err := ad.store.GetLoginAttempt(clientIp)
+	if err != nil {
+		loginAttempts, err = ad.store.UpsertLoginAttempt(clientIp, in.Email, 0, 0)
+		if err != nil {
+			return &pkg.LoginResponse{}, status.Errorf(codes.Internal, "Unable to create user's login attempt")
+		}
+	}
+	if loginAttempts.TotalAttempts > 5 && loginAttempts.BanPeriod != 0 && loginAttempts.BanPeriod >= utilities.CurrentTimestamp() {
+		return &pkg.LoginResponse{}, status.Errorf(codes.PermissionDenied, "You've failed to submit correct login information too many times, try again in an hour")
+	}
 	var claimant sharedAuth.Claimant
 
 	u, err := ad.getAndVerifyAccount(ctx, in)
 	if err != nil {
+		if loginAttempts.TotalAttempts >= 5 {
+			loginAttempts, _ = ad.store.UpsertLoginAttempt(loginAttempts.OriginIP, loginAttempts.AccountEmail, loginAttempts.TotalAttempts+1, utilities.CurrentTimestamp()+banDuration.Nanoseconds())
+		} else {
+			loginAttempts, _ = ad.store.UpsertLoginAttempt(loginAttempts.OriginIP, loginAttempts.AccountEmail, loginAttempts.TotalAttempts+1, 0)
+		}
 		return &pkg.LoginResponse{
 			ErrorReason: err.Error(),
 		}, err
@@ -180,7 +211,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		return nil, err
 	}
 	req.LastLogin = utilities.CurrentTimestamp()
-	if err := ad.store.UpdateAccount(req); err != nil {
+	if err = ad.store.UpdateAccount(req); err != nil {
 		return nil, err
 	}
 	errChan := make(chan error, 1)
@@ -208,6 +239,11 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 	if err = <-errChan; err != nil {
 		ad.log.Errorf("cannot call onLoginCreateInterceptor event: %v", err)
 		// return nil, err
+	}
+	// on success, resets login attempts counter
+	_, err = ad.store.UpsertLoginAttempt(loginAttempts.OriginIP, loginAttempts.AccountEmail, 0, 0)
+	if err != nil {
+		return nil, err
 	}
 	return &pkg.LoginResponse{
 		Success:      true,

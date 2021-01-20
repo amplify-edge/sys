@@ -7,12 +7,13 @@ import (
 )
 
 type AccountDB struct {
-	db             *coresvc.CoreDB
-	log            *logrus.Entry
-	accountColumns string
-	roleColumns    string
-	orgColumns     string
-	projectColumns string
+	db                  *coresvc.CoreDB
+	log                 *logrus.Entry
+	accountColumns      string
+	roleColumns         string
+	orgColumns          string
+	projectColumns      string
+	loginAttemptColumns string
 }
 
 func NewAccountDB(db *coresvc.CoreDB, l *logrus.Entry) (*AccountDB, error) {
@@ -20,12 +21,14 @@ func NewAccountDB(db *coresvc.CoreDB, l *logrus.Entry) (*AccountDB, error) {
 	roleColumns := coresvc.GetStructColumns(Role{})
 	orgColumns := coresvc.GetStructColumns(Org{})
 	projectColumns := coresvc.GetStructColumns(Project{})
+	loginAttemptColumns := coresvc.GetStructColumns(LoginAttempt{})
 
 	err := db.RegisterModels(map[string]coresvc.DbModel{
-		AccTableName:     Account{},
-		RolesTableName:   Role{},
-		OrgTableName:     Org{},
-		ProjectTableName: Project{},
+		AccTableName:        Account{},
+		RolesTableName:      Role{},
+		OrgTableName:        Org{},
+		ProjectTableName:    Project{},
+		loginAttemptColumns: LoginAttempt{},
 	})
 	if err != nil {
 		return nil, err
@@ -33,7 +36,7 @@ func NewAccountDB(db *coresvc.CoreDB, l *logrus.Entry) (*AccountDB, error) {
 	if err := db.MakeSchema(); err != nil {
 		return nil, err
 	}
-	return &AccountDB{db, l, accColumns, roleColumns, orgColumns, projectColumns}, nil
+	return &AccountDB{db, l, accColumns, roleColumns, orgColumns, projectColumns, loginAttemptColumns}, nil
 }
 
 func (a *AccountDB) BuildSearchQuery(qs string) string {
