@@ -50,7 +50,7 @@ func SysAccountBench() *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "e", defaultTlsEnabled, "enable tls")
 	rootCmd.PersistentFlags().StringVarP(&tlsCaCertPath, "tls-cert-path", "t", defaultTlsCertPath, "CA Cert Path")
 
-	l := zaplog.NewZapLogger("debug", "sys-bench", true)
+	l := zaplog.NewZapLogger(zaplog.DEBUG, "sys-bench", true, "")
 	l.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {

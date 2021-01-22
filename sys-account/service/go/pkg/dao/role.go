@@ -3,6 +3,7 @@ package dao
 import (
 	"errors"
 	"fmt"
+
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
@@ -99,10 +100,10 @@ func (a *AccountDB) GetRole(filterParam *coresvc.QueryParams) (*Role, error) {
 	if err != nil {
 		return nil, err
 	}
-	a.log.WithFields(map[string]string{
+	a.log.WithFields(map[string]interface{}{
 		"queryStatement": selectStmt,
-		"arguments":      fmt.Sprintf("%v", args),
-	}).Debug("Querying roles")
+		"arguments":      args,
+	}).Debug("Get Role")
 	doc, err := a.db.QueryOne(selectStmt, args...)
 	if err != nil {
 		return nil, err

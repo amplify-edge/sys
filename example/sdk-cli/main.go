@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	zlog := zaplog.NewZapLogger("debug", "exampleSys", true)
+	zlog := zaplog.NewZapLogger(zaplog.DEBUG, "exampleSys", true, "")
 	zlog.InitLogger(nil)
 	zlog.Info("starting sys example")
 

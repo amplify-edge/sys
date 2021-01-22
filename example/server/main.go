@@ -41,7 +41,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "s", defaultTLSEnabled, "enable TLS")
 
 	// logging
-	logger := zaplog.NewZapLogger("debug", "sys-all", true)
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-all", true, "")
 	logger.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {

@@ -40,9 +40,7 @@ type SysAccountServiceConfig struct {
 
 func NewSysAccountServiceConfig(l logging.Logger, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
 	var err error
-	sysAccountLogger := l.WithFields(map[string]string{
-		"service": "sys-account",
-	})
+	sysAccountLogger := l.WithFields(map[string]interface{}{"service": "sys-account"})
 
 	accountCfg, err := service.NewConfig(filepath)
 	if err != nil {

@@ -32,7 +32,7 @@ func TestSysAccountRepoAll(t *testing.T) {
 	os.Setenv("JWT_ACCESS_SECRET", "AccessVerySecretHush!")
 	os.Setenv("JWT_REFRESH_SECRET", "RefreshVeryHushHushFriends!")
 	tc := sharedAuth.NewTokenConfig([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")))
-	logger := zaplog.NewZapLogger("debug", "sys-account-repo-test", true)
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-account-repo-test", true, "")
 	logger.InitLogger(nil)
 	ad = &SysAccountRepo{
 		log:      logger,

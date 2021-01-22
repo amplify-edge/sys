@@ -25,7 +25,7 @@ var (
 )
 
 func init() {
-	logger := zaplog.NewZapLogger("debug", "test", true)
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "test", true, "")
 	logger.InitLogger(nil)
 	var csc *corecfg.FileServiceConfig
 	csc, err = corecfg.NewConfig("./testdata/db.yml")

@@ -50,9 +50,7 @@ func (ad *SysAccountRepo) getAndVerifyAccount(ctx context.Context, req *pkg.Logi
 		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
 	}
 
-	ad.log.WithFields(map[string]string{
-		"account_id": acc.ID,
-	}).Debug("querying user")
+	ad.log.WithFields(map[string]interface{}{"account_id": acc.ID}).Debug("querying user")
 
 	daoRoles, err := ad.store.FetchRoles(acc.ID)
 	if err != nil {

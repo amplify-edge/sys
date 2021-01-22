@@ -61,7 +61,7 @@ var (
 
 func init() {
 	var csc *corecfg.SysCoreConfig
-	logger := zaplog.NewZapLogger("debug", "sys-account-dao-test", true)
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-account-dao-test", true, "")
 	logger.InitLogger(nil)
 	csc, err = corecfg.NewConfig("./testdata/syscore.yml")
 	if err != nil {

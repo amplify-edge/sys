@@ -53,7 +53,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&accountCfgPath, "sys-account-config-path", "a", defaultSysAccountConfigPath, "sys-account config path to use")
 	rootCmd.PersistentFlags().StringVarP(&fileCfgPath, "sys-file-config-path", "a", defaultSysFileConfigPath, "sys-file config path to use")
 
-	log := zaplog.NewZapLogger("debug", "sys-account", true)
+	log := zaplog.NewZapLogger(zaplog.DEBUG, "sys-account", true, "")
 	log.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
