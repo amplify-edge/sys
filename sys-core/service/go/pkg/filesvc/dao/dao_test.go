@@ -4,7 +4,7 @@ import (
 	"crypto/sha512"
 	b64 "encoding/base64"
 	"encoding/binary"
-	log "github.com/sirupsen/logrus"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"testing"
@@ -25,23 +25,23 @@ var (
 )
 
 func init() {
+	logger := zaplog.NewZapLogger("debug", "test", true)
+	logger.InitLogger(nil)
 	var csc *corecfg.FileServiceConfig
 	csc, err = corecfg.NewConfig("./testdata/db.yml")
 	if err != nil {
-		log.Fatalf("error initializing db: %v", err)
+		logger.Fatalf("error initializing db: %v", err)
 	}
-	logger := log.New().WithField("test", "sys-file")
-	logger.Level = log.DebugLevel
 	testDb, err := coredb.NewCoreDB(logger, &csc.DBConfig, nil)
 	if err != nil {
-		log.Fatalf("error creating CoreDB: %v", err)
+		logger.Fatalf("error creating CoreDB: %v", err)
 	}
-	log.Debug("MakeSchema testing .....")
+	logger.Debug("MakeSchema testing .....")
 	fdb, err = dao.NewFileDB(testDb, logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
-	log.Printf("successfully initialize sys-file-db:  %v", fdb)
+	logger.Infof("successfully initialize sys-file-db:  %v", fdb)
 }
 
 func TestAll(t *testing.T) {

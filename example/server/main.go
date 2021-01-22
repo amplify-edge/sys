@@ -5,7 +5,7 @@ import (
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/sirupsen/logrus"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
@@ -41,9 +41,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "s", defaultTLSEnabled, "enable TLS")
 
 	// logging
-	log := logrus.New()
-	log.SetLevel(logrus.DebugLevel)
-	logger := log.WithField("sys-main", "sys-*")
+	logger := zaplog.NewZapLogger("debug", "sys-all", true)
+	logger.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// configs
@@ -55,7 +54,7 @@ func main() {
 		}
 
 		// initiate all sys-* service
-		sysSvc, err := pkg.NewService(sscfg)
+		sysSvc, err := pkg.NewService(sscfg, "127.0.0.1")
 		if err != nil {
 			logger.Fatalf(errCreateSysService, err)
 		}

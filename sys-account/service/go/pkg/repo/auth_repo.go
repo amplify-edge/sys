@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
@@ -12,7 +13,6 @@ import (
 	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
 
-	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -27,7 +27,9 @@ const (
 	banDuration = 1 * time.Hour
 )
 
-func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) getAndVerifyAccount(ctx context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
+	sp, ctx := opentracing.StartSpanFromContext(ctx, "SysAccount.GetAndVerifyAccount")
+	defer sp.Finish()
 	qp := &coredb.QueryParams{Params: map[string]interface{}{
 		"email": req.Email,
 	}}
@@ -48,7 +50,7 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
 	}
 
-	ad.log.WithFields(l.Fields{
+	ad.log.WithFields(map[string]string{
 		"account_id": acc.ID,
 	}).Debug("querying user")
 
