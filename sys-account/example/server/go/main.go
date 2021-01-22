@@ -5,17 +5,17 @@ package main
 
 import (
 	"fmt"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
 	"net/http"
 
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 
 	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
@@ -40,7 +40,7 @@ var (
 	fileCfgPath    string
 )
 
-func recoveryHandler(l *logrus.Entry) func(panic interface{}) error {
+func recoveryHandler(l logging.Logger) func(panic interface{}) error {
 	return func(panic interface{}) error {
 		l.Warnf("sys-account service recovered, reason: %v",
 			panic)
@@ -53,7 +53,8 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&accountCfgPath, "sys-account-config-path", "a", defaultSysAccountConfigPath, "sys-account config path to use")
 	rootCmd.PersistentFlags().StringVarP(&fileCfgPath, "sys-file-config-path", "a", defaultSysFileConfigPath, "sys-file config path to use")
 
-	log := logrus.New().WithField("svc", "sys-account")
+	log := zaplog.NewZapLogger("debug", "sys-account", true)
+	log.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, accountCfgPath, corebus.NewCoreBus())
@@ -70,18 +71,14 @@ func main() {
 			grpcRecovery.WithRecoveryHandler(recoveryHandler(log)),
 		}
 
-		logrusOpts := []grpcLogrus.Option{
-			grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
-		}
-
 		unaryItc := []grpc.UnaryServerInterceptor{
 			grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
-			grpcLogrus.UnaryServerInterceptor(log, logrusOpts...),
+			log.GetServerUnaryInterceptor(),
 		}
 
 		streamItc := []grpc.StreamServerInterceptor{
 			grpcRecovery.StreamServerInterceptor(recoveryOptions...),
-			grpcLogrus.StreamServerInterceptor(log, logrusOpts...),
+			log.GetServerStreamInterceptor(),
 		}
 
 		unaryItc, streamItc = svc.InjectInterceptors(unaryItc, streamItc)

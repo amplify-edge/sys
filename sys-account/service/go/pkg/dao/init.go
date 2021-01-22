@@ -1,14 +1,14 @@
 package dao
 
 import (
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	"github.com/sirupsen/logrus"
 	"strings"
 )
 
 type AccountDB struct {
 	db                  *coresvc.CoreDB
-	log                 *logrus.Entry
+	log                 logging.Logger
 	accountColumns      string
 	roleColumns         string
 	orgColumns          string
@@ -16,7 +16,7 @@ type AccountDB struct {
 	loginAttemptColumns string
 }
 
-func NewAccountDB(db *coresvc.CoreDB, l *logrus.Entry) (*AccountDB, error) {
+func NewAccountDB(db *coresvc.CoreDB, l logging.Logger) (*AccountDB, error) {
 	accColumns := coresvc.GetStructColumns(Account{})
 	roleColumns := coresvc.GetStructColumns(Role{})
 	orgColumns := coresvc.GetStructColumns(Org{})

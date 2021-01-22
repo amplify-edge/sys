@@ -2,7 +2,7 @@ package repo
 
 import (
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
-	l "github.com/sirupsen/logrus"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
@@ -18,7 +18,7 @@ type (
 	// SysAccountRepo is the repository layer of the authn & authz && accounts
 	SysAccountRepo struct {
 		store    *dao.AccountDB
-		log      *l.Entry
+		log      logging.Logger
 		tokenCfg *sharedAuth.TokenConfig
 		// the auth interceptor would not intercept tokens on these routes
 		// (format is: /ProtoServiceName/ProtoServiceMethod, example: /proto.AuthService/Login).
@@ -32,7 +32,7 @@ type (
 	}
 )
 
-func NewAuthRepo(l *l.Entry, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string, supes []accSvcCfg.SuperUser, bizmetrics *telemetry.SysAccountMetrics) (*SysAccountRepo, error) {
+func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string, supes []accSvcCfg.SuperUser, bizmetrics *telemetry.SysAccountMetrics) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db, l)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)

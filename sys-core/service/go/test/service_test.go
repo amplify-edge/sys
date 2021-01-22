@@ -2,10 +2,10 @@ package db_test
 
 import (
 	"fmt"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
 	"testing"
 
 	"github.com/go-playground/validator"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
@@ -56,7 +56,7 @@ func get(id string) (*SomeData, error) {
 
 func testCoreDBService(t *testing.T) {
 	var err error
-	logger := logrus.New().WithField("sys-db", "test")
+	logger := zaplog.NewZapLogger("debug", "sys-core-test", true)
 	sysCoreSvc, err = coresvc.NewCoreDB(logger, &sysCoreCfg.SysCoreConfig, nil)
 	assert.NoError(t, err)
 

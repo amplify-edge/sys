@@ -3,10 +3,10 @@ package fake
 
 import (
 	"fmt"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
 	"os"
 	"path/filepath"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	sharePkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
@@ -50,7 +50,8 @@ func SysAccountBench() *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "e", defaultTlsEnabled, "enable tls")
 	rootCmd.PersistentFlags().StringVarP(&tlsCaCertPath, "tls-cert-path", "t", defaultTlsCertPath, "CA Cert Path")
 
-	l := logrus.New().WithField("svc", "sys-bench")
+	l := zaplog.NewZapLogger("debug", "sys-bench", true)
+	l.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fakeRegistersReqs := sharePkg.NewFakeRegisterRequests()

@@ -10,9 +10,10 @@ import (
 	"github.com/genjidb/genji/sql/query"
 	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
 	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
+	log "github.com/getcouragenow/sys-share/sys-core/service/logging"
 	"github.com/robfig/cron/v3"
 	"github.com/segmentio/encoding/json"
-	log "github.com/sirupsen/logrus"
+	stdlog "log"
 	"text/template"
 	"time"
 
@@ -27,7 +28,6 @@ const (
 type AllDBService struct {
 	RegisteredDBs []*CoreDB
 }
-
 
 func NewAllDBService() *AllDBService {
 	return &AllDBService{}
@@ -48,7 +48,7 @@ func (a *AllDBService) FindCoreDB(name string) *CoreDB {
 
 // CoreDB is the exported struct
 type CoreDB struct {
-	logger    *log.Entry
+	logger    log.Logger
 	store     *genji.DB
 	engine    *badgerengine.Engine
 	models    map[string]DbModel
@@ -61,7 +61,7 @@ type CoreDB struct {
 // if one wants to use one or the other.
 // or if internally will use the underlying badger DB engine to create Stream for example
 // for backup, restore, or anything
-func NewCoreDB(l *log.Entry, cfg *commonCfg.Config, cronFuncs map[string]func()) (*CoreDB, error) {
+func NewCoreDB(l log.Logger, cfg *commonCfg.Config, cronFuncs map[string]func()) (*CoreDB, error) {
 	dbName := cfg.DbConfig.Name
 	dbPath := cfg.DbConfig.DbDir + "/" + dbName
 	store, engine, err := newGenjiStore(dbPath, cfg.DbConfig.EncryptKey, cfg.DbConfig.RotationDuration)
@@ -136,7 +136,7 @@ func (t *Table) CreateTable() []string {
 		Funcs(funcMap).Parse(createTableTpl))
 	var bf bytes.Buffer
 	if err := tpl.Execute(&bf, t); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 	tblInitStatements = append(tblInitStatements, bf.String())
 	tblInitStatements = append(tblInitStatements, t.IndexStatements...)

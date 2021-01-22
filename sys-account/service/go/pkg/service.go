@@ -2,9 +2,9 @@ package accountpkg
 
 import (
 	"context"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
@@ -33,15 +33,15 @@ type SysAccountServiceConfig struct {
 	Cfg      *service.SysAccountConfig
 	bus      *sharedBus.CoreBus
 	mail     *coremail.MailSvc
-	logger   *logrus.Entry
+	logger   logging.Logger
 	fileRepo *corefile.SysFileRepo
 	allDbs   *coredb.AllDBService
 }
 
-func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
+func NewSysAccountServiceConfig(l logging.Logger, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
 	var err error
-	sysAccountLogger := l.WithFields(logrus.Fields{
-		"sys": "sys-account",
+	sysAccountLogger := l.WithFields(map[string]string{
+		"service": "sys-account",
 	})
 
 	accountCfg, err := service.NewConfig(filepath)
@@ -83,7 +83,7 @@ func NewSysAccountServiceConfig(l *logrus.Entry, filepath string, bus *sharedBus
 }
 
 func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAccountService, error) {
-	cfg.logger.Infoln("Initializing Sys-Account Service")
+	cfg.logger.Info("Initializing Sys-Account Service")
 
 	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
 

@@ -2,17 +2,16 @@ package repo
 
 import (
 	"context"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
 	"os"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
-
 )
 
 var (
@@ -33,8 +32,10 @@ func TestSysAccountRepoAll(t *testing.T) {
 	os.Setenv("JWT_ACCESS_SECRET", "AccessVerySecretHush!")
 	os.Setenv("JWT_REFRESH_SECRET", "RefreshVeryHushHushFriends!")
 	tc := sharedAuth.NewTokenConfig([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")))
+	logger := zaplog.NewZapLogger("debug", "sys-account-repo-test", true)
+	logger.InitLogger(nil)
 	ad = &SysAccountRepo{
-		log:      logrus.New().WithField("test", "sharedAuth-delivery"),
+		log:      logger,
 		tokenCfg: tc,
 	}
 	t.Run("Test Login User", testUserLogin)

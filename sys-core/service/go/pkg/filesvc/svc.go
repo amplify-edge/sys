@@ -1,7 +1,7 @@
 package filesvc
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 	"google.golang.org/grpc"
 
 	sharedPkg "github.com/getcouragenow/sys-share/sys-core/service/go/rpc/v2"
@@ -13,7 +13,7 @@ type SysFileService struct {
 	repo *repo.SysFileRepo
 }
 
-func NewSysFileService(cfg *FileServiceConfig, l *logrus.Entry) (*SysFileService, error) {
+func NewSysFileService(cfg *FileServiceConfig, l logging.Logger) (*SysFileService, error) {
 	db, err := coredb.NewCoreDB(l, &cfg.DBConfig, nil)
 	if err != nil {
 		return nil, err

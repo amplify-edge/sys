@@ -2,8 +2,7 @@ package repo
 
 import (
 	"context"
-
-	"github.com/sirupsen/logrus"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 
 	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
 )
@@ -13,7 +12,7 @@ func (ad *SysAccountRepo) GetUnauthenticatedRoutes() []string {
 	return ad.unauthenticatedRoutes
 }
 
-func (ad *SysAccountRepo) GetLogger() *logrus.Entry {
+func (ad *SysAccountRepo) GetLogger() logging.Logger {
 	return ad.log
 }
 

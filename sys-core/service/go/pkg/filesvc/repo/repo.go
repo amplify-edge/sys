@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/getcouragenow/sys-share/sys-core/service/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
@@ -23,10 +23,10 @@ const (
 
 type SysFileRepo struct {
 	store *dao.FileDB
-	log   *logrus.Entry
+	log   logging.Logger
 }
 
-func NewSysFileRepo(db *coredb.CoreDB, log *logrus.Entry) (*SysFileRepo, error) {
+func NewSysFileRepo(db *coredb.CoreDB, log logging.Logger) (*SysFileRepo, error) {
 	store, err := dao.NewFileDB(db, log)
 	if err != nil {
 		return nil, err

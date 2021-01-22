@@ -2,10 +2,8 @@ package dao
 
 import (
 	"fmt"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
@@ -187,10 +185,7 @@ func (a *AccountDB) InsertOrg(o *Org) error {
 		Columns(columns...).
 		Values(values...).
 		ToSql()
-	a.log.WithFields(log.Fields{
-		"statement": stmt,
-		"args":      args,
-	}).Debugf("insert to %s table", OrgTableName)
+	a.log.Debugf("insert to %s table", OrgTableName)
 	if err != nil {
 		return err
 	}

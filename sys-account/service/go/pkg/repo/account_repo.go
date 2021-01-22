@@ -263,7 +263,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			return nil, err
 		}
 		go func() {
-			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
+			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
 			joinedMetrics.Inc()
 		}()
 
@@ -294,7 +294,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 
 		go func() {
-			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
+			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
 			joinedMetrics.Inc()
 		}()
 
