@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+
 	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
 
 	sharedCore "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
@@ -144,6 +145,26 @@ func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCo
 	return map[string]interface{}{
 		"exists":     true,
 		accountIdKey: acc.ID,
+	}, nil
+}
+
+func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const accountIdKey = "sys_account_user_ref_id"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	rmap := map[string]interface{}{}
+	if requestMap[accountIdKey] != nil && requestMap[accountIdKey].(string) != "" {
+		rmap["id"] = requestMap[accountIdKey]
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: rmap})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"exists": true,
+		"email":  acc.Email,
 	}, nil
 }
 
