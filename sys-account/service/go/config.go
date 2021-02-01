@@ -97,10 +97,10 @@ func NewConfig(filepath string) (*SysAccountConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := yaml.UnmarshalStrict(f, &cfg); err != nil {
+	if err = yaml.UnmarshalStrict(f, &cfg); err != nil {
 		return nil, fmt.Errorf(errParsingConfig, filepath, err)
 	}
-	if err := cfg.Validate(); err != nil {
+	if err = cfg.Validate(); err != nil {
 		return nil, err
 	}
 	return cfg, nil
