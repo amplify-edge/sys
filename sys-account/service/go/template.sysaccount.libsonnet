@@ -58,15 +58,8 @@ local tokencfg = import "vendor/github.com/getcouragenow/sys-share/sys-core/serv
         secret: "some_jwt_refresh_secret",
         expiry: cfg.AccessToken.expiry * 100,
     },
-    InitialSuperUsers:: [
-        {
-           email: "test@example.com",
-           password: "supertest",
-           avatar: "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkAQMAAABKLAcXAAAABlBMVEUuXT1CB5MPWvsYAAAALUlEQVR4nGJABfX///9vYGBgkP////+DUd6Q442C4QsGUzob5VGYNwEBAAD//34m/hCjepStAAAAAElFTkSuQmCC",
-        },
-    ],
     sysAccountConfig: {
-        initialSuperUsers: cfg.InitialSuperUsers,
+        superUserFilePath: "./config/supers.yml",
         unauthenticatedRoutes: cfg.UnauthenticatedRoutes,
         sysCoreConfig: {
             db: cfg.CoreDB,

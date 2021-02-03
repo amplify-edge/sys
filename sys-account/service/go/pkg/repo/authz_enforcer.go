@@ -72,7 +72,7 @@ func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *pkg.Id
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	in, err := ad.getAccountAndRole(idRequest.Id, idRequest.Name)
+	in, err := ad.getAccountAndRole(ctx, idRequest.Id, idRequest.Name)
 	if err != nil {
 		return nil, err
 	}

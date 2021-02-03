@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
@@ -28,14 +27,27 @@ const (
 )
 
 func (ad *SysAccountRepo) getAndVerifyAccount(ctx context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
-	sp, ctx := opentracing.StartSpanFromContext(ctx, "SysAccount.GetAndVerifyAccount")
-	defer sp.Finish()
 	qp := &coredb.QueryParams{Params: map[string]interface{}{
 		"email": req.Email,
 	}}
+	var super *pkg.Account
 	acc, err := ad.store.GetAccount(qp)
 	if err != nil {
-		return nil, err
+		super, err = ad.superDao.Get(ctx, req.Email)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if super != nil {
+		match, err := pass.VerifyHash(req.Password, super.Password)
+		if err != nil {
+			return nil, err
+		}
+		if !match {
+			return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
+		}
+		return super, nil
 	}
 
 	if acc.Disabled {

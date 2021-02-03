@@ -7,7 +7,6 @@ import (
 	"errors"
 	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
 	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/pass"
 	"io/ioutil"
 	"strings"
 
@@ -25,6 +24,7 @@ func (s *SuperUser) toPkgAccount() *pkg.Account {
 		},
 		Email:    s.Name,
 		Avatar:   []byte(s.Avatar),
+		Password: s.HashedPassword,
 		Verified: true,
 	}
 }
@@ -71,23 +71,6 @@ func (s *SuperUserIO) Get(ctx context.Context, name string) (*pkg.Account, error
 		return nil, err
 	}
 	return supe.toPkgAccount(), nil
-}
-
-// Login verifies user password against the hashed one.
-// will return error if it doesn't match or the user is not found.
-func (s *SuperUserIO) Login(name string, password string) error {
-	superAcc, err := s.get(name)
-	if err != nil {
-		return err
-	}
-	match, err := pass.VerifyHash(password, superAcc.HashedPassword)
-	if err != nil {
-		return err
-	}
-	if !match {
-		return errors.New("password mismatch")
-	}
-	return nil
 }
 
 func (s *SuperUserIO) List(ctx context.Context, nameLike string) ([]*pkg.Account, error) {

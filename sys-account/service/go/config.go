@@ -23,7 +23,7 @@ func (s *SysAccountConfig) Validate() error {
 }
 
 type Config struct {
-	InitialSuperUsers     []SuperUser        `json:"initialSuperUsers" yaml:"initialSuperUsers" mapstructure:"initialSuperUsers"`
+	SuperUserFilePath     string             `json:"superUserFilePath" yaml:"superUserFilePath" mapstructure:"superUserFilePath"`
 	UnauthenticatedRoutes []string           `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
 	JWTConfig             JWTConfig          `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
 	SysCoreConfig         commonCfg.Config   `yaml:"sysCoreConfig" mapstructure:"sysCoreConfig"`
@@ -31,35 +31,9 @@ type Config struct {
 	MailConfig            coresvc.MailConfig `yaml:"mailConfig" mapstructure:"mailConfig"`
 }
 
-type SuperUser struct {
-	Email    string `json:"email" yaml:"email" mapstructure:"email"`
-	Password string `json:"password" yaml:"password" mapstructure:"password"`
-	Avatar   string `json:"avatar" yaml:"avatar" mapstructure:"avatar"`
-}
-
-// TODO @gutterbacon: real validation
-func (s SuperUser) Validate() error {
-	if s.Email == "" {
-		return fmt.Errorf("email is empty")
-	}
-	if s.Password == "" {
-		return fmt.Errorf("password is empty")
-	}
-	if s.Avatar == "" {
-		return fmt.Errorf("avatar is empty")
-	}
-	return nil
-}
-
 func (c Config) validate() error {
 	if len(c.UnauthenticatedRoutes) == 0 {
 		return fmt.Errorf(errNoUnauthenticatedRoutes)
-	}
-	for _, su := range c.InitialSuperUsers {
-		err := su.Validate()
-		if err != nil {
-			return err
-		}
 	}
 	if err := c.JWTConfig.Validate(); err != nil {
 		return err

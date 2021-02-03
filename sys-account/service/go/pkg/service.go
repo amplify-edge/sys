@@ -86,7 +86,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
 
 	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain,
-		cfg.Cfg.SysAccountConfig.InitialSuperUsers, sysAccountMetrics)
+		cfg.Cfg.SysAccountConfig.SuperUserFilePath, sysAccountMetrics)
 	if err != nil {
 		return nil, err
 	}
@@ -94,16 +94,6 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 
 	dbProxyService := coresvc.NewSysCoreProxyService(cfg.allDbs)
 	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
-	for _, users := range cfg.Cfg.SysAccountConfig.InitialSuperUsers {
-		err = authRepo.InitSuperUser(&repo.SuperAccountRequest{
-			Email:       users.Email,
-			Password:    users.Password,
-			AvatarBytes: users.Avatar,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
 	mailSvc := coresvc.NewSysMailProxyService(cfg.mail)
 
 	return &SysAccountService{

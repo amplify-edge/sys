@@ -1,13 +1,13 @@
 package repo
 
 import (
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
 	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/superusers"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
 
 	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
 	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
 	"github.com/amplify-cms/sys/sys-account/service/go"
-	accSvcCfg "github.com/amplify-cms/sys/sys-account/service/go"
 	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
 	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 	corefile "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/repo"
@@ -27,22 +27,24 @@ type (
 		mail                  *coremail.MailSvc
 		frepo                 *corefile.SysFileRepo
 		domain                string
-		initialSuperusersMail []string
-		bizmetrics            *telemetry.SysAccountMetrics
+		//initialSuperusersMail []string
+		bizmetrics *telemetry.SysAccountMetrics
+		superDao   *superusers.SuperUserIO
 	}
 )
 
-func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string, supes []accSvcCfg.SuperUser, bizmetrics *telemetry.SysAccountMetrics) (*SysAccountRepo, error) {
+func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountConfig, bus *corebus.CoreBus, mail *coremail.MailSvc, frepo *corefile.SysFileRepo, domain string, superUserFilePath string, bizmetrics *telemetry.SysAccountMetrics) (*SysAccountRepo, error) {
 	accdb, err := dao.NewAccountDB(db, l)
 	if err != nil {
 		l.Errorf("Error while initializing DAO: %v", err)
 		return nil, err
 	}
 	tokenCfg := sharedAuth.NewTokenConfig([]byte(cfg.SysAccountConfig.JWTConfig.Access.Secret), []byte(cfg.SysAccountConfig.JWTConfig.Refresh.Secret))
-	var initialSuperMails []string
-	for _, sureq := range supes {
-		initialSuperMails = append(initialSuperMails, sureq.Email)
-	}
+	//var initialSuperMails []string
+	//for _, sureq := range supes {
+	//	initialSuperMails = append(initialSuperMails, sureq.Email)
+	//}
+	superDao := superusers.NewSuperUserDAO(superUserFilePath, l)
 	repo := &SysAccountRepo{
 		store:                 accdb,
 		log:                   l,
@@ -52,8 +54,9 @@ func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountCon
 		mail:                  mail,
 		frepo:                 frepo,
 		domain:                domain,
-		initialSuperusersMail: initialSuperMails,
-		bizmetrics:            bizmetrics,
+		//initialSuperusersMail: initialSuperMails,
+		bizmetrics: bizmetrics,
+		superDao:   superDao,
 	}
 	// Register Bus Dispatchers
 	bus.RegisterAction("onDeleteOrg", repo.onDeleteOrg)

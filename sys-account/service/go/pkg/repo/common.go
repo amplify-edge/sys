@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 	fileDao "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/dao"
 )
 
-func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, error) {
+func (ad *SysAccountRepo) getAccountAndRole(ctx context.Context, id, email string) (*pkg.Account, error) {
 	queryParams := map[string]interface{}{}
 	if id != "" {
 		queryParams["id"] = id
@@ -21,7 +22,11 @@ func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, err
 	}
 	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: queryParams})
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
+		super, err := ad.superDao.Get(ctx, email)
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound, "cannot find user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
+		}
+		return super, nil
 	}
 	daoRoles, err := ad.store.ListRole(&coredb.QueryParams{Params: map[string]interface{}{
 		"account_id": acc.ID,
@@ -48,7 +53,7 @@ func (ad *SysAccountRepo) getAccountAndRole(id, email string) (*pkg.Account, err
 	return acc.ToPkgAccount(pkgRoles, nil)
 }
 
-func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*pkg.Account, *int64, error) {
+func (ad *SysAccountRepo) listAccountsAndRoles(ctx context.Context, filter *coredb.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*pkg.Account, *int64, error) {
 	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor, sqlMatcher)
 	if err != nil {
 		return nil, nil, err
@@ -86,6 +91,16 @@ func (ad *SysAccountRepo) listAccountsAndRoles(filter *coredb.QueryParams, order
 		}
 		accounts = append(accounts, account)
 	}
+
+	// superuser
+	if len(filter.Params) == 0 {
+		supers, err := ad.superDao.List(ctx, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		accounts = append(accounts, supers...)
+	}
+
 	return accounts, &next, nil
 }
 
