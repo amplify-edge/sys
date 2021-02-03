@@ -19,6 +19,9 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	var err error
+	if err = ad.allowNewOrg(ctx); err != nil {
+		return nil, err
+	}
 	var logoBytes []byte
 	if in.LogoUploadBytes != "" {
 		logoBytes, err = sharedConfig.DecodeB64(in.LogoUploadBytes)
@@ -185,6 +188,9 @@ func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgUpdateReques
 	if in.Name != "" {
 		org.Name = in.Name
 	}
+	if err = ad.allowUpdateDeleteOrg(ctx, org.Id); err != nil {
+		return nil, err
+	}
 	if in.LogoFilepath != "" && len(in.LogoUploadBytes) != 0 {
 		updatedLogo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
 		if err != nil {
@@ -210,6 +216,9 @@ func (ad *SysAccountRepo) DeleteOrg(ctx context.Context, in *pkg.IdRequest) (*em
 	}
 	org, err := ad.GetOrg(ctx, &pkg.IdRequest{Id: in.Id})
 	if err != nil {
+		return nil, err
+	}
+	if err = ad.allowUpdateDeleteOrg(ctx, org.Id); err != nil {
 		return nil, err
 	}
 	for _, proj := range org.Projects {

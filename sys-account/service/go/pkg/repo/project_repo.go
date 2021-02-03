@@ -56,6 +56,10 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	if in.LogoUploadBytes != "" {
 		logoBytes, err = sharedConfig.DecodeB64(in.LogoUploadBytes)
 	}
+	// do the permission check here
+	if err = ad.allowNewProject(ctx, in.OrgId); err != nil {
+		return nil, err
+	}
 	logo, err := ad.frepo.UploadFile(in.LogoFilepath, logoBytes)
 	if err != nil {
 		return nil, err
@@ -142,6 +146,9 @@ func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectUpda
 	if in.Name != "" {
 		proj.Name = in.Name
 	}
+	if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+		return nil, err
+	}
 	if in.LogoFilepath != "" && len(in.LogoUploadBytes) != 0 {
 		updatedLogo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
 		if err != nil {
@@ -164,7 +171,14 @@ func (ad *SysAccountRepo) DeleteProject(ctx context.Context, in *pkg.IdRequest) 
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	err := ad.store.DeleteProject(in.Id)
+	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	if err != nil {
+		return nil, err
+	}
+	if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+		return nil, err
+	}
+	err = ad.store.DeleteProject(in.Id)
 	if err != nil {
 		return nil, err
 	}

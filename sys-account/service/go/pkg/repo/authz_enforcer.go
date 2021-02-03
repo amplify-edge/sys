@@ -2,11 +2,9 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
 	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
@@ -159,55 +157,99 @@ func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *pkg.AssignA
 	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
 
-type SuperAccountRequest struct {
-	Email          string `json:"string"`
-	Password       string `json:"password"`
-	AvatarFilePath string `json:"avatar_filepath"`
-	AvatarBytes    string `json:"avatar_bytes"`
+// only allow superadmin to create new org.
+func (ad *SysAccountRepo) allowNewOrg(ctx context.Context) error {
+	_, curAcc, err := ad.accountFromClaims(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	if sharedAuth.IsSuperadmin(curAcc.Role) {
+		return nil
+	}
+	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
 
-// Initial User Creation via CLI only
-func (ad *SysAccountRepo) InitSuperUser(in *SuperAccountRequest) error {
-	if in == nil {
-		return fmt.Errorf("error unable to proceed, user is nil")
-	}
-	_, err := ad.store.GetAccount(&coresvc.QueryParams{Params: map[string]interface{}{
-		"email": in.Email,
-	}})
+// only allow superadmin and specified org admins to edit / update / delete org
+func (ad *SysAccountRepo) allowUpdateDeleteOrg(ctx context.Context, orgId string) error {
+	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
-		var avatarBytes []byte
-		if in.AvatarBytes != "" {
-			avatarBytes, err = utilities.DecodeB64(in.AvatarBytes)
+		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	if sharedAuth.IsSuperadmin(curAcc.Role) {
+		return nil
+	}
+	// ORG ADMIN
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	if !isAdm {
+		return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	match, err := sharedAuth.AllowOrgAdmin(curAcc, orgId)
+	if err != nil {
+		return err
+	}
+	if !match {
+		return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	return nil
+}
+
+// only allow org admin or superadmin to create new project.
+func (ad *SysAccountRepo) allowNewProject(ctx context.Context, orgId string) error {
+	_, curAcc, err := ad.accountFromClaims(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	if sharedAuth.IsSuperadmin(curAcc.Role) {
+		return nil
+	}
+	// ORG ADMIN
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	if isAdm {
+		match, err := sharedAuth.AllowOrgAdmin(curAcc, orgId)
+		if err != nil {
+			return err
+		}
+		if !match {
+			return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+		}
+		return nil
+	}
+	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+}
+
+// only allow project admin, org admin, or superadmin to edit / update / delete the project
+func (ad *SysAccountRepo) allowUpdateDeleteProject(ctx context.Context, orgId string, projectId string) error {
+	_, curAcc, err := ad.accountFromClaims(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	if sharedAuth.IsSuperadmin(curAcc.Role) {
+		return nil
+	}
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	if isAdm {
+		// ORG ADMIN
+		if orgId != "" && projectId == "" {
+			match, err := sharedAuth.AllowOrgAdmin(curAcc, orgId)
 			if err != nil {
 				return err
 			}
+			if !match {
+				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+			}
+			return nil
 		}
-		avatar, err := ad.frepo.UploadFile(in.AvatarFilePath, avatarBytes)
-		if err != nil {
-			return err
+		// PROJECT ADMIN
+		if orgId != "" && projectId != "" {
+			match, err := sharedAuth.AllowProjectAdmin(curAcc, orgId, projectId)
+			if err != nil {
+				return err
+			}
+			if !match {
+				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+			}
+			return nil
 		}
-		newAcc := &pkg.AccountNewRequest{
-			Email:          in.Email,
-			Password:       in.Password,
-			Roles:          []*pkg.UserRoles{{Role: pkg.SUPERADMIN}},
-			AvatarFilepath: avatar.GetResourceId(),
-		}
-		_, err = ad.store.InsertFromPkgAccountRequest(newAcc, true)
-		if err != nil {
-			ad.log.Debugf("error unable to create super-account request: %v", err)
-			return err
-		}
-		return nil
-	} else {
-		// passwd, err := pass.GenHash(acc.Password)
-		// if err != nil {
-		// 	return err
-		// }
-		// acc.Password = passwd
-		// acc.UpdatedAt = utilities.CurrentTimestamp()
-		// if err = ad.store.UpdateAccount(acc); err != nil {
-		// 	return err
-		// }
-		return nil
 	}
+	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
