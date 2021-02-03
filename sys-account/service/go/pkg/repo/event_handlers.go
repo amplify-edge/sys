@@ -2,9 +2,14 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
 
 	sharedCore "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
 	sharedBus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
@@ -181,18 +186,45 @@ func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *sharedCor
 	if err != nil {
 		return nil, err
 	}
-	if requestMap[orgIdKey] == nil || requestMap[orgIdKey] == "" {
-		if requestMap[projectIdKey] == nil || requestMap[projectIdKey] == "" {
-			return nil, err
-		}
-		qp := &coredb.QueryParams{Params: requestMap}
-		proj, err := ad.store.GetProject(qp)
-		if err != nil {
-			return nil, err
-		}
-		if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
-			return nil, err
-		}
+	var proj *dao.Project
+
+	if requestMap[projectIdKey] == nil || requestMap[projectIdKey] == "" {
+		return nil, err
+	}
+	qp := &coredb.QueryParams{Params: requestMap}
+	proj, err = ad.store.GetProject(qp)
+	if err != nil {
+		return nil, err
+	}
+	if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"allowed": true,
+	}, nil
+
+}
+
+// onCheckAllowSurveyUser only allows either the superuesr (for backup reason) or the user itself to be able to
+// update or delete survey user data.
+func (ad *SysAccountRepo) onCheckAllowSurveyUser(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const accountIdKey = "user_id"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	if requestMap[accountIdKey] == nil || requestMap[accountIdKey] == "" {
+		return nil, status.Errorf(codes.InvalidArgument, sharedAuth.Error{
+			Reason: sharedAuth.ErrInvalidParameters,
+			Err:    errors.New("invalid argument: missing account id"),
+		}.Error())
+	}
+	_, curAcc, err := ad.accountFromClaims(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	// allow superadmin to do anything
+	if sharedAuth.IsSuperadmin(curAcc.Role) || sharedAuth.AllowSelf(curAcc, requestMap[accountIdKey].(string)) {
 		return map[string]interface{}{
 			"allowed": true,
 		}, nil
