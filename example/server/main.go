@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
-	"github.com/getcouragenow/sys/main/pkg"
+	"github.com/amplify-cms/sys/main/pkg"
 )
 
 const (

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"

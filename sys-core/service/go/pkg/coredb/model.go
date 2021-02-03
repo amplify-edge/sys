@@ -8,16 +8,16 @@ import (
 	"github.com/genjidb/genji/document"
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/genjidb/genji/sql/query"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
-	log "github.com/getcouragenow/sys-share/sys-core/service/logging"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
+	log "github.com/amplify-cms/sys-share/sys-core/service/logging"
 	"github.com/robfig/cron/v3"
 	"github.com/segmentio/encoding/json"
 	stdlog "log"
 	"text/template"
 	"time"
 
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/internal/helper"
+	"github.com/amplify-cms/sys/sys-core/service/go/pkg/internal/helper"
 )
 
 const (

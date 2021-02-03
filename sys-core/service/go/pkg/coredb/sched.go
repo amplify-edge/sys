@@ -14,8 +14,8 @@ import (
 	"github.com/robfig/cron/v3"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	sharedPkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	sharedPkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
 )
 
 const (

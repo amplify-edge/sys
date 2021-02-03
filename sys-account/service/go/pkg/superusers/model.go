@@ -1,10 +1,11 @@
 package superusers
 
 import (
-	"github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
+	"github.com/amplify-cms/sys-share/sys-core/service/config"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/pass"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -16,29 +17,47 @@ const (
 	defaultFilePerm           = 0660
 )
 
+type SuperUser struct {
+	// SuperUser has names as opposed to email
+	Name string
+	// HashedPassword contains hashed password
+	HashedPassword string
+	// Avatar is a base64
+	Avatar string
+}
+
+type SuperUserConfig struct {
+	SuperUsers []*SuperUser `json:"super_users" yaml:"super_users" mapstructure:"super_users"`
+}
+
 // SuperUserIO queries superusers from a config under yaml / json format
 // note that passwords are and should be encrypted
 type SuperUserIO struct {
-	fpath  string
-	logger logging.Logger
-	mu     sync.RWMutex
+	fpath    string
+	logger   logging.Logger
+	mu       sync.RWMutex
+}
+
+func (s *SuperUserIO) GetFilepath() string {
+	return s.fpath
 }
 
 // NewSuperUserDAO creates SuperUserIO
 // it checks whether or not the file exists, if it does it opens it readonly
 // if it doesn't it creates a file containing default superuser and its password in a hashed format.
 func NewSuperUserDAO(superAdminFilePath string, logger logging.Logger) *SuperUserIO {
-	_, err := os.Stat(superAdminFilePath)
-	if err != nil {
+	if superAdminFilePath == "" {
 		superAdminFilePath = defaultSuperAdminFilepath
 	}
+	superDir := filepath.Dir(superAdminFilePath)
+	_ = os.MkdirAll(superDir, os.ModeDir)
 	mu := sync.RWMutex{}
 	f, err := os.OpenFile(superAdminFilePath, os.O_RDONLY, defaultFilePerm)
 	if err != nil {
 		logger.Error("error opening superadmin config, creating one")
 		f, err = os.OpenFile(superAdminFilePath, os.O_CREATE|os.O_WRONLY, defaultFilePerm)
 		if err != nil {
-			logger.Fatal("error creating superadmin config")
+			logger.Fatalf("error creating superadmin config: %v", err)
 		}
 	}
 	defer f.Close()
@@ -55,28 +74,17 @@ func NewSuperUserDAO(superAdminFilePath string, logger logging.Logger) *SuperUse
 				Avatar:         defaultAvatar,
 			},
 		}}
-		b, err := config.MarshalPretty(&hcodedSuper)
+		b, err := config.MarshalYAML(&hcodedSuper)
 		if err != nil {
 			logger.Fatal("unable to marshal default superuser to yml")
 		}
+		mu.Lock()
 		f.Write(b)
+		mu.Unlock()
 	}
 	return &SuperUserIO{
-		fpath:  superAdminFilePath,
-		logger: logger,
-		mu:     mu,
+		fpath:    superAdminFilePath,
+		logger:   logger,
+		mu:       mu,
 	}
-}
-
-type SuperUser struct {
-	// SuperUser has names as opposed to email
-	Name string
-	// HashedPassword contains hashed password
-	HashedPassword string
-	// Avatar is a base64 
-	Avatar string
-}
-
-type SuperUserConfig struct {
-	SuperUsers []*SuperUser `json:"super_users" yaml:"super_users" mapstructure:"super_users"`
 }

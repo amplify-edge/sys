@@ -2,14 +2,14 @@ package db_test
 
 import (
 	"fmt"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"testing"
 
 	"github.com/go-playground/validator"
 	"github.com/stretchr/testify/assert"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (

@@ -5,10 +5,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"net/http"
 
-	"github.com/getcouragenow/sys-share/sys-core/service/logging"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
@@ -18,8 +18,8 @@ import (
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 
-	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg"
+	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg"
 )
 
 const (

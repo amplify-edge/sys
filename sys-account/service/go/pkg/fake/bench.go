@@ -3,15 +3,15 @@ package fake
 
 import (
 	"fmt"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
-	sharePkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	benchPkg "github.com/getcouragenow/sys-share/sys-core/service/bench"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	sharePkg "github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	benchPkg "github.com/amplify-cms/sys-share/sys-core/service/bench"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
 )
 
 const (

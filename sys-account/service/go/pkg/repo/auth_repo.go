@@ -9,18 +9,18 @@ import (
 	"net"
 	"time"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
+	corepkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/pass"
+	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 )
 
 const (

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go"
 )
 
 const (

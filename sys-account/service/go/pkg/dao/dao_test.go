@@ -1,14 +1,14 @@
 package dao_test
 
 import (
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
+	corecfg "github.com/amplify-cms/sys/sys-core/service/go"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 )
 
 var (

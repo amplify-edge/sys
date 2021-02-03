@@ -6,11 +6,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
 )
 
 func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *pkg.AccountNewRequest) error {

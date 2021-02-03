@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error) {

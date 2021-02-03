@@ -2,7 +2,7 @@ package repo
 
 import (
 	"context"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"os"
 	"testing"
 
@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 			Password: "someInsecureBlaBlaPassword",
 		},
 		{
-			Email:    "superadmin@getcouragenow.org",
+			Email:    "superadmin@amplify-cms.org",
 			Password: "superadmin",
 		},
 	}

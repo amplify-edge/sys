@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/fake"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	corepkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/fake"
 )
 
 func main() {

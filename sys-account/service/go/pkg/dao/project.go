@@ -6,9 +6,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 )
 
 type Project struct {

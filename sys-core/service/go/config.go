@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
+	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
 )
 
 const (

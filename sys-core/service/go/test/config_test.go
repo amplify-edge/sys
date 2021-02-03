@@ -2,12 +2,12 @@ package db_test
 
 import (
 	"fmt"
-	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
+	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
+	corecfg "github.com/amplify-cms/sys/sys-core/service/go"
 )
 
 
@@ -23,7 +23,7 @@ func testNewSysCoreConfig(t *testing.T) {
 	expected := &corecfg.SysCoreConfig{
 		SysCoreConfig: commonCfg.Config{
 			DbConfig: commonCfg.DbConfig{
-				Name:             "getcouragenow.db",
+				Name:             "amplify-cms.db",
 				EncryptKey:       "testkey!@",
 				RotationDuration: 1,
 				DbDir:            "./db",

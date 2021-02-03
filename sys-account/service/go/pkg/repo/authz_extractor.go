@@ -2,9 +2,9 @@ package repo
 
 import (
 	"context"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging"
 
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
 )
 
 // Satisfies sharedAuth.ServerAuuthzInterceptor

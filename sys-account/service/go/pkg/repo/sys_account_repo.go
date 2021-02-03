@@ -1,17 +1,17 @@
 package repo
 
 import (
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging"
 
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
-	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/getcouragenow/sys/sys-account/service/go"
-	accSvcCfg "github.com/getcouragenow/sys/sys-account/service/go"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	corefile "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/repo"
-	coremail "github.com/getcouragenow/sys/sys-core/service/go/pkg/mailer"
+	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
+	"github.com/amplify-cms/sys/sys-account/service/go"
+	accSvcCfg "github.com/amplify-cms/sys/sys-account/service/go"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
+	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	corefile "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/repo"
+	coremail "github.com/amplify-cms/sys/sys-core/service/go/pkg/mailer"
 )
 
 type (

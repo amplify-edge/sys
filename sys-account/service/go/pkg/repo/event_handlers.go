@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
 
-	sharedCore "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
-	sharedBus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	sharedCore "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
+	sharedBus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
+	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) onDeleteProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {

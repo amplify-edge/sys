@@ -3,11 +3,11 @@ package dao_test
 import (
 	"testing"
 
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
 )
 
 var (

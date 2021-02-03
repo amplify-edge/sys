@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"github.com/getcouragenow/sys-share/sys-core/service/logging"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
 	"strings"
 )
 

@@ -4,15 +4,15 @@ import (
 	"crypto/sha512"
 	b64 "encoding/base64"
 	"encoding/binary"
-	"github.com/getcouragenow/sys-share/sys-core/service/logging/zaplog"
+	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"testing"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
+	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
+	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	corecfg "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc"
+	"github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/dao"
 )
 
 var (
