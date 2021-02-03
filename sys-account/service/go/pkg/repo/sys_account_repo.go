@@ -66,5 +66,6 @@ func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountCon
 	bus.RegisterAction("onCheckAccountExists", repo.onCheckAccountExists)
 	bus.RegisterAction("onResetAllSysAccount", repo.onResetAllSysAccount)
 	bus.RegisterAction("onGetAccountEmail", repo.onGetAccountEmail)
+	bus.RegisterAction("onCheckAllowProject", repo.onCheckAllowProject)
 	return repo, nil
 }

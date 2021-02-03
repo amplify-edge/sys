@@ -16,7 +16,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/improbable-eng/grpc-web v0.13.0
 	github.com/matcornic/hermes/v2 v2.1.0
-	github.com/opentracing/opentracing-go v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/segmentio/encoding v0.2.7

@@ -169,9 +169,35 @@ func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *sharedCore.
 }
 
 func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
-	err := ad.store.ResetAll(ad.initialSuperusersMail)
+	return map[string]interface{}{}, nil
+}
+
+// onCheckAllowProject checks current user account claims see if they are allowed to do any data operations on DiscoProject
+// general rule is only superadmin, org admin, or the project admin for the specific project are allowed to do anything.
+func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const orgIdKey = "org_id"
+	const projectIdKey = "project_id"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{}, nil
+	if requestMap[orgIdKey] == nil || requestMap[orgIdKey] == "" {
+		if requestMap[projectIdKey] == nil || requestMap[projectIdKey] == "" {
+			return nil, err
+		}
+		qp := &coredb.QueryParams{Params: requestMap}
+		proj, err := ad.store.GetProject(qp)
+		if err != nil {
+			return nil, err
+		}
+		if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{
+			"allowed": true,
+		}, nil
+	}
+	return map[string]interface{}{
+		"allowed": false,
+	}, nil
 }
