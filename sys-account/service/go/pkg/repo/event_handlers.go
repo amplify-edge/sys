@@ -174,6 +174,9 @@ func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *sharedCore.
 }
 
 func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	if err := ad.store.ResetAll(); err != nil {
+		return nil, err
+	}
 	return map[string]interface{}{}, nil
 }
 
@@ -187,11 +190,12 @@ func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *sharedCor
 		return nil, err
 	}
 	var proj *dao.Project
-
+	rmap := map[string]interface{}{}
 	if requestMap[projectIdKey] == nil || requestMap[projectIdKey] == "" {
 		return nil, err
 	}
-	qp := &coredb.QueryParams{Params: requestMap}
+	rmap["id"] = requestMap[projectIdKey]
+	qp := &coredb.QueryParams{Params: rmap}
 	proj, err = ad.store.GetProject(qp)
 	if err != nil {
 		return nil, err

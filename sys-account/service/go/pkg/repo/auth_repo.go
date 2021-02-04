@@ -218,13 +218,17 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrCreatingToken, Err: err})
 	}
 
-	req, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": u.Id}})
-	if err != nil {
-		return nil, err
-	}
-	req.LastLogin = utilities.CurrentTimestamp()
-	if err = ad.store.UpdateAccount(req); err != nil {
-		return nil, err
+	curTimestamp := utilities.CurrentTimestamp()
+
+	if !sharedAuth.IsSuperadmin(u.Role) {
+		req, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": u.Id}})
+		if err != nil {
+			return nil, err
+		}
+		req.LastLogin = curTimestamp
+		if err = ad.store.UpdateAccount(req); err != nil {
+			return nil, err
+		}
 	}
 	errChan := make(chan error, 1)
 	go func() {
@@ -261,7 +265,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		Success:      true,
 		AccessToken:  tokenPairs.AccessToken,
 		RefreshToken: tokenPairs.RefreshToken,
-		LastLogin:    req.LastLogin,
+		LastLogin:    curTimestamp,
 	}, nil
 }
 

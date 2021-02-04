@@ -63,9 +63,9 @@ func (s *SuperUserIO) verifyPermission(ctx context.Context) bool {
 // Get Superuser based on its / his / her name.
 // will return SuperUser object and error if any
 func (s *SuperUserIO) Get(ctx context.Context, name string) (*pkg.Account, error) {
-	if !s.verifyPermission(ctx) {
-		return nil, errors.New(sharedAuth.Error{Reason: sharedAuth.ErrInsufficientRights}.Error())
-	}
+	//if !s.verifyPermission(ctx) {
+	//	return nil, errors.New(sharedAuth.Error{Reason: sharedAuth.ErrInsufficientRights}.Error())
+	//}
 	supe, err := s.get(name)
 	if err != nil {
 		return nil, err
