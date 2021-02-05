@@ -3,7 +3,7 @@ package coredb
 import (
 	"context"
 	"fmt"
-	"github.com/amplify-cms/sys-share/sys-core/service/fileutils"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/fileutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
@@ -15,8 +15,8 @@ import (
 	"github.com/robfig/cron/v3"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
-	sharedPkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
+	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	sharedPkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
 )
 
 const (

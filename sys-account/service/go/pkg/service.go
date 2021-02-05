@@ -2,19 +2,19 @@ package accountpkg
 
 import (
 	"context"
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
 	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	coresvc "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
-	sharedBus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/amplify-cms/sys/sys-account/service/go"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/repo"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
-	corefile "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/repo"
-	coremail "github.com/amplify-cms/sys/sys-core/service/go/pkg/mailer"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	coresvc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	sharedBus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/repo"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	corefile "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/repo"
+	coremail "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/mailer"
 )
 
 type SysAccountService struct {

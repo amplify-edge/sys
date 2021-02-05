@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/genjidb/genji/document"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 
-	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/pass"
-	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/pass"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 var (

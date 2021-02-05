@@ -2,12 +2,12 @@ package service_test
 
 import (
 	"fmt"
-	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
+	commonCfg "go.amplifyedge.org/sys-share-v2/sys-core/service/config/common"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	acccfg "github.com/amplify-cms/sys/sys-account/service/go"
+	acccfg "go.amplifyedge.org/sys-v2/sys-account/service/go"
 )
 
 func TestNewSysAccountConfig(t *testing.T) {

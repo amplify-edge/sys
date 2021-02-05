@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 )
 
 func main() {

@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 type FileDB struct {

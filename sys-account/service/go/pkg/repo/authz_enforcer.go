@@ -5,10 +5,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 )
 
 func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *pkg.AccountNewRequest) error {

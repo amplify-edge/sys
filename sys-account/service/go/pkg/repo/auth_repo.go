@@ -8,18 +8,18 @@ import (
 	"net"
 	"time"
 
-	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
-	corepkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/pass"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/pass"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 const (

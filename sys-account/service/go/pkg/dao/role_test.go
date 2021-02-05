@@ -4,9 +4,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
-	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 var (

@@ -7,13 +7,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 
-	sharedCore "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
-	sharedBus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	sharedCore "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	sharedBus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) onDeleteProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {

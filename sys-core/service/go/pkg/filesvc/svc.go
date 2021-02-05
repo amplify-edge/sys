@@ -1,12 +1,12 @@
 package filesvc
 
 import (
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"google.golang.org/grpc"
 
-	sharedPkg "github.com/amplify-cms/sys-share/sys-core/service/go/rpc/v2"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/repo"
+	sharedPkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/repo"
 )
 
 type SysFileService struct {

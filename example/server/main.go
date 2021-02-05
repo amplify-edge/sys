@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/amplify-cms/sys-share/sys-core/service/certutils"
-	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/certutils"
+	corebus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
-	"github.com/amplify-cms/sys/main/pkg"
+	"go.amplifyedge.org/sys-v2/main/pkg"
 )
 
 const (

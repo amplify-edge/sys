@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"log"
 
-	sharedpkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
+	sharedpkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
 )
 
 var rootCmd = &cobra.Command{

@@ -1,8 +1,8 @@
 package db_test
 
 import (
-	corecfg "github.com/amplify-cms/sys/sys-core/service/go"
-	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	corecfg "go.amplifyedge.org/sys-v2/sys-core/service/go"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 	"testing"
 )
 

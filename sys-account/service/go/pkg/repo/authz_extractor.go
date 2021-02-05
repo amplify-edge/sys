@@ -2,9 +2,9 @@ package repo
 
 import (
 	"context"
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 )
 
 // Satisfies sharedAuth.ServerAuuthzInterceptor

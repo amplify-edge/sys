@@ -2,12 +2,12 @@ package db_test
 
 import (
 	"fmt"
-	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
+	commonCfg "go.amplifyedge.org/sys-share-v2/sys-core/service/config/common"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	corecfg "github.com/amplify-cms/sys/sys-core/service/go"
+	corecfg "go.amplifyedge.org/sys-v2/sys-core/service/go"
 )
 
 

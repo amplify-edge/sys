@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
 	"math"
 
-	"github.com/amplify-cms/sys-share/sys-core/service/go/pkg/filehelper"
-	corepkg "github.com/amplify-cms/sys-share/sys-core/service/go/rpc/v2"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/dao"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/filehelper"
+	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/dao"
 )
 
 const (

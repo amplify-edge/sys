@@ -2,10 +2,10 @@ package superusers_test
 
 import (
 	"context"
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
-	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/superusers"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/superusers"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/require"
 	"testing"

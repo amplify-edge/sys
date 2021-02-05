@@ -1,11 +1,11 @@
 package pkg
 
 import (
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"net/http"
 
-	coresvc "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
-	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
+	coresvc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	corebus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
 
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -13,10 +13,10 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	accountpkg "github.com/amplify-cms/sys/sys-account/service/go/pkg"
-	corecfg "github.com/amplify-cms/sys/sys-core/service/go"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
-	corefilecfg "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc"
+	accountpkg "go.amplifyedge.org/sys-v2/sys-account/service/go/pkg"
+	corecfg "go.amplifyedge.org/sys-v2/sys-core/service/go"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	corefilecfg "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc"
 )
 
 const (

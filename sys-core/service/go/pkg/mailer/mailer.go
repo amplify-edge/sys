@@ -3,15 +3,15 @@ package mailer
 import (
 	"context"
 	"fmt"
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"github.com/matcornic/hermes/v2"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"gopkg.in/gomail.v2"
 
-	corepkg "github.com/amplify-cms/sys-share/sys-core/service/go/pkg"
+	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
 
-	service "github.com/amplify-cms/sys/sys-core/service/go"
+	service "go.amplifyedge.org/sys-v2/sys-core/service/go"
 )
 
 type MailSvc struct {

@@ -7,11 +7,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
-	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {

@@ -5,12 +5,12 @@ package superusers
 import (
 	"context"
 	"errors"
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 	"io/ioutil"
 	"strings"
 
-	util "github.com/amplify-cms/sys-share/sys-core/service/config"
+	util "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 )
 
 // toPkgAccount converts SuperUser struct to its proto counterparts.

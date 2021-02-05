@@ -5,18 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/VictoriaMetrics/metrics"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	utilities "github.com/amplify-cms/sys-share/sys-core/service/config"
-	coresvc "github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 )
 
 func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Context, *pkg.Account, error) {

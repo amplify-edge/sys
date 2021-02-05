@@ -1,17 +1,17 @@
 package repo
 
 import (
-	"github.com/amplify-cms/sys-share/sys-core/service/logging"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/superusers"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/telemetry"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/superusers"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
 
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
-	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/amplify-cms/sys/sys-account/service/go"
-	"github.com/amplify-cms/sys/sys-account/service/go/pkg/dao"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
-	corefile "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/repo"
-	coremail "github.com/amplify-cms/sys/sys-core/service/go/pkg/mailer"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	corebus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	corefile "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/repo"
+	coremail "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/mailer"
 )
 
 type (

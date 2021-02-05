@@ -6,10 +6,10 @@ import (
 	"google.golang.org/grpc/status"
 	"strconv"
 
-	"github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/amplify-cms/sys-share/sys-account/service/go/pkg/shared"
-	"github.com/amplify-cms/sys/sys-core/service/go/pkg/coredb"
-	fileDao "github.com/amplify-cms/sys/sys-core/service/go/pkg/filesvc/dao"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	fileDao "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/dao"
 )
 
 func (ad *SysAccountRepo) getAccountAndRole(ctx context.Context, id, email string) (*pkg.Account, error) {
