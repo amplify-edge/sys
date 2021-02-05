@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
+	"github.com/amplify-cms/sys-share/sys-core/service/fileutils"
 	"gopkg.in/yaml.v2"
 
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
 	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
 	coresvc "github.com/amplify-cms/sys/sys-core/service/go"
 )
@@ -15,14 +15,6 @@ const (
 )
 
 type SysAccountConfig struct {
-	SysAccountConfig Config `yaml:"sysAccountConfig" mapstructure:"sysAccountConfig"`
-}
-
-func (s *SysAccountConfig) Validate() error {
-	return s.SysAccountConfig.validate()
-}
-
-type Config struct {
 	SuperUserFilePath     string             `json:"superUserFilePath" yaml:"superUserFilePath" mapstructure:"superUserFilePath"`
 	UnauthenticatedRoutes []string           `json:"unauthenticatedRoutes" yaml:"unauthenticatedRoutes" mapstructure:"unauthenticatedRoutes"`
 	JWTConfig             JWTConfig          `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
@@ -31,7 +23,7 @@ type Config struct {
 	MailConfig            coresvc.MailConfig `yaml:"mailConfig" mapstructure:"mailConfig"`
 }
 
-func (c Config) validate() error {
+func (c SysAccountConfig) Validate() error {
 	if len(c.UnauthenticatedRoutes) == 0 {
 		return fmt.Errorf(errNoUnauthenticatedRoutes)
 	}
@@ -67,7 +59,7 @@ func (j JWTConfig) Validate() error {
 
 func NewConfig(filepath string) (*SysAccountConfig, error) {
 	cfg := &SysAccountConfig{}
-	f, err := sharedConfig.LoadFile(filepath)
+	f, err := fileutils.LoadFile(filepath)
 	if err != nil {
 		return nil, err
 	}

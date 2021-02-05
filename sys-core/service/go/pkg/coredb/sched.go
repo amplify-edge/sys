@@ -3,6 +3,7 @@ package coredb
 import (
 	"context"
 	"fmt"
+	"github.com/amplify-cms/sys-share/sys-core/service/fileutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
@@ -136,7 +137,7 @@ func (a *AllDBService) Restore(ctx context.Context, in *sharedPkg.RestoreAllRequ
 	if in.RestoreVersion != "" {
 		for _, cdb := range a.RegisteredDBs {
 			backupDir := cdb.config.CronConfig.BackupDir
-			backupFilename, err := sharedConfig.LookupFile(backupDir, in.RestoreVersion)
+			backupFilename, err := fileutils.LookupFile(backupDir, in.RestoreVersion)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "restore version %s for database %s not found", in.RestoreVersion, cdb.config.DbConfig.Name)
 			}
@@ -234,7 +235,7 @@ func (a *AllDBService) listAndFilterBackups(callbackFunc func(backupFile string,
 func (c *CoreDB) listBackups() ([]string, error) {
 	backupDir := c.config.CronConfig.BackupDir
 	c.logger.Info("backup dir: " + backupDir)
-	fileInfos, err := sharedConfig.ListFiles(backupDir)
+	fileInfos, err := fileutils.ListFiles(backupDir)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +265,7 @@ func createFile(fileName string) (io.WriteCloser, error) {
 }
 
 func (c *CoreDB) openFile(filepath string) (io.ReadCloser, error) {
-	exists := sharedConfig.FileExists(filepath)
+	exists := fileutils.FileExists(filepath)
 	if !exists {
 		return nil, fmt.Errorf("cannot find %s", filepath)
 	}

@@ -41,12 +41,14 @@ type SysServices struct {
 }
 
 type ServiceConfigPaths struct {
-	account string
+	accountFilePath string
+	accountConfig   *accountpkg.SysAccountServiceConfig
 }
 
-func NewServiceConfigPaths(account string) *ServiceConfigPaths {
+func NewServiceConfigPaths(accountFilePath string, accountConfig *accountpkg.SysAccountServiceConfig) *ServiceConfigPaths {
 	return &ServiceConfigPaths{
-		account: account,
+		accountFilePath: accountFilePath,
+		accountConfig:   accountConfig,
 	}
 }
 
@@ -72,11 +74,17 @@ type SysServiceConfig struct {
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
 func NewSysServiceConfig(l logging.Logger, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int, bus *corebus.CoreBus) (*SysServiceConfig, error) {
 	var err error
-	// account
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, servicePaths.account, bus)
-	if err != nil {
-		return nil, err
+	var newSysAccountCfg *accountpkg.SysAccountServiceConfig
+	if servicePaths.accountFilePath != "" {
+		newSysAccountCfg, err = accountpkg.NewSysAccountServiceConfig(l, servicePaths.accountFilePath, bus, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
+	if servicePaths.accountConfig != nil {
+		newSysAccountCfg = servicePaths.accountConfig
+	}
+
 	ssc := &SysServiceConfig{
 		logger: l,
 		store:  db,

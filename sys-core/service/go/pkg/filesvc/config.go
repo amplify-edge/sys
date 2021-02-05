@@ -2,8 +2,8 @@ package filesvc
 
 import (
 	"fmt"
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
 	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
+	"github.com/amplify-cms/sys-share/sys-core/service/fileutils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,7 +21,7 @@ func (f *FileServiceConfig) Validate() error {
 
 func NewConfig(filepath string) (*FileServiceConfig, error) {
 	fileSvcConfig := &FileServiceConfig{}
-	f, err := sharedConfig.LoadFile(filepath)
+	f, err := fileutils.LoadFile(filepath)
 	if err != nil {
 		return nil, err
 	}

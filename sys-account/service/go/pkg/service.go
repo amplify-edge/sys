@@ -38,23 +38,25 @@ type SysAccountServiceConfig struct {
 	allDbs   *coredb.AllDBService
 }
 
-func NewSysAccountServiceConfig(l logging.Logger, filepath string, bus *sharedBus.CoreBus) (*SysAccountServiceConfig, error) {
+func NewSysAccountServiceConfig(l logging.Logger, filepath string, bus *sharedBus.CoreBus, accountCfg *service.SysAccountConfig) (*SysAccountServiceConfig, error) {
 	var err error
 	sysAccountLogger := l.WithFields(map[string]interface{}{"service": "sys-account"})
 
-	accountCfg, err := service.NewConfig(filepath)
-	if err != nil {
-		return nil, err
+	if filepath != "" {
+		accountCfg, err = service.NewConfig(filepath)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// accounts database
-	db, err := coredb.NewCoreDB(l, &accountCfg.SysAccountConfig.SysCoreConfig, nil)
+	db, err := coredb.NewCoreDB(l, &accountCfg.SysCoreConfig, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	mailSvc := coremail.NewMailSvc(&accountCfg.SysAccountConfig.MailConfig, l)
+	mailSvc := coremail.NewMailSvc(&accountCfg.MailConfig, l)
 	// files database
-	fileDb, err := coredb.NewCoreDB(l, &accountCfg.SysAccountConfig.SysFileConfig, nil)
+	fileDb, err := coredb.NewCoreDB(l, &accountCfg.SysFileConfig, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +88,7 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 	sysAccountMetrics := telemetry.NewSysAccountMetrics(cfg.logger)
 
 	authRepo, err := repo.NewAuthRepo(cfg.logger, cfg.store, cfg.Cfg, cfg.bus, cfg.mail, cfg.fileRepo, domain,
-		cfg.Cfg.SysAccountConfig.SuperUserFilePath, sysAccountMetrics)
+		cfg.Cfg.SuperUserFilePath, sysAccountMetrics)
 	if err != nil {
 		return nil, err
 	}

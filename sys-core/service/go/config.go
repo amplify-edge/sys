@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
+	"github.com/amplify-cms/sys-share/sys-core/service/fileutils"
 	"gopkg.in/yaml.v2"
 
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
 	commonCfg "github.com/amplify-cms/sys-share/sys-core/service/config/common"
 )
 
@@ -89,7 +89,7 @@ func (m *MailConfig) Validate() error {
 
 func NewConfig(filepath string) (*SysCoreConfig, error) {
 	sysCfg := &SysCoreConfig{}
-	f, err := sharedConfig.LoadFile(filepath)
+	f, err := fileutils.LoadFile(filepath)
 	if err != nil {
 		return nil, err
 	}

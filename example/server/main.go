@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
+	"github.com/amplify-cms/sys-share/sys-core/service/certutils"
 	corebus "github.com/amplify-cms/sys-share/sys-core/service/go/pkg/bus"
-	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
+	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
@@ -46,7 +46,7 @@ func main() {
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// configs
-		sspaths := pkg.NewServiceConfigPaths(accountCfgPath)
+		sspaths := pkg.NewServiceConfigPaths(accountCfgPath, nil)
 		cbus := corebus.NewCoreBus()
 		sscfg, err := pkg.NewSysServiceConfig(logger, nil, sspaths, defaultPort, cbus)
 		if err != nil {
@@ -64,7 +64,7 @@ func main() {
 		var grpcServer *grpc.Server
 		if tlsEnabled {
 			logger.Info("Server Running With TLS Enabled")
-			tlsCreds, err := sharedConfig.LoadTLSKeypair(localTlsCertPath, localTlsKeyPath)
+			tlsCreds, err := certutils.LoadTLSKeypair(localTlsCertPath, localTlsKeyPath)
 			if err != nil {
 				logger.Fatalf(errCreateSysService, err)
 			}

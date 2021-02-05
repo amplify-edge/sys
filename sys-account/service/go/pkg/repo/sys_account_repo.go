@@ -39,7 +39,7 @@ func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountCon
 		l.Errorf("Error while initializing DAO: %v", err)
 		return nil, err
 	}
-	tokenCfg := sharedAuth.NewTokenConfig([]byte(cfg.SysAccountConfig.JWTConfig.Access.Secret), []byte(cfg.SysAccountConfig.JWTConfig.Refresh.Secret))
+	tokenCfg := sharedAuth.NewTokenConfig([]byte(cfg.JWTConfig.Access.Secret), []byte(cfg.JWTConfig.Refresh.Secret))
 	//var initialSuperMails []string
 	//for _, sureq := range supes {
 	//	initialSuperMails = append(initialSuperMails, sureq.Email)
@@ -49,7 +49,7 @@ func NewAuthRepo(l logging.Logger, db *coredb.CoreDB, cfg *service.SysAccountCon
 		store:                 accdb,
 		log:                   l,
 		tokenCfg:              tokenCfg,
-		unauthenticatedRoutes: cfg.SysAccountConfig.UnauthenticatedRoutes,
+		unauthenticatedRoutes: cfg.UnauthenticatedRoutes,
 		bus:                   bus,
 		mail:                  mail,
 		frepo:                 frepo,

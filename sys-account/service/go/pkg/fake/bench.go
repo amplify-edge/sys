@@ -3,6 +3,7 @@ package fake
 
 import (
 	"fmt"
+	"github.com/amplify-cms/sys-share/sys-core/service/fileutils"
 	"github.com/amplify-cms/sys-share/sys-core/service/logging/zaplog"
 	"os"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 
 	sharePkg "github.com/amplify-cms/sys-share/sys-account/service/go/pkg"
 	benchPkg "github.com/amplify-cms/sys-share/sys-core/service/bench"
-	sharedConfig "github.com/amplify-cms/sys-share/sys-core/service/config"
 )
 
 const (
@@ -60,7 +60,7 @@ func SysAccountBench() *cobra.Command {
 			return err
 		}
 		dirPath := filepath.Dir(jsonOutPath)
-		exists, _ := sharedConfig.PathExists(dirPath)
+		exists, _ := fileutils.PathExists(dirPath)
 		if !exists {
 			os.MkdirAll(dirPath, 0755)
 		}
