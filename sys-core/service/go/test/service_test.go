@@ -56,7 +56,7 @@ func get(id string) (*SomeData, error) {
 
 func testCoreDBService(t *testing.T) {
 	var err error
-	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-core-test", true)
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-core-test", true, "")
 	sysCoreSvc, err = coresvc.NewCoreDB(logger, &sysCoreCfg.SysCoreConfig, nil)
 	assert.NoError(t, err)
 
