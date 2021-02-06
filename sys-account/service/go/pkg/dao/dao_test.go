@@ -1,14 +1,14 @@
 package dao_test
 
 import (
-	log "github.com/sirupsen/logrus"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
+	corecfg "go.amplifyedge.org/sys-v2/sys-core/service/go"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 var (
@@ -61,22 +61,22 @@ var (
 
 func init() {
 	var csc *corecfg.SysCoreConfig
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-account-dao-test", true, "")
+	logger.InitLogger(nil)
 	csc, err = corecfg.NewConfig("./testdata/syscore.yml")
 	if err != nil {
-		log.Fatalf("error initializing db: %v", err)
+		logger.Fatalf("error initializing db: %v", err)
 	}
-	logger := log.New().WithField("test", "sys-account")
-	logger.Level = log.DebugLevel
 	testDb, err = coresvc.NewCoreDB(logger, &csc.SysCoreConfig, nil)
 	if err != nil {
-		log.Fatalf("error creating CoreDB: %v", err)
+		logger.Fatalf("error creating CoreDB: %v", err)
 	}
-	log.Debug("MakeSchema testing .....")
+	logger.Debug("MakeSchema testing .....")
 	accdb, err = dao.NewAccountDB(testDb, logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
-	log.Printf("successfully initialize accountdb :  %v", accdb)
+	logger.Infof("successfully initialize accountdb :  %v", accdb)
 }
 
 func TestAll(t *testing.T) {
@@ -136,7 +136,7 @@ func testQueryAccounts(t *testing.T) {
 	var next int64
 
 	for _, qp := range queryParams {
-		accs, next, err = accdb.ListAccount(qp, "email", 1, 0)
+		accs, next, err = accdb.ListAccount(qp, "email", 1, 0, "")
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, next)
 	}

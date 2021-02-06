@@ -2,20 +2,21 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/VictoriaMetrics/metrics"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 )
 
 func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Context, *pkg.Account, error) {
@@ -25,7 +26,7 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	}
 	ad.log.Debugf("Extracted current user claims: email: %s, role: %v", claims.UserEmail, claims.Role)
 	newCtx := context.WithValue(ctx, sharedAuth.ContextKeyClaims, claims)
-	acc, err := ad.getAccountAndRole("", claims.UserEmail)
+	acc, err := ad.getAccountAndRole(newCtx, "", claims.UserEmail)
 	if err != nil {
 		return ctx, nil, status.Errorf(codes.NotFound, "current user not found: %v", err)
 	}
@@ -36,6 +37,13 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 	if err := ad.allowNewAccount(ctx, in); err != nil {
 		ad.log.Debugf("creation of new account failed: %v", err)
 		return nil, err
+	}
+	if sharedAuth.IsSuperadmin(in.Roles) {
+		ad.log.Debugf("user wanted to create superadmin, fail here as it's not allowed")
+		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{
+			Reason: sharedAuth.ErrInvalidParameters,
+			Err:    errors.New("superuser creation not allowed"),
+		}.Error())
 	}
 	var logoBytes []byte
 	var err error
@@ -54,7 +62,7 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
 	}
-	return ad.getAccountAndRole(acc.ID, "")
+	return ad.getAccountAndRole(ctx, acc.ID, "")
 }
 
 func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.IdRequest) (*pkg.Account, error) {
@@ -66,11 +74,13 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.IdRequest) (*p
 	if err != nil {
 		return nil, err
 	}
-	avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
-	if err != nil {
-		return nil, err
+	if acc.AvatarResourceId != "" {
+		avatar, err := ad.frepo.DownloadFile("", acc.AvatarResourceId)
+		if err != nil {
+			return nil, err
+		}
+		acc.Avatar = avatar.Binary
 	}
-	acc.Avatar = avatar.Binary
 	return acc, nil
 }
 
@@ -100,7 +110,7 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 		limit = dao.DefaultLimit
 	}
 
-	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor, in.Matcher)
+	accounts, next, err := ad.listAccountsAndRoles(ctx, filter, orderBy, limit, cursor, in.Matcher)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +148,7 @@ func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAcco
 	if in.SearchParam.PerPageEntries == 0 {
 		limit = dao.DefaultLimit
 	}
-	accounts, next, err := ad.listAccountsAndRoles(filter, orderBy, limit, cursor, in.SearchParam.Matcher)
+	accounts, next, err := ad.listAccountsAndRoles(ctx, filter, orderBy, limit, cursor, in.SearchParam.Matcher)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +192,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 				}); err != nil {
 					return nil, err
 				}
-				return ad.getAccountAndRole(in.AssignedAccountId, "")
+				return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
 			}
 		}
 	}
@@ -202,30 +212,34 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 				}); err != nil {
 					return nil, err
 				}
-				return ad.getAccountAndRole(in.AssignedAccountId, "")
+				return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
 			}
 		}
 	}
 	// SUPERADMIN
 	if in.Role.Role == pkg.SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.Role) {
-		for _, r := range roles {
-			if err = ad.store.DeleteRole(r.ID); err != nil {
-				return nil, err
-			}
-		}
-		newRole := &dao.Role{
-			ID:        utilities.NewID(),
-			AccountId: in.AssignedAccountId,
-			Role:      int(in.Role.Role),
-			ProjectId: "",
-			OrgId:     "",
-			CreatedAt: utilities.CurrentTimestamp(),
-			UpdatedAt: utilities.CurrentTimestamp(),
-		}
-		if err = ad.store.InsertRole(newRole); err != nil {
-			return nil, err
-		}
-		return ad.getAccountAndRole(in.AssignedAccountId, "")
+		//for _, r := range roles {
+		//	if err = ad.store.DeleteRole(r.ID); err != nil {
+		//		return nil, err
+		//	}
+		//}
+		//newRole := &dao.Role{
+		//	ID:        utilities.NewID(),
+		//	AccountId: in.AssignedAccountId,
+		//	Role:      int(in.Role.Role),
+		//	ProjectId: "",
+		//	OrgId:     "",
+		//	CreatedAt: utilities.CurrentTimestamp(),
+		//	UpdatedAt: utilities.CurrentTimestamp(),
+		//}
+		//if err = ad.store.InsertRole(newRole); err != nil {
+		//	return nil, err
+		//}
+		//return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
+		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{
+			Reason: sharedAuth.ErrInvalidParameters,
+			Err:    errors.New("superadmin is not assignable"),
+		}.Error())
 	} else if sharedAuth.IsSuperadmin(curAcc.Role) {
 		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
 			ad.log.Debug("deleting user guest role")
@@ -247,7 +261,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 				}); err != nil {
 					return nil, err
 				}
-				return ad.getAccountAndRole(in.AssignedAccountId, "")
+				return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
 			}
 		}
 		newRole := &dao.Role{
@@ -263,11 +277,11 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			return nil, err
 		}
 		go func() {
-			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
+			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
 			joinedMetrics.Inc()
 		}()
 
-		return ad.getAccountAndRole(in.AssignedAccountId, "")
+		return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
 	}
 
 	// Regular Users can only allow themselves to be regular user in other project
@@ -278,7 +292,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 		for _, r := range roles {
 			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
-				return ad.getAccountAndRole(in.AssignedAccountId, "")
+				return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
 			}
 		}
 		if err = ad.store.InsertRole(&dao.Role{
@@ -294,7 +308,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 
 		go func() {
-			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
+			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
 			joinedMetrics.Inc()
 		}()
 
@@ -339,7 +353,7 @@ func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.AccountUpda
 		ad.log.Debugf("unable to update account: %v", err)
 		return nil, err
 	}
-	return ad.getAccountAndRole(in.Id, "")
+	return ad.getAccountAndRole(ctx, in.Id, "")
 }
 
 func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAccountRequest) (*pkg.Account, error) {

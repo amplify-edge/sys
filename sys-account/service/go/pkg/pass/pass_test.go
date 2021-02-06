@@ -1,7 +1,7 @@
 package pass_test
 
 import (
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/pass"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

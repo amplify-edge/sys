@@ -1,12 +1,12 @@
 package dao_test
 
 import (
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 )
 
 var (

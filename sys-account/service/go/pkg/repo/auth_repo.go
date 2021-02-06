@@ -8,32 +8,46 @@ import (
 	"net"
 	"time"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
-	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 
-	l "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/pass"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 const (
 	banDuration = 1 * time.Hour
 )
 
-func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) getAndVerifyAccount(ctx context.Context, req *pkg.LoginRequest) (*pkg.Account, error) {
 	qp := &coredb.QueryParams{Params: map[string]interface{}{
 		"email": req.Email,
 	}}
+	var super *pkg.Account
 	acc, err := ad.store.GetAccount(qp)
 	if err != nil {
-		return nil, err
+		super, err = ad.superDao.Get(ctx, req.Email)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if super != nil {
+		match, err := pass.VerifyHash(req.Password, super.Password)
+		if err != nil {
+			return nil, err
+		}
+		if !match {
+			return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
+		}
+		return super, nil
 	}
 
 	if acc.Disabled {
@@ -48,9 +62,7 @@ func (ad *SysAccountRepo) getAndVerifyAccount(_ context.Context, req *pkg.LoginR
 		return nil, fmt.Errorf(sharedAuth.Error{Reason: sharedAuth.ErrVerifyPassword, Err: fmt.Errorf("password mismatch")}.Error())
 	}
 
-	ad.log.WithFields(l.Fields{
-		"account_id": acc.ID,
-	}).Debug("querying user")
+	ad.log.WithFields(map[string]interface{}{"account_id": acc.ID}).Debug("querying user")
 
 	daoRoles, err := ad.store.FetchRoles(acc.ID)
 	if err != nil {
@@ -206,13 +218,17 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		}, status.Errorf(codes.Unauthenticated, "Can't authenticate: %v", sharedAuth.Error{Reason: sharedAuth.ErrCreatingToken, Err: err})
 	}
 
-	req, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": u.Id}})
-	if err != nil {
-		return nil, err
-	}
-	req.LastLogin = utilities.CurrentTimestamp()
-	if err = ad.store.UpdateAccount(req); err != nil {
-		return nil, err
+	curTimestamp := utilities.CurrentTimestamp()
+
+	if !sharedAuth.IsSuperadmin(u.Role) {
+		req, err := ad.store.GetAccount(&coredb.QueryParams{Params: map[string]interface{}{"id": u.Id}})
+		if err != nil {
+			return nil, err
+		}
+		req.LastLogin = curTimestamp
+		if err = ad.store.UpdateAccount(req); err != nil {
+			return nil, err
+		}
 	}
 	errChan := make(chan error, 1)
 	go func() {
@@ -249,7 +265,7 @@ func (ad *SysAccountRepo) Login(ctx context.Context, in *pkg.LoginRequest) (*pkg
 		Success:      true,
 		AccessToken:  tokenPairs.AccessToken,
 		RefreshToken: tokenPairs.RefreshToken,
-		LastLogin:    req.LastLogin,
+		LastLogin:    curTimestamp,
 	}, nil
 }
 

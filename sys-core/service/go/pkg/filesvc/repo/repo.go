@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
 	"math"
 
-	"github.com/getcouragenow/sys-share/sys-core/service/go/pkg/filehelper"
-	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/rpc/v2"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc/dao"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/filehelper"
+	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/dao"
 )
 
 const (
@@ -23,10 +23,10 @@ const (
 
 type SysFileRepo struct {
 	store *dao.FileDB
-	log   *logrus.Entry
+	log   logging.Logger
 }
 
-func NewSysFileRepo(db *coredb.CoreDB, log *logrus.Entry) (*SysFileRepo, error) {
+func NewSysFileRepo(db *coredb.CoreDB, log logging.Logger) (*SysFileRepo, error) {
 	store, err := dao.NewFileDB(db, log)
 	if err != nil {
 		return nil, err

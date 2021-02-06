@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/dao"
+	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error) {
@@ -55,6 +55,10 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	var logoBytes []byte
 	if in.LogoUploadBytes != "" {
 		logoBytes, err = sharedConfig.DecodeB64(in.LogoUploadBytes)
+	}
+	// do the permission check here
+	if err = ad.allowNewProject(ctx, in.OrgId); err != nil {
+		return nil, err
 	}
 	logo, err := ad.frepo.UploadFile(in.LogoFilepath, logoBytes)
 	if err != nil {
@@ -142,6 +146,9 @@ func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectUpda
 	if in.Name != "" {
 		proj.Name = in.Name
 	}
+	if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+		return nil, err
+	}
 	if in.LogoFilepath != "" && len(in.LogoUploadBytes) != 0 {
 		updatedLogo, err := ad.frepo.UploadFile(in.LogoFilepath, in.LogoUploadBytes)
 		if err != nil {
@@ -164,7 +171,14 @@ func (ad *SysAccountRepo) DeleteProject(ctx context.Context, in *pkg.IdRequest) 
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	err := ad.store.DeleteProject(in.Id)
+	proj, err := ad.store.GetProject(&coresvc.QueryParams{Params: map[string]interface{}{"id": in.Id}})
+	if err != nil {
+		return nil, err
+	}
+	if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+		return nil, err
+	}
+	err = ad.store.DeleteProject(in.Id)
 	if err != nil {
 		return nil, err
 	}

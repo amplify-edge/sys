@@ -2,7 +2,7 @@ package telemetry
 
 import (
 	"github.com/VictoriaMetrics/metrics"
-	"github.com/sirupsen/logrus"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 )
 
 const (
@@ -17,8 +17,8 @@ type SysAccountMetrics struct {
 	VerifiedUserMetrics   *metrics.Counter
 }
 
-func NewSysAccountMetrics(logger *logrus.Entry) *SysAccountMetrics {
-	logger.Infof("Registering Sys-Account Metrics")
+func NewSysAccountMetrics(logger logging.Logger) *SysAccountMetrics {
+	logger.Info("Registering Sys-Account Metrics")
 	return &SysAccountMetrics{
 		RegisteredUserMetrics: metrics.NewCounter(METRICS_REGISTERED_USERS),
 		VerifiedUserMetrics:   metrics.NewCounter(METRICS_VERIFIED_USERS),

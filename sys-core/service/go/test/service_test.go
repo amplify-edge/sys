@@ -2,14 +2,14 @@ package db_test
 
 import (
 	"fmt"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	"testing"
 
 	"github.com/go-playground/validator"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 const (
@@ -56,7 +56,7 @@ func get(id string) (*SomeData, error) {
 
 func testCoreDBService(t *testing.T) {
 	var err error
-	logger := logrus.New().WithField("sys-db", "test")
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-core-test", true)
 	sysCoreSvc, err = coresvc.NewCoreDB(logger, &sysCoreCfg.SysCoreConfig, nil)
 	assert.NoError(t, err)
 

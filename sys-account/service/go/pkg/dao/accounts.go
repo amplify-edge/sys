@@ -4,17 +4,16 @@ import (
 	"fmt"
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/genjidb/genji/document"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/telemetry"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	log "github.com/sirupsen/logrus"
 
-	utilities "github.com/getcouragenow/sys-share/sys-core/service/config"
+	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	"github.com/getcouragenow/sys/sys-account/service/go/pkg/pass"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/pass"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 var (
@@ -219,16 +218,12 @@ func (a *AccountDB) InsertAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("query params: %v", filterParams)
 	columns, values := filterParams.ColumnsAndValues()
 	stmt, args, err := sq.Insert(AccTableName).
 		Columns(columns...).
 		Values(values...).
 		ToSql()
-	a.log.WithFields(log.Fields{
-		"statement": stmt,
-		"args":      args,
-	}).Debug("insert to accounts table")
+	a.log.Debugf("insert to accounts table, stmt: %v, args: %v", columns, values)
 	if err != nil {
 		return err
 	}
@@ -273,7 +268,7 @@ func (a *AccountDB) UpsertLoginAttempt(originIp string, accountEmail string, att
 		OriginIP:      originIp,
 		AccountEmail:  accountEmail,
 		TotalAttempts: attempt,
-		BanPeriod: banPeriod,
+		BanPeriod:     banPeriod,
 	}
 	queryParam, err := coresvc.AnyToQueryParam(newLoginAttempt, true)
 	if err != nil {

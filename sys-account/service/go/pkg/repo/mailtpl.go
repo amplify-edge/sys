@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/matcornic/hermes/v2"
 
-	"github.com/getcouragenow/sys-share/sys-core/service/go/pkg/mailhelper"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/mailhelper"
 )
 
 func (ad *SysAccountRepo) mailVerifyAccountTpl(emailAddr string, verifyToken string, id string) ([]byte, error) {

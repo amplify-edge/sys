@@ -3,15 +3,15 @@ package mailer
 import (
 	"context"
 	"fmt"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"github.com/matcornic/hermes/v2"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/gomail.v2"
 
-	corepkg "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
+	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
 
-	service "github.com/getcouragenow/sys/sys-core/service/go"
+	service "go.amplifyedge.org/sys-v2/sys-core/service/go"
 )
 
 type MailSvc struct {
@@ -20,11 +20,11 @@ type MailSvc struct {
 	client     *sendgrid.Client
 	dialer     *gomail.Dialer
 	// smtpCfg    *service.SmtpConfig
-	logger *logrus.Entry
+	logger logging.Logger
 	hp     hermes.Product
 }
 
-func NewMailSvc(mcfg *service.MailConfig, l *logrus.Entry) *MailSvc {
+func NewMailSvc(mcfg *service.MailConfig, l logging.Logger) *MailSvc {
 	mailSvc := &MailSvc{
 		senderName: mcfg.SenderName,
 		senderMail: mcfg.SenderMail,

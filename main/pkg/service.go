@@ -1,23 +1,22 @@
 package pkg
 
 import (
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"net/http"
 
-	coresvc "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
-	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
+	coresvc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	corebus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
 
-	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	accountpkg "github.com/getcouragenow/sys/sys-account/service/go/pkg"
-	corecfg "github.com/getcouragenow/sys/sys-core/service/go"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
-	corefilecfg "github.com/getcouragenow/sys/sys-core/service/go/pkg/filesvc"
+	accountpkg "go.amplifyedge.org/sys-v2/sys-account/service/go/pkg"
+	corecfg "go.amplifyedge.org/sys-v2/sys-core/service/go"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
+	corefilecfg "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc"
 )
 
 const (
@@ -32,7 +31,7 @@ const (
 // - sys-core (not sure about db)
 // TODO @gutterbacon : When other sys-* are built, put it on sys-share as a proxy, then call it here.
 type SysServices struct {
-	logger        *logrus.Entry
+	logger        logging.Logger
 	port          int
 	SysAccountSvc *accountpkg.SysAccountService
 	// dbSvc         *coresvc.SysCoreProxyService
@@ -42,12 +41,14 @@ type SysServices struct {
 }
 
 type ServiceConfigPaths struct {
-	account string
+	accountFilePath string
+	accountConfig   *accountpkg.SysAccountServiceConfig
 }
 
-func NewServiceConfigPaths(account string) *ServiceConfigPaths {
+func NewServiceConfigPaths(accountFilePath string, accountConfig *accountpkg.SysAccountServiceConfig) *ServiceConfigPaths {
 	return &ServiceConfigPaths{
-		account: account,
+		accountFilePath: accountFilePath,
+		accountConfig:   accountConfig,
 	}
 }
 
@@ -65,19 +66,25 @@ type serviceConfigs struct {
 type SysServiceConfig struct {
 	store  *coredb.CoreDB // sys-core
 	port   int
-	logger *logrus.Entry
+	logger logging.Logger
 	cfg    *serviceConfigs
 	bus    *corebus.CoreBus
 }
 
 // TODO @gutterbacon: this function is a stub, we need to load up config from somewhere later.
-func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int, bus *corebus.CoreBus) (*SysServiceConfig, error) {
+func NewSysServiceConfig(l logging.Logger, db *coredb.CoreDB, servicePaths *ServiceConfigPaths, port int, bus *corebus.CoreBus) (*SysServiceConfig, error) {
 	var err error
-	// account
-	newSysAccountCfg, err := accountpkg.NewSysAccountServiceConfig(l, servicePaths.account, bus)
-	if err != nil {
-		return nil, err
+	var newSysAccountCfg *accountpkg.SysAccountServiceConfig
+	if servicePaths.accountFilePath != "" {
+		newSysAccountCfg, err = accountpkg.NewSysAccountServiceConfig(l, servicePaths.accountFilePath, bus, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
+	if servicePaths.accountConfig != nil {
+		newSysAccountCfg = servicePaths.accountConfig
+	}
+
 	ssc := &SysServiceConfig{
 		logger: l,
 		store:  db,
@@ -92,7 +99,7 @@ func NewSysServiceConfig(l *logrus.Entry, db *coredb.CoreDB, servicePaths *Servi
 // or could be run independently using Run method below
 func NewService(cfg *SysServiceConfig, domain string) (*SysServices, error) {
 	// load up the sub grpc Services
-	cfg.logger.Println("Initializing GRPC Services")
+	cfg.logger.Info("Initializing GRPC Services for SYS")
 
 	// ========================================================================
 	// Sys-Account
@@ -131,20 +138,17 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 	recoveryOptions := []grpcRecovery.Option{
 		grpcRecovery.WithRecoveryHandler(s.recoveryHandler()),
 	}
-	logrusOpts := []grpcLogrus.Option{
-		grpcLogrus.WithLevels(grpcLogrus.DefaultCodeToLevel),
-	}
 	// inject unary interceptors
 	unaryInterceptors = append(
 		unaryInterceptors,
 		grpcRecovery.UnaryServerInterceptor(recoveryOptions...),
-		grpcLogrus.UnaryServerInterceptor(s.logger, logrusOpts...),
+		s.logger.GetServerUnaryInterceptor(),
 	)
 	// inject stream interceptors
 	streamInterceptors = append(
 		streamInterceptors,
 		grpcRecovery.StreamServerInterceptor(recoveryOptions...),
-		grpcLogrus.StreamServerInterceptor(s.logger, logrusOpts...),
+		s.logger.GetServerStreamInterceptor(),
 	)
 	// inject grpc auth
 	unaryInterceptors, streamInterceptors = s.SysAccountSvc.InjectInterceptors(unaryInterceptors, streamInterceptors)
@@ -153,10 +157,7 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.SysAccountSvc.RegisterServices(srv)
-	// s.dbSvc.RegisterSvc(srv)
 	s.busSvc.RegisterSvc(srv)
-	// s.mailSvc.RegisterSvc(srv)
-	// s.fileSvc.RegisterService(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {

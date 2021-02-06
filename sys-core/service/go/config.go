@@ -2,10 +2,10 @@ package service
 
 import (
 	"fmt"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/fileutils"
 	"gopkg.in/yaml.v2"
 
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	commonCfg "github.com/getcouragenow/sys-share/sys-core/service/config/common"
+	commonCfg "go.amplifyedge.org/sys-share-v2/sys-core/service/config/common"
 )
 
 const (
@@ -89,7 +89,7 @@ func (m *MailConfig) Validate() error {
 
 func NewConfig(filepath string) (*SysCoreConfig, error) {
 	sysCfg := &SysCoreConfig{}
-	f, err := sharedConfig.LoadFile(filepath)
+	f, err := fileutils.LoadFile(filepath)
 	if err != nil {
 		return nil, err
 	}

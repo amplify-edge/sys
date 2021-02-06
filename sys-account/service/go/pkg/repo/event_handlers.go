@@ -2,12 +2,18 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	sharedCore "github.com/getcouragenow/sys-share/sys-core/service/go/pkg"
-	sharedBus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
-	"github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
+
+	sharedCore "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	sharedBus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 func (ad *SysAccountRepo) onDeleteProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
@@ -147,10 +153,87 @@ func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCo
 	}, nil
 }
 
-func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
-	err := ad.store.ResetAll(ad.initialSuperusersMail)
+func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const accountIdKey = "sys_account_user_ref_id"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
 	if err != nil {
 		return nil, err
 	}
+	rmap := map[string]interface{}{}
+	if requestMap[accountIdKey] != nil && requestMap[accountIdKey].(string) != "" {
+		rmap["id"] = requestMap[accountIdKey]
+	}
+	acc, err := ad.store.GetAccount(&coredb.QueryParams{Params: rmap})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"exists": true,
+		"email":  acc.Email,
+	}, nil
+}
+
+func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	if err := ad.store.ResetAll(); err != nil {
+		return nil, err
+	}
 	return map[string]interface{}{}, nil
+}
+
+// onCheckAllowProject checks current user account claims see if they are allowed to do any data operations on DiscoProject
+// general rule is only superadmin, org admin, or the project admin for the specific project are allowed to do anything.
+func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const orgIdKey = "org_id"
+	const projectIdKey = "project_id"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	var proj *dao.Project
+	rmap := map[string]interface{}{}
+	if requestMap[projectIdKey] == nil || requestMap[projectIdKey] == "" {
+		return nil, err
+	}
+	rmap["id"] = requestMap[projectIdKey]
+	qp := &coredb.QueryParams{Params: rmap}
+	proj, err = ad.store.GetProject(qp)
+	if err != nil {
+		return nil, err
+	}
+	if err = ad.allowUpdateDeleteProject(ctx, proj.OrgId, proj.Id); err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"allowed": true,
+	}, nil
+
+}
+
+// onCheckAllowSurveyUser only allows either the superuesr (for backup reason) or the user itself to be able to
+// update or delete survey user data.
+func (ad *SysAccountRepo) onCheckAllowSurveyUser(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+	const accountIdKey = "user_id"
+	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
+	if err != nil {
+		return nil, err
+	}
+	if requestMap[accountIdKey] == nil || requestMap[accountIdKey] == "" {
+		return nil, status.Errorf(codes.InvalidArgument, sharedAuth.Error{
+			Reason: sharedAuth.ErrInvalidParameters,
+			Err:    errors.New("invalid argument: missing account id"),
+		}.Error())
+	}
+	_, curAcc, err := ad.accountFromClaims(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
+	}
+	// allow superadmin to do anything
+	if sharedAuth.IsSuperadmin(curAcc.Role) || sharedAuth.AllowSelf(curAcc, requestMap[accountIdKey].(string)) {
+		return map[string]interface{}{
+			"allowed": true,
+		}, nil
+	}
+	return map[string]interface{}{
+		"allowed": false,
+	}, nil
 }

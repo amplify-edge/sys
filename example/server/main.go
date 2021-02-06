@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	corebus "github.com/getcouragenow/sys-share/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/certutils"
+	corebus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	grpcMw "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
-	"github.com/getcouragenow/sys/main/pkg"
+	"go.amplifyedge.org/sys-v2/main/pkg"
 )
 
 const (
@@ -41,13 +41,12 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "s", defaultTLSEnabled, "enable TLS")
 
 	// logging
-	log := logrus.New()
-	log.SetLevel(logrus.DebugLevel)
-	logger := log.WithField("sys-main", "sys-*")
+	logger := zaplog.NewZapLogger(zaplog.DEBUG, "sys-all", true, "")
+	logger.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// configs
-		sspaths := pkg.NewServiceConfigPaths(accountCfgPath)
+		sspaths := pkg.NewServiceConfigPaths(accountCfgPath, nil)
 		cbus := corebus.NewCoreBus()
 		sscfg, err := pkg.NewSysServiceConfig(logger, nil, sspaths, defaultPort, cbus)
 		if err != nil {
@@ -55,7 +54,7 @@ func main() {
 		}
 
 		// initiate all sys-* service
-		sysSvc, err := pkg.NewService(sscfg)
+		sysSvc, err := pkg.NewService(sscfg, "127.0.0.1")
 		if err != nil {
 			logger.Fatalf(errCreateSysService, err)
 		}
@@ -65,7 +64,7 @@ func main() {
 		var grpcServer *grpc.Server
 		if tlsEnabled {
 			logger.Info("Server Running With TLS Enabled")
-			tlsCreds, err := sharedConfig.LoadTLSKeypair(localTlsCertPath, localTlsKeyPath)
+			tlsCreds, err := certutils.LoadTLSKeypair(localTlsCertPath, localTlsKeyPath)
 			if err != nil {
 				logger.Fatalf(errCreateSysService, err)
 			}

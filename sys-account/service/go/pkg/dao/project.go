@@ -3,14 +3,12 @@ package dao
 import (
 	"errors"
 	"fmt"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
-	log "github.com/sirupsen/logrus"
 
-	"github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
-	coresvc "github.com/getcouragenow/sys/sys-core/service/go/pkg/coredb"
+	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
+	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
 type Project struct {
@@ -88,7 +86,7 @@ func (a *AccountDB) GetProject(filterParam *coresvc.QueryParams) (*Project, erro
 	if err != nil {
 		return nil, err
 	}
-	a.log.WithFields(log.Fields{
+	a.log.WithFields(map[string]interface{}{
 		"queryStatement": selectStmt,
 		"arguments":      args,
 	}).Debug("Querying projects")
@@ -113,7 +111,7 @@ func (a *AccountDB) ListProject(filterParam *coresvc.QueryParams, orderBy string
 	if err != nil {
 		return nil, 0, err
 	}
-	a.log.WithFields(log.Fields{
+	a.log.WithFields(map[string]interface{}{
 		"queryStatement": selectStmt,
 		"arguments":      args,
 	}).Debug("List projects")
@@ -152,10 +150,10 @@ func (a *AccountDB) InsertProject(p *Project) error {
 	if len(columns) != len(values) {
 		return fmt.Errorf("error: length mismatch: cols: %d, vals: %d", len(columns), len(values))
 	}
-	a.log.WithFields(log.Fields{
-		"columns": columns,
-		"values":  values,
-	}).Debug("insert into projects table")
+	a.log.WithFields(map[string]interface{}{
+		"queryStatement": columns,
+		"arguments":      values,
+	}).Debug("insert into project table")
 	stmt, args, err := sq.Insert(ProjectTableName).
 		Columns(columns...).
 		Values(values...).

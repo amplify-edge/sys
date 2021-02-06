@@ -3,15 +3,15 @@ package fake
 
 import (
 	"fmt"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/fileutils"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	"os"
 	"path/filepath"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	sharePkg "github.com/getcouragenow/sys-share/sys-account/service/go/pkg"
-	benchPkg "github.com/getcouragenow/sys-share/sys-core/service/bench"
-	sharedConfig "github.com/getcouragenow/sys-share/sys-core/service/config"
+	sharePkg "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	benchPkg "go.amplifyedge.org/sys-share-v2/sys-core/service/bench"
 )
 
 const (
@@ -50,7 +50,8 @@ func SysAccountBench() *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(&tlsEnabled, "enable-tls", "e", defaultTlsEnabled, "enable tls")
 	rootCmd.PersistentFlags().StringVarP(&tlsCaCertPath, "tls-cert-path", "t", defaultTlsCertPath, "CA Cert Path")
 
-	l := logrus.New().WithField("svc", "sys-bench")
+	l := zaplog.NewZapLogger(zaplog.DEBUG, "sys-bench", true, "")
+	l.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fakeRegistersReqs := sharePkg.NewFakeRegisterRequests()
@@ -59,7 +60,7 @@ func SysAccountBench() *cobra.Command {
 			return err
 		}
 		dirPath := filepath.Dir(jsonOutPath)
-		exists, _ := sharedConfig.PathExists(dirPath)
+		exists, _ := fileutils.PathExists(dirPath)
 		if !exists {
 			os.MkdirAll(dirPath, 0755)
 		}

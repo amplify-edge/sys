@@ -2,10 +2,9 @@ package repo
 
 import (
 	"context"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 
-	"github.com/sirupsen/logrus"
-
-	sharedAuth "github.com/getcouragenow/sys-share/sys-account/service/go/pkg/shared"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 )
 
 // Satisfies sharedAuth.ServerAuuthzInterceptor
@@ -13,7 +12,7 @@ func (ad *SysAccountRepo) GetUnauthenticatedRoutes() []string {
 	return ad.unauthenticatedRoutes
 }
 
-func (ad *SysAccountRepo) GetLogger() *logrus.Entry {
+func (ad *SysAccountRepo) GetLogger() logging.Logger {
 	return ad.log
 }
 
