@@ -4,7 +4,7 @@ import (
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"google.golang.org/grpc"
 
-	sharedPkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/repo"
 )
@@ -26,5 +26,5 @@ func NewSysFileService(cfg *FileServiceConfig, l logging.Logger) (*SysFileServic
 }
 
 func (s *SysFileService) RegisterService(srv *grpc.Server) {
-	sharedPkg.RegisterFileServiceService(srv, sharedPkg.NewFileServiceService(s.repo))
+	coreRpc.RegisterFileServiceServer(srv, s.repo)
 }

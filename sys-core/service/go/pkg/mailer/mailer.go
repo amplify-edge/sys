@@ -3,14 +3,13 @@ package mailer
 import (
 	"context"
 	"fmt"
-	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"github.com/matcornic/hermes/v2"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"gopkg.in/gomail.v2"
 
-	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
-
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 	service "go.amplifyedge.org/sys-v2/sys-core/service/go"
 )
 
@@ -22,6 +21,7 @@ type MailSvc struct {
 	// smtpCfg    *service.SmtpConfig
 	logger logging.Logger
 	hp     hermes.Product
+	*coreRpc.UnimplementedEmailServiceServer
 }
 
 func NewMailSvc(mcfg *service.MailConfig, l logging.Logger) *MailSvc {
@@ -56,7 +56,7 @@ func (m *MailSvc) GetHermesProduct() hermes.Product {
 	return m.hp
 }
 
-func (m *MailSvc) SendMail(ctx context.Context, in *corepkg.EmailRequest) (*corepkg.EmailResponse, error) {
+func (m *MailSvc) SendMail(ctx context.Context, in *coreRpc.EmailRequest) (*coreRpc.EmailResponse, error) {
 	if m.dialer != nil {
 		for name, address := range in.Recipients {
 			msg := gomail.NewMessage()
@@ -65,14 +65,14 @@ func (m *MailSvc) SendMail(ctx context.Context, in *corepkg.EmailRequest) (*core
 			msg.SetHeader("Subject", in.Subject)
 			msg.SetBody("text/html", string(in.Content))
 			if err := m.dialer.DialAndSend(msg); err != nil {
-				return &corepkg.EmailResponse{
+				return &coreRpc.EmailResponse{
 					Success:        false,
 					ErrMessage:     err.Error(),
 					SuccessMessage: "",
 				}, err
 			}
 		}
-		return &corepkg.EmailResponse{
+		return &coreRpc.EmailResponse{
 			Success:        false,
 			ErrMessage:     "",
 			SuccessMessage: "Successfully sent all emails",
@@ -85,7 +85,7 @@ func (m *MailSvc) SendMail(ctx context.Context, in *corepkg.EmailRequest) (*core
 			msg := mail.NewSingleEmail(sender, in.Subject, mail.NewEmail(name, address), content, content)
 			resp, err := m.client.Send(msg)
 			if err != nil {
-				return &corepkg.EmailResponse{
+				return &coreRpc.EmailResponse{
 					Success:        false,
 					ErrMessage:     err.Error(),
 					SuccessMessage: "",
@@ -93,7 +93,7 @@ func (m *MailSvc) SendMail(ctx context.Context, in *corepkg.EmailRequest) (*core
 			}
 			m.logger.Debugf("Email response: %s", resp.Body)
 		}
-		return &corepkg.EmailResponse{
+		return &coreRpc.EmailResponse{
 			Success:        true,
 			ErrMessage:     "",
 			SuccessMessage: "Successfully sent all emails",

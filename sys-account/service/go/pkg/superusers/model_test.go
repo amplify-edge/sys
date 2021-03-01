@@ -2,12 +2,12 @@ package superusers_test
 
 import (
 	"context"
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
-	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
-	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
-	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/superusers"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/require"
+	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
+	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/superusers"
 	"testing"
 )
 
@@ -42,9 +42,9 @@ func testGetAndListSuperuser(t *testing.T) {
 		},
 		{
 			UserId: superusers.DefaultSuperAdmin,
-			Role: []*pkg.UserRoles{
+			Role: []*rpc.UserRoles{
 				{
-					Role: pkg.SUPERADMIN,
+					Role: rpc.Roles_SUPERADMIN,
 				},
 			},
 			UserEmail:      superusers.DefaultSuperAdmin,
@@ -62,9 +62,9 @@ func testGetAndListSuperuser(t *testing.T) {
 	su, err = superIO.Get(ctx, "superadmin")
 	require.NoError(t, err)
 	require.Equal(t, su.Id, "superadmin")
-	require.Equal(t, []*pkg.UserRoles{
+	require.Equal(t, []*rpc.UserRoles{
 		{
-			Role: pkg.SUPERADMIN,
+			Role: rpc.Roles_SUPERADMIN,
 		},
-	}, su.Role)
+	}, su.Roles)
 }

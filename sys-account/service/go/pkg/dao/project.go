@@ -5,8 +5,10 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
@@ -26,7 +28,7 @@ var (
 	projectLogoUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_logo_resource_id ON %s(logo_resource_id)", ProjectTableName, ProjectTableName)
 )
 
-func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
+func (a *AccountDB) FromRpcProject(p *rpc.ProjectRequest) (*Project, error) {
 	var orgId, orgName string
 	if p.OrgId == "" && p.OrgName == "" {
 		return nil, errors.New("project organization id required")
@@ -48,20 +50,19 @@ func (a *AccountDB) FromPkgProject(p *pkg.ProjectRequest) (*Project, error) {
 	}, nil
 }
 
-func (p *Project) ToPkgProject(org *pkg.Org, logo []byte) (*pkg.Project, error) {
-	porg := &pkg.Org{}
+func (p *Project) ToRpcProject(org *rpc.Org, logo []byte) (*rpc.Project, error) {
+	porg := &rpc.Org{}
 	if org != nil {
 		porg = org
 	}
-	return &pkg.Project{
+	return &rpc.Project{
 		Id:             p.Id,
 		Name:           p.Name,
 		LogoResourceId: p.LogoResourceId,
 		Logo:           logo,
-		CreatedAt:      p.CreatedAt,
+		CreatedAt:      timestamppb.New(time.Unix(p.CreatedAt, 0)),
 		CreatorId:      p.AccountId,
 		OrgId:          p.OrgId,
-		OrgName:        p.OrgName,
 		Org:            porg,
 	}, nil
 }

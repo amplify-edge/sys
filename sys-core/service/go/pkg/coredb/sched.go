@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
-	sharedPkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 )
 
 const (
@@ -72,17 +72,17 @@ func (c *CoreDB) scheduleBackup() error {
 	return nil
 }
 
-func (c *CoreDB) singleBackup(ctx context.Context, versionPrefix string) (*sharedPkg.SingleBackupResult, error) {
+func (c *CoreDB) singleBackup(ctx context.Context, versionPrefix string) (*coreRpc.SingleBackupResult, error) {
 	filename, err := c.backup(versionPrefix)
 	if err != nil {
 		return nil, err
 	}
-	return &sharedPkg.SingleBackupResult{BackupFile: filename}, nil
+	return &coreRpc.SingleBackupResult{BackupFile: filename}, nil
 }
 
-func (a *AllDBService) Backup(ctx context.Context, in *emptypb.Empty) (*sharedPkg.BackupAllResult, error) {
+func (a *AllDBService) Backup(ctx context.Context, in *emptypb.Empty) (*coreRpc.BackupAllResult, error) {
 	versionPrefix := sharedConfig.NewID()
-	var backupFileNames []*sharedPkg.SingleBackupResult
+	var backupFileNames []*coreRpc.SingleBackupResult
 	for _, cdb := range a.RegisteredDBs {
 		sbr, err := cdb.singleBackup(ctx, versionPrefix)
 		if err != nil {
@@ -90,7 +90,7 @@ func (a *AllDBService) Backup(ctx context.Context, in *emptypb.Empty) (*sharedPk
 		}
 		backupFileNames = append(backupFileNames, sbr)
 	}
-	return &sharedPkg.BackupAllResult{
+	return &coreRpc.BackupAllResult{
 		Version:     versionPrefix,
 		BackupFiles: backupFileNames,
 	}, nil
@@ -116,7 +116,7 @@ func (c *CoreDB) backup(versionPrefix string) (string, error) {
 	return filename, nil
 }
 
-func (c *CoreDB) singleRestore(_ context.Context, in *sharedPkg.SingleRestoreRequest) (*sharedPkg.SingleRestoreResult, error) {
+func (c *CoreDB) singleRestore(_ context.Context, in *coreRpc.SingleRestoreRequest) (*coreRpc.SingleRestoreResult, error) {
 	badgerDB := c.engine.DB
 	f, err := c.openFile(in.BackupFile)
 	if err != nil {
@@ -126,14 +126,14 @@ func (c *CoreDB) singleRestore(_ context.Context, in *sharedPkg.SingleRestoreReq
 	if err != nil {
 		return nil, err
 	}
-	return &sharedPkg.SingleRestoreResult{Result: fmt.Sprintf("successfully restore db: %s", in.BackupFile)}, nil
+	return &coreRpc.SingleRestoreResult{Result: fmt.Sprintf("successfully restore db: %s", in.BackupFile)}, nil
 }
 
-func (a *AllDBService) Restore(ctx context.Context, in *sharedPkg.RestoreAllRequest) (*sharedPkg.RestoreAllResult, error) {
+func (a *AllDBService) Restore(ctx context.Context, in *coreRpc.RestoreAllRequest) (*coreRpc.RestoreAllResult, error) {
 	if in.RestoreVersion == "" && (in.BackupFiles == nil || len(in.BackupFiles) == 0) {
 		return nil, status.Errorf(codes.InvalidArgument, "restore version or specific backup files has to be specified")
 	}
-	var singleRestoreResults []*sharedPkg.SingleRestoreResult
+	var singleRestoreResults []*coreRpc.SingleRestoreResult
 	if in.RestoreVersion != "" {
 		for _, cdb := range a.RegisteredDBs {
 			backupDir := cdb.config.CronConfig.BackupDir
@@ -141,13 +141,13 @@ func (a *AllDBService) Restore(ctx context.Context, in *sharedPkg.RestoreAllRequ
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "restore version %s for database %s not found", in.RestoreVersion, cdb.config.DbConfig.Name)
 			}
-			res, err := cdb.singleRestore(ctx, &sharedPkg.SingleRestoreRequest{BackupFile: backupFilename})
+			res, err := cdb.singleRestore(ctx, &coreRpc.SingleRestoreRequest{BackupFile: backupFilename})
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "unable to execute restore version %s for database %s: %v", in.RestoreVersion, cdb.config.DbConfig.Name, err)
 			}
 			singleRestoreResults = append(singleRestoreResults, res)
 		}
-		return &sharedPkg.RestoreAllResult{RestoreResults: singleRestoreResults}, nil
+		return &coreRpc.RestoreAllResult{RestoreResults: singleRestoreResults}, nil
 	}
 	if in.BackupFiles != nil && len(in.BackupFiles) != 0 {
 		for k, v := range in.BackupFiles {
@@ -155,37 +155,37 @@ func (a *AllDBService) Restore(ctx context.Context, in *sharedPkg.RestoreAllRequ
 			if cdb == nil {
 				return nil, status.Errorf(codes.InvalidArgument, "unable to find database with name: %s", k)
 			}
-			res, err := cdb.singleRestore(ctx, &sharedPkg.SingleRestoreRequest{BackupFile: v})
+			res, err := cdb.singleRestore(ctx, &coreRpc.SingleRestoreRequest{BackupFile: v})
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "unable to execute restore version %s for database %s: %v", in.RestoreVersion, cdb.config.DbConfig.Name, err)
 			}
 			singleRestoreResults = append(singleRestoreResults, res)
 		}
-		return &sharedPkg.RestoreAllResult{RestoreResults: singleRestoreResults}, nil
+		return &coreRpc.RestoreAllResult{RestoreResults: singleRestoreResults}, nil
 	}
 	return nil, status.Errorf(codes.Unknown, "unknown error occured")
 }
 
-func (c *CoreDB) SingleListBackup(ctx context.Context, in *emptypb.Empty) ([]*sharedPkg.SingleBackupResult, error) {
-	var bfiles []*sharedPkg.SingleBackupResult
+func (c *CoreDB) SingleListBackup(ctx context.Context, in *emptypb.Empty) ([]*coreRpc.SingleBackupResult, error) {
+	var bfiles []*coreRpc.SingleBackupResult
 	listFiles, err := c.listBackups()
 	if err != nil {
 		return nil, err
 	}
 	for _, f := range listFiles {
-		bfiles = append(bfiles, &sharedPkg.SingleBackupResult{BackupFile: f})
+		bfiles = append(bfiles, &coreRpc.SingleBackupResult{BackupFile: f})
 	}
 	return bfiles, nil
 }
 
-func (a *AllDBService) ListBackup(ctx context.Context, in *sharedPkg.ListBackupRequest) (*sharedPkg.ListBackupResult, error) {
+func (a *AllDBService) ListBackup(ctx context.Context, in *coreRpc.ListBackupRequest) (*coreRpc.ListBackupResult, error) {
 	var err error
-	backupMaps := map[string][]*sharedPkg.SingleBackupResult{}
-	var backupAllResults []*sharedPkg.BackupAllResult
+	backupMaps := map[string][]*coreRpc.SingleBackupResult{}
+	var backupAllResults []*coreRpc.BackupAllResult
 	if in.BackupVersion != "" {
-		backupMaps, err = a.listAndFilterBackups(func(bfile string, version string, bmap map[string][]*sharedPkg.SingleBackupResult) error {
+		backupMaps, err = a.listAndFilterBackups(func(bfile string, version string, bmap map[string][]*coreRpc.SingleBackupResult) error {
 			if version == in.BackupVersion {
-				bmap[version] = append(bmap[version], &sharedPkg.SingleBackupResult{BackupFile: bfile})
+				bmap[version] = append(bmap[version], &coreRpc.SingleBackupResult{BackupFile: bfile})
 			}
 			return nil
 		})
@@ -193,11 +193,11 @@ func (a *AllDBService) ListBackup(ctx context.Context, in *sharedPkg.ListBackupR
 			return nil, err
 		}
 	} else {
-		backupMaps, err = a.listAndFilterBackups(func(bfile string, version string, bmap map[string][]*sharedPkg.SingleBackupResult) error {
+		backupMaps, err = a.listAndFilterBackups(func(bfile string, version string, bmap map[string][]*coreRpc.SingleBackupResult) error {
 			if version == "" {
 				return status.Errorf(codes.Internal, "unable to get version from backups")
 			}
-			bmap[version] = append(bmap[version], &sharedPkg.SingleBackupResult{BackupFile: bfile})
+			bmap[version] = append(bmap[version], &coreRpc.SingleBackupResult{BackupFile: bfile})
 			return nil
 		})
 		if err != nil {
@@ -205,18 +205,18 @@ func (a *AllDBService) ListBackup(ctx context.Context, in *sharedPkg.ListBackupR
 		}
 	}
 	for k, v := range backupMaps {
-		backupAllResults = append(backupAllResults, &sharedPkg.BackupAllResult{
+		backupAllResults = append(backupAllResults, &coreRpc.BackupAllResult{
 			Version:     k,
 			BackupFiles: v,
 		})
 	}
-	return &sharedPkg.ListBackupResult{
+	return &coreRpc.ListBackupResult{
 		BackupVersions: backupAllResults,
 	}, nil
 }
 
-func (a *AllDBService) listAndFilterBackups(callbackFunc func(backupFile string, version string, bmap map[string][]*sharedPkg.SingleBackupResult) error) (map[string][]*sharedPkg.SingleBackupResult, error) {
-	backupMaps := map[string][]*sharedPkg.SingleBackupResult{}
+func (a *AllDBService) listAndFilterBackups(callbackFunc func(backupFile string, version string, bmap map[string][]*coreRpc.SingleBackupResult) error) (map[string][]*coreRpc.SingleBackupResult, error) {
+	backupMaps := map[string][]*coreRpc.SingleBackupResult{}
 	for _, cdb := range a.RegisteredDBs {
 		blist, err := cdb.listBackups()
 		if err != nil {

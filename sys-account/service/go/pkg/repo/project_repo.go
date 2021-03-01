@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
-func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error) {
+func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*rpc.Project, error) {
 	org, err := ad.store.GetOrg(&coresvc.QueryParams{Params: map[string]interface{}{"id": req.OrgId}})
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error
 	if err != nil {
 		return nil, err
 	}
-	pkgOrg, err := org.ToPkgOrg(nil, orgLogo.Binary)
+	pkgOrg, err := org.ToRpcOrg(nil, orgLogo.Binary)
 	if err != nil {
 		return nil, err
 	}
@@ -33,10 +33,10 @@ func (ad *SysAccountRepo) projectFetchOrg(req *dao.Project) (*pkg.Project, error
 	if err != nil {
 		return nil, err
 	}
-	return req.ToPkgProject(pkgOrg, projectLogo.Binary)
+	return req.ToRpcProject(pkgOrg, projectLogo.Binary)
 }
 
-func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest) (*pkg.Project, error) {
+func (ad *SysAccountRepo) NewProject(ctx context.Context, in *rpc.ProjectRequest) (*rpc.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -67,7 +67,7 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	// this is the key
 	in.LogoFilepath = logo.ResourceId
 	in.OrgId = o.Id
-	req, err := ad.store.FromPkgProject(in)
+	req, err := ad.store.FromRpcProject(in)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (ad *SysAccountRepo) NewProject(ctx context.Context, in *pkg.ProjectRequest
 	return ad.projectFetchOrg(proj)
 }
 
-func (ad *SysAccountRepo) GetProject(ctx context.Context, in *pkg.IdRequest) (*pkg.Project, error) {
+func (ad *SysAccountRepo) GetProject(ctx context.Context, in *rpc.IdRequest) (*rpc.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot get project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -99,7 +99,7 @@ func (ad *SysAccountRepo) GetProject(ctx context.Context, in *pkg.IdRequest) (*p
 	return ad.projectFetchOrg(proj)
 }
 
-func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) (*pkg.ListResponse, error) {
+func (ad *SysAccountRepo) ListProject(ctx context.Context, in *rpc.ListRequest) (*rpc.ListResponse, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -107,7 +107,11 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 	limit = in.PerPageEntries
 	orderBy := in.OrderBy
 	var err error
-	filter := &coresvc.QueryParams{Params: in.Filters}
+	filtersJson := map[string]interface{}{}
+	if err = sharedConfig.UnmarshalJson(in.GetFilters(), &filtersJson); err != nil {
+		return nil, err
+	}
+	filter := &coresvc.QueryParams{Params: filtersJson}
 	if in.IsDescending {
 		orderBy += " DESC"
 	} else {
@@ -121,7 +125,7 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 		limit = dao.DefaultLimit
 	}
 	projects, next, err := ad.store.ListProject(filter, orderBy, limit, cursor, in.Matcher)
-	var pkgProjects []*pkg.Project
+	var pkgProjects []*rpc.Project
 	for _, p := range projects {
 		pkgProject, err := ad.projectFetchOrg(p)
 		if err != nil {
@@ -129,13 +133,13 @@ func (ad *SysAccountRepo) ListProject(ctx context.Context, in *pkg.ListRequest) 
 		}
 		pkgProjects = append(pkgProjects, pkgProject)
 	}
-	return &pkg.ListResponse{
+	return &rpc.ListResponse{
 		Projects:   pkgProjects,
 		NextPageId: fmt.Sprintf("%d", next),
 	}, nil
 }
 
-func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectUpdateRequest) (*pkg.Project, error) {
+func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *rpc.ProjectUpdateRequest) (*rpc.Project, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -167,7 +171,7 @@ func (ad *SysAccountRepo) UpdateProject(ctx context.Context, in *pkg.ProjectUpda
 	return ad.projectFetchOrg(proj)
 }
 
-func (ad *SysAccountRepo) DeleteProject(ctx context.Context, in *pkg.IdRequest) (*emptypb.Empty, error) {
+func (ad *SysAccountRepo) DeleteProject(ctx context.Context, in *rpc.IdRequest) (*emptypb.Empty, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list project: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}

@@ -8,9 +8,9 @@ import (
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	"net/http"
 
-	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/spf13/cobra"
+	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -57,7 +57,7 @@ func main() {
 	log.InitLogger(nil)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, accountCfgPath, corebus.NewCoreBus())
+		sysAccountConfig, err := accountpkg.NewSysAccountServiceConfig(log, accountCfgPath, corebus.NewCoreBus(), nil)
 		if err != nil {
 			log.Fatalf("error creating config: %v", err)
 		}

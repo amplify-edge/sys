@@ -4,8 +4,10 @@ import (
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/genjidb/genji/document"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"time"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
@@ -24,7 +26,7 @@ var (
 	orgLogoUniqueIndex = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS idx_%s_logo_resource_id ON %s(logo_resource_id)", OrgTableName, OrgTableName)
 )
 
-func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, error) {
+func (a *AccountDB) FromrpcOrgRequest(org *rpc.OrgRequest, id string) (*Org, error) {
 	orgId := id
 	if orgId == "" {
 		orgId = utilities.NewID()
@@ -39,7 +41,7 @@ func (a *AccountDB) FromPkgOrgRequest(org *pkg.OrgRequest, id string) (*Org, err
 	}, nil
 }
 
-func (a *AccountDB) FromPkgOrgRequestToQueryFilter(org *pkg.OrgRequest) (*coresvc.QueryParams, error) {
+func (a *AccountDB) FromRpcOrgRequestToQueryFilter(org *rpc.OrgRequest) (*coresvc.QueryParams, error) {
 	qf, err := coresvc.AnyToQueryParam(org, false)
 	if err != nil {
 		return nil, err
@@ -48,14 +50,14 @@ func (a *AccountDB) FromPkgOrgRequestToQueryFilter(org *pkg.OrgRequest) (*coresv
 	return &qf, nil
 }
 
-func (o *Org) ToPkgOrg(projects []*pkg.Project, logo []byte) (*pkg.Org, error) {
-	return &pkg.Org{
+func (o *Org) ToRpcOrg(projects []*rpc.Project, logo []byte) (*rpc.Org, error) {
+	return &rpc.Org{
 		Id:             o.Id,
 		Name:           o.Name,
 		LogoResourceId: o.LogoResourceId,
 		Logo:           logo,
 		Contact:        o.Contact,
-		CreatedAt:      o.CreatedAt,
+		CreatedAt:      timestamppb.New(time.Unix(o.CreatedAt, 0)),
 		CreatorId:      o.AccountId,
 		Projects:       projects,
 	}, nil

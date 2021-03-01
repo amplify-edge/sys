@@ -5,13 +5,14 @@ import (
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/genjidb/genji/document"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 
 	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
+	accountRpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/pass"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
@@ -41,24 +42,24 @@ type Account struct {
 	AvatarResourceId  string `json:"avatar_resource_id,omitempty" genji:"avatar_resource_id"`
 }
 
-func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, verified bool) (*Account, error) {
+func (a *AccountDB) InsertFromRpcAccountRequest(account *accountRpc.AccountNewRequest, verified bool) (*Account, error) {
 	accountId := utilities.NewID()
 	var roles []*Role
 	if account.Roles != nil && len(account.Roles) > 0 {
 		a.log.Debugf("Convert and getting roles")
-		for _, pkgRole := range account.Roles {
-			role := a.FromPkgRoleRequest(pkgRole, accountId)
+		for _, accountRpcRole := range account.Roles {
+			role := a.FromPkgRoleRequest(accountRpcRole, accountId)
 			roles = append(roles, role)
 		}
 	} else if account.NewUserRoles != nil && len(account.NewUserRoles) > 0 {
 		a.log.Debugf("Convert and getting new roles")
-		for _, pkgNewRole := range account.NewUserRoles {
+		for _, accountRpcNewRole := range account.NewUserRoles {
 			param := map[string]interface{}{}
-			if pkgNewRole.ProjectName != "" {
-				param["name"] = pkgNewRole.ProjectName
+			if accountRpcNewRole.ProjectName != "" {
+				param["name"] = accountRpcNewRole.ProjectName
 			}
-			if pkgNewRole.ProjectID != "" {
-				param["id"] = pkgNewRole.ProjectID
+			if accountRpcNewRole.GetProjectId() != "" {
+				param["id"] = accountRpcNewRole.GetProjectId()
 			}
 			project, err := a.GetProject(&coresvc.QueryParams{Params: param})
 			if err != nil {
@@ -69,16 +70,16 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 				joinedProjectMetrics.Inc()
 			}()
 
-			pkgNewRole.ProjectID = project.Id
-			pkgNewRole.OrgID = project.OrgId
-			role := a.FromPkgNewRoleRequest(pkgNewRole, accountId)
+			accountRpcNewRole.ProjectId = project.Id
+			accountRpcNewRole.OrgId = project.OrgId
+			role := a.FromPkgNewRoleRequest(accountRpcNewRole, accountId)
 			roles = append(roles, role)
 		}
 	} else {
 		roles = append(roles, &Role{
 			ID:        utilities.NewID(),
 			AccountId: accountId,
-			Role:      int(pkg.GUEST),
+			Role:      int(accountRpc.Roles_GUEST),
 			ProjectId: "",
 			OrgId:     "",
 			CreatedAt: utilities.CurrentTimestamp(),
@@ -112,21 +113,21 @@ func (a *AccountDB) InsertFromPkgAccountRequest(account *pkg.AccountNewRequest, 
 	return acc, nil
 }
 
-func (a *AccountDB) FromPkgAccount(account *pkg.Account) (*Account, error) {
+func (a *AccountDB) FromRpcAccount(account *accountRpc.Account) (*Account, error) {
 	return &Account{
 		ID:               account.Id,
 		Email:            account.Email,
 		Password:         account.Password,
-		CreatedAt:        account.CreatedAt,
-		UpdatedAt:        account.UpdatedAt,
-		LastLogin:        account.LastLogin,
+		CreatedAt:        utilities.TsToUnixUTC(account.CreatedAt),
+		UpdatedAt:        utilities.TsToUnixUTC(account.UpdatedAt),
+		LastLogin:        utilities.TsToUnixUTC(account.LastLogin),
 		Disabled:         account.Disabled,
 		Verified:         account.Verified,
 		AvatarResourceId: account.AvatarResourceId,
 	}, nil
 }
 
-func (a *Account) ToPkgAccount(roles []*pkg.UserRoles, avatar []byte) (*pkg.Account, error) {
+func (a *Account) ToRpcAccount(roles []*accountRpc.UserRoles, avatar []byte) (*accountRpc.Account, error) {
 	createdAt := time.Unix(a.CreatedAt, 0)
 	updatedAt := time.Unix(a.UpdatedAt, 0)
 	lastLogin := time.Unix(a.LastLogin, 0)
@@ -134,14 +135,14 @@ func (a *Account) ToPkgAccount(roles []*pkg.UserRoles, avatar []byte) (*pkg.Acco
 	if avt == nil {
 		avt = []byte{}
 	}
-	return &pkg.Account{
+	return &accountRpc.Account{
 		Id:               a.ID,
 		Email:            a.Email,
 		Password:         a.Password,
-		Role:             roles,
-		CreatedAt:        createdAt.Unix(),
-		UpdatedAt:        updatedAt.Unix(),
-		LastLogin:        lastLogin.Unix(),
+		Roles:            roles,
+		CreatedAt:        timestamppb.New(createdAt),
+		UpdatedAt:        timestamppb.New(updatedAt),
+		LastLogin:        timestamppb.New(lastLogin),
 		Disabled:         a.Disabled,
 		Verified:         a.Verified,
 		AvatarResourceId: a.AvatarResourceId,

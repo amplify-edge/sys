@@ -11,7 +11,7 @@ import (
 	"math"
 
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/filehelper"
-	corepkg "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/dao"
 )
@@ -24,6 +24,7 @@ const (
 type SysFileRepo struct {
 	store *dao.FileDB
 	log   logging.Logger
+	coreRpc.UnimplementedFileServiceServer
 }
 
 func NewSysFileRepo(db *coredb.CoreDB, log logging.Logger) (*SysFileRepo, error) {
@@ -37,12 +38,12 @@ func NewSysFileRepo(db *coredb.CoreDB, log logging.Logger) (*SysFileRepo, error)
 	}, nil
 }
 
-func (s *SysFileRepo) sharedUpload(content []byte, resourceId string, isDir bool) (*corepkg.FileUploadResponse, error) {
+func (s *SysFileRepo) sharedUpload(content []byte, resourceId string, isDir bool) (*coreRpc.FileUploadResponse, error) {
 	f, err := s.store.UpsertFromUploadRequest(content, "", resourceId, isDir)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot save file to db: %v", err)
 	}
-	resp := &corepkg.FileUploadResponse{
+	resp := &coreRpc.FileUploadResponse{
 		Success:    true,
 		Id:         f.Id,
 		ResourceId: f.ResourceId,
@@ -52,8 +53,8 @@ func (s *SysFileRepo) sharedUpload(content []byte, resourceId string, isDir bool
 }
 
 // UploadFile for v2, Upload for v3
-func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*corepkg.FileUploadResponse, error) {
-	var finfo *corepkg.FileInfo
+func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*coreRpc.FileUploadResponse, error) {
+	var finfo *coreRpc.FileInfo
 	var err error
 	fileContent := content
 	if filepath != "" && (content == nil && len(content) == 0) {
@@ -73,7 +74,7 @@ func (s *SysFileRepo) UploadFile(filepath string, content []byte) (*corepkg.File
 	return s.sharedUpload(fileContent, finfo.GetResourceId(), finfo.GetIsDir())
 }
 
-func (s *SysFileRepo) Upload(stream corepkg.FileService_UploadServer) error {
+func (s *SysFileRepo) Upload(stream coreRpc.FileService_UploadServer) error {
 	req, err := stream.Recv()
 	if err != nil {
 		return status.Errorf(codes.InvalidArgument, "cannot upload file: %v", err)
@@ -125,7 +126,7 @@ func (s *SysFileRepo) DownloadFile(fileId, resourceId string) (*dao.File, error)
 	return f, nil
 }
 
-func (s *SysFileRepo) Download(req *corepkg.FileDownloadRequest, stream corepkg.FileService_DownloadServer) error {
+func (s *SysFileRepo) Download(req *coreRpc.FileDownloadRequest, stream coreRpc.FileService_DownloadServer) error {
 	f, err := s.DownloadFile(req.GetId(), "")
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func (s *SysFileRepo) Download(req *corepkg.FileDownloadRequest, stream corepkg.
 		partSize := int(math.Min(downloadChunkSize, float64(fileSize-(i*downloadChunkSize))))
 		s.log.Debugf("Sending partsize of size %d to client", partSize)
 		chunk := f.Binary[offset:(offset + partSize)]
-		resp := &corepkg.FileDownloadResponse{Chunk: chunk, TotalSize: int64(fileSize)}
+		resp := &coreRpc.FileDownloadResponse{Chunk: chunk, TotalSize: int64(fileSize)}
 		if f.IsDir {
 			resp.IsCompressed = true
 		}

@@ -4,8 +4,8 @@ import (
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"net/http"
 
-	coresvc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
 	corebus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -35,7 +35,7 @@ type SysServices struct {
 	port          int
 	SysAccountSvc *accountpkg.SysAccountService
 	// dbSvc         *coresvc.SysCoreProxyService
-	busSvc *coresvc.SysBusProxyService
+	busSvc coreRpc.BusServiceServer
 	// mailSvc       *coresvc.SysEmailProxyService
 	// fileSvc       *corefilecfg.SysFileService
 }
@@ -129,7 +129,7 @@ func NewService(cfg *SysServiceConfig, domain string) (*SysServices, error) {
 		port:          cfg.port,
 		SysAccountSvc: sysAccountSvc,
 		// dbSvc:         sysAccountSvc.DbProxyService,
-		busSvc: sysAccountSvc.BusProxyService,
+		busSvc: sysAccountSvc.BusService,
 	}, nil
 }
 
@@ -157,7 +157,6 @@ func (s *SysServices) InjectInterceptors(unaryInterceptors []grpc.UnaryServerInt
 
 func (s *SysServices) RegisterServices(srv *grpc.Server) {
 	s.SysAccountSvc.RegisterServices(srv)
-	s.busSvc.RegisterSvc(srv)
 }
 
 func (s *SysServices) recoveryHandler() func(panic interface{}) error {

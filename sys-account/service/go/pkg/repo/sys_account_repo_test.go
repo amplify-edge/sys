@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging/zaplog"
 	"os"
 	"testing"
@@ -10,13 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 )
 
 var (
 	ad            *SysAccountRepo
-	loginRequests = []*pkg.LoginRequest{
+	loginRequests = []*rpc.LoginRequest{
 		{
 			Email:    "someemail@example.com",
 			Password: "someInsecureBlaBlaPassword",

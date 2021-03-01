@@ -7,14 +7,14 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
-func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.Org, error) {
+func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *rpc.OrgRequest) (*rpc.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot insert org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -32,7 +32,7 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 	}
 	// this is the key
 	in.LogoFilepath = logo.ResourceId
-	req, err := ad.store.FromPkgOrgRequest(in, "")
+	req, err := ad.store.FromrpcOrgRequest(in, "")
 	if err != nil {
 		ad.log.Debugf("unable to convert org request to dao object: %v", err)
 		return nil, err
@@ -51,10 +51,10 @@ func (ad *SysAccountRepo) NewOrg(ctx context.Context, in *pkg.OrgRequest) (*pkg.
 	if err != nil {
 		return nil, err
 	}
-	return org.ToPkgOrg(nil, logoFile.Binary)
+	return org.ToRpcOrg(nil, logoFile.Binary)
 }
 
-func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
+func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*rpc.Org, error) {
 	orgLogo, err := ad.frepo.DownloadFile("", org.LogoResourceId)
 	if err != nil {
 		return nil, err
@@ -65,29 +65,29 @@ func (ad *SysAccountRepo) orgFetchProjects(org *dao.Org) (*pkg.Org, error) {
 	)
 	if err != nil {
 		if err.Error() == "document not found" {
-			return org.ToPkgOrg(nil, orgLogo.Binary)
+			return org.ToRpcOrg(nil, orgLogo.Binary)
 		}
 		return nil, err
 	}
 	if len(projects) > 0 {
-		var pkgProjects []*pkg.Project
+		var pkgProjects []*rpc.Project
 		for _, p := range projects {
 			projectLogo, err := ad.frepo.DownloadFile("", p.LogoResourceId)
 			if err != nil {
 				return nil, err
 			}
-			proj, err := p.ToPkgProject(nil, projectLogo.Binary)
+			proj, err := p.ToRpcProject(nil, projectLogo.Binary)
 			if err != nil {
 				return nil, err
 			}
 			pkgProjects = append(pkgProjects, proj)
 		}
-		return org.ToPkgOrg(pkgProjects, orgLogo.Binary)
+		return org.ToRpcOrg(pkgProjects, orgLogo.Binary)
 	}
-	return org.ToPkgOrg(nil, orgLogo.Binary)
+	return org.ToRpcOrg(nil, orgLogo.Binary)
 }
 
-func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *pkg.IdRequest) (*pkg.Org, error) {
+func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *rpc.IdRequest) (*rpc.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot get org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -105,7 +105,7 @@ func (ad *SysAccountRepo) GetOrg(ctx context.Context, in *pkg.IdRequest) (*pkg.O
 	return ad.orgFetchProjects(org)
 }
 
-func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pkg.ListResponse, error) {
+func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *rpc.ListRequest) (*rpc.ListResponse, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -113,7 +113,11 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 	limit = in.PerPageEntries
 	orderBy := in.OrderBy
 	var err error
-	filter := &coresvc.QueryParams{Params: in.Filters}
+	filtersJson := map[string]interface{}{}
+	if err = sharedConfig.UnmarshalJson(in.GetFilters(), &filtersJson); err != nil {
+		return nil, err
+	}
+	filter := &coresvc.QueryParams{Params: filtersJson}
 	if in.IsDescending {
 		orderBy += " DESC"
 	} else {
@@ -127,7 +131,7 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 		limit = dao.DefaultLimit
 	}
 	orgs, next, err := ad.store.ListOrg(filter, orderBy, limit, cursor, in.Matcher)
-	var pkgOrgs []*pkg.Org
+	var pkgOrgs []*rpc.Org
 	for _, org := range orgs {
 		pkgOrg, err := ad.orgFetchProjects(org)
 		if err != nil {
@@ -135,13 +139,13 @@ func (ad *SysAccountRepo) ListOrg(ctx context.Context, in *pkg.ListRequest) (*pk
 		}
 		pkgOrgs = append(pkgOrgs, pkgOrg)
 	}
-	return &pkg.ListResponse{
+	return &rpc.ListResponse{
 		Orgs:       pkgOrgs,
 		NextPageId: fmt.Sprintf("%d", next),
 	}, nil
 }
 
-func (ad *SysAccountRepo) ListNonSubscribedOrgs(ctx context.Context, in *pkg.ListRequest) (*pkg.ListResponse, error) {
+func (ad *SysAccountRepo) ListNonSubscribedOrgs(ctx context.Context, in *rpc.ListRequest) (*rpc.ListResponse, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -149,7 +153,11 @@ func (ad *SysAccountRepo) ListNonSubscribedOrgs(ctx context.Context, in *pkg.Lis
 	limit = in.PerPageEntries
 	orderBy := in.OrderBy
 	var err error
-	filter := &coresvc.QueryParams{Params: in.Filters}
+	filtersJson := map[string]interface{}{}
+	if err = sharedConfig.UnmarshalJson(in.GetFilters(), &filtersJson); err != nil {
+		return nil, err
+	}
+	filter := &coresvc.QueryParams{Params: filtersJson}
 	if in.IsDescending {
 		orderBy += " DESC"
 	} else {
@@ -163,7 +171,7 @@ func (ad *SysAccountRepo) ListNonSubscribedOrgs(ctx context.Context, in *pkg.Lis
 		limit = dao.DefaultLimit
 	}
 	orgs, next, err := ad.store.ListNonSubbed(in.AccountId, filter, orderBy, limit, cursor)
-	var pkgOrgs []*pkg.Org
+	var pkgOrgs []*rpc.Org
 	for _, org := range orgs {
 		pkgOrg, err := ad.orgFetchProjects(org)
 		if err != nil {
@@ -171,13 +179,13 @@ func (ad *SysAccountRepo) ListNonSubscribedOrgs(ctx context.Context, in *pkg.Lis
 		}
 		pkgOrgs = append(pkgOrgs, pkgOrg)
 	}
-	return &pkg.ListResponse{
+	return &rpc.ListResponse{
 		Orgs:       pkgOrgs,
 		NextPageId: fmt.Sprintf("%d", next),
 	}, nil
 }
 
-func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgUpdateRequest) (*pkg.Org, error) {
+func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *rpc.OrgUpdateRequest) (*rpc.Org, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -210,11 +218,11 @@ func (ad *SysAccountRepo) UpdateOrg(ctx context.Context, in *pkg.OrgUpdateReques
 	return ad.orgFetchProjects(org)
 }
 
-func (ad *SysAccountRepo) DeleteOrg(ctx context.Context, in *pkg.IdRequest) (*emptypb.Empty, error) {
+func (ad *SysAccountRepo) DeleteOrg(ctx context.Context, in *rpc.IdRequest) (*emptypb.Empty, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot list org: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	org, err := ad.GetOrg(ctx, &pkg.IdRequest{Id: in.Id})
+	org, err := ad.GetOrg(ctx, &rpc.IdRequest{Id: in.Id})
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +230,7 @@ func (ad *SysAccountRepo) DeleteOrg(ctx context.Context, in *pkg.IdRequest) (*em
 		return nil, err
 	}
 	for _, proj := range org.Projects {
-		if _, err = ad.DeleteProject(ctx, &pkg.IdRequest{Id: proj.Id}); err != nil {
+		if _, err = ad.DeleteProject(ctx, &rpc.IdRequest{Id: proj.Id}); err != nil {
 			return nil, err
 		}
 	}

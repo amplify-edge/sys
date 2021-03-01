@@ -2,14 +2,14 @@ package accountpkg
 
 import (
 	"context"
+	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
-	grpcAuth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
-	coresvc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	sharedBus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/repo"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
@@ -19,10 +19,9 @@ import (
 
 type SysAccountService struct {
 	authInterceptorFunc func(context.Context) (context.Context, error)
-	proxyService        *pkg.SysAccountProxyService
-	DbProxyService      *coresvc.SysCoreProxyService
-	BusProxyService     *coresvc.SysBusProxyService
-	MailProxyService    *coresvc.SysEmailProxyService
+	DbService           coreRpc.DbAdminServiceServer
+	BusService          coreRpc.BusServiceServer
+	MailService         coreRpc.EmailServiceServer
 	AuthRepo            *repo.SysAccountRepo
 	BusinessTelemetry   *telemetry.SysAccountMetrics
 	AllDBs              *coredb.AllDBService
@@ -92,19 +91,17 @@ func NewSysAccountService(cfg *SysAccountServiceConfig, domain string) (*SysAcco
 	if err != nil {
 		return nil, err
 	}
-	sysAccountProxy := pkg.NewSysAccountProxyService(authRepo, authRepo, authRepo)
 
-	dbProxyService := coresvc.NewSysCoreProxyService(cfg.allDbs)
-	busProxyService := coresvc.NewSysBusProxyService(cfg.bus)
-	mailSvc := coresvc.NewSysMailProxyService(cfg.mail)
+	dbService := cfg.allDbs
+	busService := cfg.bus
+	mailSvc := cfg.mail
 
 	return &SysAccountService{
 		authInterceptorFunc: authRepo.DefaultInterceptor,
-		proxyService:        sysAccountProxy,
 		AuthRepo:            authRepo,
-		DbProxyService:      dbProxyService,
-		BusProxyService:     busProxyService,
-		MailProxyService:    mailSvc,
+		DbService:           dbService,
+		BusService:          busService,
+		MailService:         mailSvc,
 		BusinessTelemetry:   sysAccountMetrics,
 		AllDBs:              cfg.allDbs,
 	}, nil
@@ -117,7 +114,10 @@ func (sas *SysAccountService) InjectInterceptors(unaryItc []grpc.UnaryServerInte
 }
 
 func (sas *SysAccountService) RegisterServices(srv *grpc.Server) {
-	sas.proxyService.RegisterSvc(srv)
-	sas.DbProxyService.RegisterSvc(srv)
-	sas.MailProxyService.RegisterSvc(srv)
+	rpc.RegisterAccountServiceServer(srv, sas.AuthRepo)
+	rpc.RegisterAuthServiceServer(srv, sas.AuthRepo)
+	rpc.RegisterOrgProjServiceServer(srv, sas.AuthRepo)
+	coreRpc.RegisterDbAdminServiceServer(srv, sas.DbService)
+	coreRpc.RegisterBusServiceServer(srv, sas.BusService)
+	coreRpc.RegisterEmailServiceServer(srv, sas.MailService)
 }
