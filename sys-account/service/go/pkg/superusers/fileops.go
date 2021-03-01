@@ -5,21 +5,21 @@ package superusers
 import (
 	"context"
 	"errors"
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	"io/ioutil"
 	"strings"
 
 	util "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 )
 
-// toPkgAccount converts SuperUser struct to its proto counterparts.
-func (s *SuperUser) toPkgAccount() *pkg.Account {
-	return &pkg.Account{
+// toRpcAccount converts SuperUser struct to its proto counterparts.
+func (s *SuperUser) toRpcAccount() *rpc.Account {
+	return &rpc.Account{
 		Id: s.Name,
-		Role: []*pkg.UserRoles{
+		Roles: []*rpc.UserRoles{
 			{
-				Role: pkg.SUPERADMIN,
+				Role: rpc.Roles_SUPERADMIN,
 			},
 		},
 		Email:    s.Name,
@@ -62,7 +62,7 @@ func (s *SuperUserIO) verifyPermission(ctx context.Context) bool {
 
 // Get Superuser based on its / his / her name.
 // will return SuperUser object and error if any
-func (s *SuperUserIO) Get(ctx context.Context, name string) (*pkg.Account, error) {
+func (s *SuperUserIO) Get(ctx context.Context, name string) (*rpc.Account, error) {
 	//if !s.verifyPermission(ctx) {
 	//	return nil, errors.New(sharedAuth.Error{Reason: sharedAuth.ErrInsufficientRights}.Error())
 	//}
@@ -70,10 +70,10 @@ func (s *SuperUserIO) Get(ctx context.Context, name string) (*pkg.Account, error
 	if err != nil {
 		return nil, err
 	}
-	return supe.toPkgAccount(), nil
+	return supe.toRpcAccount(), nil
 }
 
-func (s *SuperUserIO) List(ctx context.Context, nameLike string) ([]*pkg.Account, error) {
+func (s *SuperUserIO) List(ctx context.Context, nameLike string) ([]*rpc.Account, error) {
 	if !s.verifyPermission(ctx) {
 		return nil, errors.New(sharedAuth.Error{Reason: sharedAuth.ErrInsufficientRights}.Error())
 	}
@@ -81,17 +81,17 @@ func (s *SuperUserIO) List(ctx context.Context, nameLike string) ([]*pkg.Account
 	if err != nil {
 		return nil, err
 	}
-	var accounts []*pkg.Account
+	var accounts []*rpc.Account
 	if nameLike == "" {
 		for _, supe := range supes.SuperUsers {
 			if strings.Contains(supe.Name, nameLike) {
-				accounts = append(accounts, supe.toPkgAccount())
+				accounts = append(accounts, supe.toRpcAccount())
 			}
 		}
 		return accounts, nil
 	}
 	for _, supe := range supes.SuperUsers {
-		accounts = append(accounts, supe.toPkgAccount())
+		accounts = append(accounts, supe.toRpcAccount())
 	}
 	return accounts, nil
 }

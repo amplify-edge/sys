@@ -1,37 +1,9 @@
+[![build](https://github.com/amplify-edge/sys/actions/workflows/build.yml/badge.svg)](https://github.com/amplify-edge/sys/actions/workflows/build.yml)
+
 # sys
 
 # basics
 
-BUILD
+Build:
 
-```
-make this-build
-````
-
-RUN Server
-
-```
-make this-server-run
-````
-
-Run CLI 
-```
-make this-sdk-run
-````
-
-
-## Example
-
-RUN Server
-
-```
-make this-server-run
-````
-
-Run CLI with data
-```
-make this-example-sdk-auth
-````
-
-
-
+`make all`

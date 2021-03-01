@@ -2,17 +2,17 @@ package repo
 
 import (
 	"context"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strconv"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 	fileDao "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/filesvc/dao"
 )
 
-func (ad *SysAccountRepo) getAccountAndRole(ctx context.Context, id, email string) (*pkg.Account, error) {
+func (ad *SysAccountRepo) getAccountAndRole(ctx context.Context, id, email string) (*rpc.Account, error) {
 	queryParams := map[string]interface{}{}
 	if id != "" {
 		queryParams["id"] = id
@@ -34,7 +34,7 @@ func (ad *SysAccountRepo) getAccountAndRole(ctx context.Context, id, email strin
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "cannot find user role: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound})
 	}
-	var pkgRoles []*pkg.UserRoles
+	var pkgRoles []*rpc.UserRoles
 	for _, daoRole := range daoRoles {
 		pkgRole, err := daoRole.ToPkgRole()
 		if err != nil {
@@ -48,17 +48,17 @@ func (ad *SysAccountRepo) getAccountAndRole(ctx context.Context, id, email strin
 		if err != nil {
 			return nil, err
 		}
-		return acc.ToPkgAccount(pkgRoles, avatar.Binary)
+		return acc.ToRpcAccount(pkgRoles, avatar.Binary)
 	}
-	return acc.ToPkgAccount(pkgRoles, nil)
+	return acc.ToRpcAccount(pkgRoles, nil)
 }
 
-func (ad *SysAccountRepo) listAccountsAndRoles(ctx context.Context, filter *coredb.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*pkg.Account, *int64, error) {
+func (ad *SysAccountRepo) listAccountsAndRoles(ctx context.Context, filter *coredb.QueryParams, orderBy string, limit, cursor int64, sqlMatcher string) ([]*rpc.Account, *int64, error) {
 	listAccounts, next, err := ad.store.ListAccount(filter, orderBy, limit, cursor, sqlMatcher)
 	if err != nil {
 		return nil, nil, err
 	}
-	var accounts []*pkg.Account
+	var accounts []*rpc.Account
 
 	for _, acc := range listAccounts {
 		daoRoles, err := ad.store.ListRole(&coredb.QueryParams{Params: map[string]interface{}{
@@ -67,7 +67,7 @@ func (ad *SysAccountRepo) listAccountsAndRoles(ctx context.Context, filter *core
 		if err != nil {
 			return nil, nil, status.Errorf(codes.NotFound, "cannot find user roles: %v", sharedAuth.Error{Reason: sharedAuth.ErrAccountNotFound, Err: err})
 		}
-		var pkgRoles []*pkg.UserRoles
+		var pkgRoles []*rpc.UserRoles
 		for _, daoRole := range daoRoles {
 			pkgRole, err := daoRole.ToPkgRole()
 			if err != nil {
@@ -76,15 +76,15 @@ func (ad *SysAccountRepo) listAccountsAndRoles(ctx context.Context, filter *core
 			pkgRoles = append(pkgRoles, pkgRole)
 		}
 		var avatar *fileDao.File
-		var account *pkg.Account
+		var account *rpc.Account
 		if acc.AvatarResourceId != "" {
 			avatar, err = ad.frepo.DownloadFile("", acc.AvatarResourceId)
 			if err != nil {
 				return nil, nil, err
 			}
-			account, err = acc.ToPkgAccount(pkgRoles, avatar.Binary)
+			account, err = acc.ToRpcAccount(pkgRoles, avatar.Binary)
 		} else {
-			account, err = acc.ToPkgAccount(pkgRoles, nil)
+			account, err = acc.ToRpcAccount(pkgRoles, nil)
 		}
 		if err != nil {
 			return nil, nil, err

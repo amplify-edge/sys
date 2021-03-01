@@ -13,13 +13,13 @@ import (
 	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 )
 
-func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Context, *pkg.Account, error) {
+func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Context, *rpc.Account, error) {
 	claims, err := ad.ObtainAccessClaimsFromMetadata(ctx, true)
 	if err != nil {
 		return ctx, nil, err
@@ -33,7 +33,7 @@ func (ad *SysAccountRepo) accountFromClaims(ctx context.Context) (context.Contex
 	return newCtx, acc, nil
 }
 
-func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *rpc.AccountNewRequest) (*rpc.Account, error) {
 	if err := ad.allowNewAccount(ctx, in); err != nil {
 		ad.log.Debugf("creation of new account failed: %v", err)
 		return nil, err
@@ -57,7 +57,7 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 	ad.log.Debugf("Uploaded File from path: %s, id: %s", in.AvatarFilepath, fresp.GetId())
 	// Remember this is the key to success
 	in.AvatarFilepath = fresp.ResourceId
-	acc, err := ad.store.InsertFromPkgAccountRequest(in, false)
+	acc, err := ad.store.InsertFromRpcAccountRequest(in, false)
 	if err != nil {
 		ad.log.Debugf("error unable to create new account request: %v", err)
 		return nil, err
@@ -65,9 +65,9 @@ func (ad *SysAccountRepo) NewAccount(ctx context.Context, in *pkg.AccountNewRequ
 	return ad.getAccountAndRole(ctx, acc.ID, "")
 }
 
-func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.IdRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *rpc.IdRequest) (*rpc.Account, error) {
 	if in == nil {
-		return &pkg.Account{},
+		return &rpc.Account{},
 			status.Errorf(codes.InvalidArgument, "cannot get user account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	acc, err := ad.allowGetAccount(ctx, in)
@@ -84,11 +84,11 @@ func (ad *SysAccountRepo) GetAccount(ctx context.Context, in *pkg.IdRequest) (*p
 	return acc, nil
 }
 
-func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccountsRequest) (*pkg.ListAccountsResponse, error) {
+func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *rpc.ListAccountsRequest) (*rpc.ListAccountsResponse, error) {
 	var limit, cursor int64
 	var err error
 	if in == nil {
-		return &pkg.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+		return &rpc.ListAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot list user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	limit = in.PerPageEntries
 	filter, err := ad.allowListAccount(ctx)
@@ -115,52 +115,56 @@ func (ad *SysAccountRepo) ListAccounts(ctx context.Context, in *pkg.ListAccounts
 		return nil, err
 	}
 
-	return &pkg.ListAccountsResponse{
+	return &rpc.ListAccountsResponse{
 		Accounts:   accounts,
 		NextPageId: fmt.Sprintf("%d", next),
 	}, nil
 }
 
 // TODO @gutterbacon: In the absence of actual enforcement policy function, this method is a stub. We allow everyone to query anything at this point.
-func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *pkg.SearchAccountsRequest) (*pkg.SearchAccountsResponse, error) {
+func (ad *SysAccountRepo) SearchAccounts(ctx context.Context, in *rpc.SearchAccountsRequest) (*rpc.SearchAccountsResponse, error) {
 	var limit, cursor int64
 	var err error
 	if in == nil {
-		return &pkg.SearchAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot search user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+		return &rpc.SearchAccountsResponse{}, status.Errorf(codes.InvalidArgument, "cannot search user accounts: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
 	filter, err := ad.allowListAccount(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range in.Query {
+	query := map[string]interface{}{}
+	if err := utilities.UnmarshalJson(in.GetQuery(), &query); err != nil {
+		return nil, err
+	}
+	for k, v := range query {
 		filter.Params[k] = v
 	}
-	orderBy := in.SearchParam.OrderBy
-	if in.SearchParam.IsDescending {
+	orderBy := in.GetSearchParams().GetOrderBy()
+	if in.GetSearchParams().IsDescending {
 		orderBy += " DESC"
 	} else {
 		orderBy += " ASC"
 	}
-	cursor, err = ad.getCursor(in.SearchParam.CurrentPageId)
+	cursor, err = ad.getCursor(in.GetSearchParams().CurrentPageId)
 	if err != nil {
 		return nil, err
 	}
-	if in.SearchParam.PerPageEntries == 0 {
+	if in.GetSearchParams().PerPageEntries == 0 {
 		limit = dao.DefaultLimit
 	}
-	accounts, next, err := ad.listAccountsAndRoles(ctx, filter, orderBy, limit, cursor, in.SearchParam.Matcher)
+	accounts, next, err := ad.listAccountsAndRoles(ctx, filter, orderBy, limit, cursor, in.GetSearchParams().Matcher)
 	if err != nil {
 		return nil, err
 	}
-	return &pkg.SearchAccountsResponse{
-		SearchResponse: &pkg.ListAccountsResponse{
+	return &rpc.SearchAccountsResponse{
+		SearchResponse: &rpc.ListAccountsResponse{
 			Accounts:   accounts,
 			NextPageId: fmt.Sprintf("%d", next),
 		},
 	}, nil
 }
 
-func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.AssignAccountToRoleRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *rpc.AssignAccountToRoleRequest) (*rpc.Account, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot assign user Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
@@ -177,16 +181,16 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		return nil, err
 	}
 	// ORG ADMIN
-	if in.Role.OrgID != "" && in.Role.ProjectID == "" {
+	if in.Role.OrgId != "" && in.Role.ProjectId == "" {
 		for _, r := range roles {
 			// can only assign for their own org
-			if r.OrgId == in.Role.OrgID {
+			if r.OrgId == in.Role.OrgId {
 				if err := ad.store.UpdateRole(&dao.Role{
 					ID:        r.ID,
 					AccountId: r.AccountId,
 					Role:      int(in.Role.Role),
 					ProjectId: r.ProjectId,
-					OrgId:     in.Role.OrgID,
+					OrgId:     in.Role.OrgId,
 					CreatedAt: r.CreatedAt,
 					UpdatedAt: utilities.CurrentTimestamp(),
 				}); err != nil {
@@ -197,16 +201,16 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 	}
 	// PROJECT ADMIN
-	if (in.Role.OrgID != "" && in.Role.ProjectID != "") || (in.Role.OrgID == "" && in.Role.ProjectID != "") {
+	if (in.Role.OrgId != "" && in.Role.ProjectId != "") || (in.Role.OrgId == "" && in.Role.ProjectId != "") {
 		for _, r := range roles {
 			// can only assign for their own project
-			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+			if r.OrgId == in.Role.OrgId && r.ProjectId == in.Role.ProjectId {
 				if err := ad.store.UpdateRole(&dao.Role{
 					ID:        r.ID,
 					AccountId: r.AccountId,
 					Role:      int(in.Role.Role),
-					ProjectId: in.Role.ProjectID,
-					OrgId:     in.Role.OrgID,
+					ProjectId: in.Role.ProjectId,
+					OrgId:     in.Role.OrgId,
 					CreatedAt: r.CreatedAt,
 					UpdatedAt: utilities.CurrentTimestamp(),
 				}); err != nil {
@@ -217,31 +221,13 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 	}
 	// SUPERADMIN
-	if in.Role.Role == pkg.SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.Role) {
-		//for _, r := range roles {
-		//	if err = ad.store.DeleteRole(r.ID); err != nil {
-		//		return nil, err
-		//	}
-		//}
-		//newRole := &dao.Role{
-		//	ID:        utilities.NewID(),
-		//	AccountId: in.AssignedAccountId,
-		//	Role:      int(in.Role.Role),
-		//	ProjectId: "",
-		//	OrgId:     "",
-		//	CreatedAt: utilities.CurrentTimestamp(),
-		//	UpdatedAt: utilities.CurrentTimestamp(),
-		//}
-		//if err = ad.store.InsertRole(newRole); err != nil {
-		//	return nil, err
-		//}
-		//return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
+	if in.Role.Role == rpc.Roles_SUPERADMIN && sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{
 			Reason: sharedAuth.ErrInvalidParameters,
 			Err:    errors.New("superadmin is not assignable"),
 		}.Error())
-	} else if sharedAuth.IsSuperadmin(curAcc.Role) {
-		if len(roles) == 1 && roles[0].Role == int(pkg.GUEST) {
+	} else if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
+		if len(roles) == 1 && roles[0].Role == int(rpc.Roles_GUEST) {
 			ad.log.Debug("deleting user guest role")
 			if err := ad.store.DeleteRole(roles[0].ID); err != nil {
 				return nil, err
@@ -249,7 +235,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 		for _, r := range roles {
 			// if exists, update current record
-			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+			if r.OrgId == in.Role.OrgId && r.ProjectId == in.Role.ProjectId {
 				if err = ad.store.UpdateRole(&dao.Role{
 					ID:        r.ID,
 					AccountId: r.AccountId,
@@ -268,8 +254,8 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
 			Role:      int(in.Role.Role),
-			ProjectId: in.Role.ProjectID,
-			OrgId:     in.Role.OrgID,
+			ProjectId: in.Role.ProjectId,
+			OrgId:     in.Role.OrgId,
 			CreatedAt: utilities.CurrentTimestamp(),
 			UpdatedAt: utilities.CurrentTimestamp(),
 		}
@@ -277,7 +263,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			return nil, err
 		}
 		go func() {
-			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
+			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgId, in.Role.ProjectId))
 			joinedMetrics.Inc()
 		}()
 
@@ -287,11 +273,11 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	// Regular Users can only allow themselves to be regular user in other project
 	if sharedAuth.AllowSelf(curAcc, in.AssignedAccountId) {
 		requestedRole := in.Role.Role
-		if requestedRole != pkg.USER {
+		if requestedRole != rpc.Roles_USER {
 			return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
 		}
 		for _, r := range roles {
-			if r.OrgId == in.Role.OrgID && r.ProjectId == in.Role.ProjectID {
+			if r.OrgId == in.Role.OrgId && r.ProjectId == in.Role.ProjectId {
 				return ad.getAccountAndRole(ctx, in.AssignedAccountId, "")
 			}
 		}
@@ -299,8 +285,8 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 			ID:        utilities.NewID(),
 			AccountId: in.AssignedAccountId,
 			Role:      int(requestedRole),
-			ProjectId: in.Role.ProjectID,
-			OrgId:     in.Role.OrgID,
+			ProjectId: in.Role.ProjectId,
+			OrgId:     in.Role.OrgId,
 			CreatedAt: utilities.CurrentTimestamp(),
 			UpdatedAt: utilities.CurrentTimestamp(),
 		}); err != nil {
@@ -308,7 +294,7 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 		}
 
 		go func() {
-			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgID, in.Role.ProjectID))
+			joinedMetrics := metrics.GetOrCreateCounter(fmt.Sprintf(telemetry.JoinProjectLabel, telemetry.METRICS_JOINED_PROJECT, in.Role.OrgId, in.Role.ProjectId))
 			joinedMetrics.Inc()
 		}()
 
@@ -317,11 +303,11 @@ func (ad *SysAccountRepo) AssignAccountToRole(ctx context.Context, in *pkg.Assig
 	return nil, status.Errorf(codes.InvalidArgument, "cannot update role: invalid role is specified")
 }
 
-func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.AccountUpdateRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *rpc.AccountUpdateRequest) (*rpc.Account, error) {
 	if in == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	cur, err := ad.allowGetAccount(ctx, &pkg.IdRequest{Id: in.Id})
+	cur, err := ad.allowGetAccount(ctx, &rpc.IdRequest{Id: in.Id})
 	if err != nil {
 		return nil, err
 	}
@@ -356,16 +342,16 @@ func (ad *SysAccountRepo) UpdateAccount(ctx context.Context, in *pkg.AccountUpda
 	return ad.getAccountAndRole(ctx, in.Id, "")
 }
 
-func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAccountRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *rpc.DisableAccountRequest) (*rpc.Account, error) {
 	if in == nil {
-		return &pkg.Account{}, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
+		return &rpc.Account{}, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	acc, err := ad.allowGetAccount(ctx, &pkg.IdRequest{Id: in.AccountId})
+	acc, err := ad.allowGetAccount(ctx, &rpc.IdRequest{Id: in.AccountId})
 	if err != nil {
 		return nil, err
 	}
 	acc.Disabled = true
-	req, err := ad.store.FromPkgAccount(acc)
+	req, err := ad.store.FromRpcAccount(acc)
 	if err != nil {
 		return nil, err
 	}
@@ -376,11 +362,11 @@ func (ad *SysAccountRepo) DisableAccount(ctx context.Context, in *pkg.DisableAcc
 	return acc, nil
 }
 
-func (ad *SysAccountRepo) DeleteAccount(ctx context.Context, in *pkg.DisableAccountRequest) (*emptypb.Empty, error) {
+func (ad *SysAccountRepo) DeleteAccount(ctx context.Context, in *rpc.DisableAccountRequest) (*emptypb.Empty, error) {
 	if in == nil {
 		return &emptypb.Empty{}, status.Errorf(codes.InvalidArgument, "cannot update Account: %v", sharedAuth.Error{Reason: sharedAuth.ErrInvalidParameters})
 	}
-	_, err := ad.allowGetAccount(ctx, &pkg.IdRequest{Id: in.AccountId})
+	_, err := ad.allowGetAccount(ctx, &rpc.IdRequest{Id: in.AccountId})
 	if err != nil {
 		return nil, err
 	}

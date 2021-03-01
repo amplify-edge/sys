@@ -7,38 +7,38 @@ import (
 
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 )
 
-func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *pkg.AccountNewRequest) error {
+func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *rpc.AccountNewRequest) error {
 	ad.log.Debugf("getting permission for new account creation")
 	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
 	// allow superadmin to create account
-	if allowed := sharedAuth.IsSuperadmin(curAcc.Role); allowed {
+	if allowed := sharedAuth.IsSuperadmin(curAcc.GetRoles()); allowed {
 		return nil
 	}
 	if len(in.Roles) > 0 {
-		if in.Roles[0].OrgID != "" && in.Roles[0].ProjectID == "" {
+		if in.Roles[0].OrgId != "" && in.Roles[0].ProjectId == "" {
 			// allow org admin
-			ad.log.Debugf("expecting org admin of: %s", in.Roles[0].OrgID)
-			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, in.Roles[0].OrgID)
+			ad.log.Debugf("expecting org admin of: %s", in.Roles[0].OrgId)
+			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, in.Roles[0].OrgId)
 			if err != nil || !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 			}
 			return nil
-		} else if (in.Roles[0].OrgID == "" && in.Roles[0].ProjectID != "") || (in.Roles[0].OrgID != "" && in.Roles[0].ProjectID != "") {
+		} else if (in.Roles[0].OrgId == "" && in.Roles[0].ProjectId != "") || (in.Roles[0].OrgId != "" && in.Roles[0].ProjectId != "") {
 			// allow project admin
-			ad.log.Debugf("expecting project admin of org: %s, project: %s", in.Roles[0].OrgID)
-			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, "", in.Roles[0].ProjectID)
+			ad.log.Debugf("expecting project admin of org: %s, project: %s", in.Roles[0].OrgId)
+			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, "", in.Roles[0].ProjectId)
 			if err != nil || !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 			}
 			return nil
-		} else if in.Roles[0].OrgID == "" && in.Roles[0].ProjectID == "" {
+		} else if in.Roles[0].OrgId == "" && in.Roles[0].ProjectId == "" {
 			ad.log.Debugf("expecting superadmin")
 			if allowed := sharedAuth.IsSuperadmin(in.Roles); !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
@@ -51,25 +51,25 @@ func (ad *SysAccountRepo) allowNewAccount(ctx context.Context, in *pkg.AccountNe
 	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
 
-func hasOrgIds(in *pkg.Account) bool {
-	for _, r := range in.Role {
-		if r.OrgID != "" {
+func hasOrgIds(in *rpc.Account) bool {
+	for _, r := range in.GetRoles() {
+		if r.OrgId != "" {
 			return true
 		}
 	}
 	return false
 }
 
-func hasProjectIds(in *pkg.Account) bool {
-	for _, r := range in.Role {
-		if r.ProjectID != "" {
+func hasProjectIds(in *rpc.Account) bool {
+	for _, r := range in.GetRoles() {
+		if r.ProjectId != "" {
 			return true
 		}
 	}
 	return false
 }
 
-func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *pkg.IdRequest) (*pkg.Account, error) {
+func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *rpc.IdRequest) (*rpc.Account, error) {
 	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
@@ -78,23 +78,23 @@ func (ad *SysAccountRepo) allowGetAccount(ctx context.Context, idRequest *pkg.Id
 	if err != nil {
 		return nil, err
 	}
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return in, nil
 	}
 	if allowed := sharedAuth.AllowSelf(curAcc, in.Id); allowed {
 		return in, nil
 	}
 	if hasOrgIds(curAcc) && !hasProjectIds(curAcc) {
-		for _, r := range in.Role {
-			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, r.OrgID)
+		for _, r := range in.GetRoles() {
+			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, r.OrgId)
 			if allowed && err != nil {
 				return in, nil
 			}
 		}
 		return nil, status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	} else if hasOrgIds(curAcc) && hasProjectIds(curAcc) {
-		for _, r := range in.Role {
-			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, r.OrgID, r.ProjectID)
+		for _, r := range in.GetRoles() {
+			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, r.OrgId, r.ProjectId)
 			if allowed && err != nil {
 				return in, nil
 			}
@@ -112,19 +112,19 @@ func (ad *SysAccountRepo) allowListAccount(ctx context.Context) (*coresvc.QueryP
 		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
 	// allow all if it's superadmin
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return &coresvc.QueryParams{Params: map[string]interface{}{}}, nil
 	}
-	isAdm, idx := sharedAuth.IsAdmin(curAcc.Role)
+	isAdm, idx := sharedAuth.IsAdmin(curAcc.GetRoles())
 	if isAdm {
 		params := map[string]interface{}{}
-		if curAcc.Role[*idx].OrgID != "" {
-			params["org_id"] = curAcc.Role[*idx].OrgID
+		if curAcc.Roles[*idx].OrgId != "" {
+			params["org_id"] = curAcc.Roles[*idx].OrgId
 			// only allow org admin to query its own org
 			return &coresvc.QueryParams{Params: params}, nil
-		} else if curAcc.Role[*idx].ProjectID != "" {
-			params["org_id"] = curAcc.Role[*idx].OrgID
-			params["project_id"] = curAcc.Role[*idx].ProjectID
+		} else if curAcc.Roles[*idx].ProjectId != "" {
+			params["org_id"] = curAcc.Roles[*idx].OrgId
+			params["project_id"] = curAcc.Roles[*idx].ProjectId
 			// only allow project admin to query its own project
 			return &coresvc.QueryParams{Params: params}, nil
 		} else {
@@ -134,27 +134,27 @@ func (ad *SysAccountRepo) allowListAccount(ctx context.Context) (*coresvc.QueryP
 	return &coresvc.QueryParams{Params: map[string]interface{}{"id": curAcc.Id}}, nil
 }
 
-func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *pkg.AssignAccountToRoleRequest) error {
+func (ad *SysAccountRepo) allowAssignToRole(ctx context.Context, in *rpc.AssignAccountToRoleRequest) error {
 	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
 	// allow superadmin to do anything
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return nil
 	}
-	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.GetRoles())
 	if isAdm {
-		if in.Role.OrgID != "" && in.Role.ProjectID == "" {
+		if in.Role.OrgId != "" && in.Role.ProjectId == "" {
 			// Org Admin
-			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, in.Role.OrgID)
+			allowed, err := sharedAuth.AllowOrgAdmin(curAcc, in.Role.OrgId)
 			if err != nil || !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 			}
 			return nil
-		} else if in.Role.ProjectID != "" {
+		} else if in.Role.ProjectId != "" {
 			// Project Admin
-			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, in.Role.OrgID, in.Role.ProjectID)
+			allowed, err := sharedAuth.AllowProjectAdmin(curAcc, in.Role.OrgId, in.Role.ProjectId)
 			if err != nil || !allowed {
 				return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 			}
@@ -175,27 +175,27 @@ func (ad *SysAccountRepo) allowNewOrg(ctx context.Context) error {
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return nil
 	}
 	return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 }
 
 // only allow superadmin and specified org admins to edit / update / delete org
-func (ad *SysAccountRepo) allowUpdateDeleteOrg(ctx context.Context, orgId string) error {
+func (ad *SysAccountRepo) allowUpdateDeleteOrg(ctx context.Context, OrgId string) error {
 	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return nil
 	}
 	// ORG ADMIN
-	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.GetRoles())
 	if !isAdm {
 		return status.Errorf(codes.PermissionDenied, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	match, err := sharedAuth.AllowOrgAdmin(curAcc, orgId)
+	match, err := sharedAuth.AllowOrgAdmin(curAcc, OrgId)
 	if err != nil {
 		return err
 	}
@@ -206,18 +206,18 @@ func (ad *SysAccountRepo) allowUpdateDeleteOrg(ctx context.Context, orgId string
 }
 
 // only allow org admin or superadmin to create new project.
-func (ad *SysAccountRepo) allowNewProject(ctx context.Context, orgId string) error {
+func (ad *SysAccountRepo) allowNewProject(ctx context.Context, OrgId string) error {
 	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return nil
 	}
 	// ORG ADMIN
-	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.GetRoles())
 	if isAdm {
-		match, err := sharedAuth.AllowOrgAdmin(curAcc, orgId)
+		match, err := sharedAuth.AllowOrgAdmin(curAcc, OrgId)
 		if err != nil {
 			return err
 		}
@@ -230,19 +230,19 @@ func (ad *SysAccountRepo) allowNewProject(ctx context.Context, orgId string) err
 }
 
 // only allow project admin, org admin, or superadmin to edit / update / delete the project
-func (ad *SysAccountRepo) allowUpdateDeleteProject(ctx context.Context, orgId string, projectId string) error {
+func (ad *SysAccountRepo) allowUpdateDeleteProject(ctx context.Context, OrgId string, ProjectId string) error {
 	_, curAcc, err := ad.accountFromClaims(ctx)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
-	if sharedAuth.IsSuperadmin(curAcc.Role) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) {
 		return nil
 	}
-	isAdm, _ := sharedAuth.IsAdmin(curAcc.Role)
+	isAdm, _ := sharedAuth.IsAdmin(curAcc.GetRoles())
 	if isAdm {
 		// ORG ADMIN
-		if orgId != "" && projectId == "" {
-			match, err := sharedAuth.AllowOrgAdmin(curAcc, orgId)
+		if OrgId != "" && ProjectId == "" {
+			match, err := sharedAuth.AllowOrgAdmin(curAcc, OrgId)
 			if err != nil {
 				return err
 			}
@@ -252,8 +252,8 @@ func (ad *SysAccountRepo) allowUpdateDeleteProject(ctx context.Context, orgId st
 			return nil
 		}
 		// PROJECT ADMIN
-		if orgId != "" && projectId != "" {
-			match, err := sharedAuth.AllowProjectAdmin(curAcc, orgId, projectId)
+		if OrgId != "" && ProjectId != "" {
+			match, err := sharedAuth.AllowProjectAdmin(curAcc, OrgId, ProjectId)
 			if err != nil {
 				return err
 			}

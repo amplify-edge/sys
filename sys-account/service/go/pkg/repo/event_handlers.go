@@ -4,26 +4,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	sharedAuth "go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg/shared"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/dao"
 
-	sharedCore "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg"
 	sharedBus "go.amplifyedge.org/sys-share-v2/sys-core/service/go/pkg/bus"
 	"go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 )
 
-func (ad *SysAccountRepo) onDeleteProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onDeleteProject(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const projectIdKey = "project_id"
 	deleteRequestMap, err := getEventIdMap(in, projectIdKey)
 	if err != nil {
 		return nil, err
 	}
 	projId := deleteRequestMap[projectIdKey].(string)
-	_, err = ad.DeleteProject(ctx, &pkg.IdRequest{Id: projId})
+	_, err = ad.DeleteProject(ctx, &rpc.IdRequest{Id: projId})
 	if err != nil {
 		return nil, err
 	}
@@ -33,14 +33,14 @@ func (ad *SysAccountRepo) onDeleteProject(ctx context.Context, in *sharedCore.Ev
 	}, nil
 }
 
-func (ad *SysAccountRepo) onDeleteOrg(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onDeleteOrg(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const orgIdKey = "org_id"
 	deleteRequestMap, err := getEventIdMap(in, orgIdKey)
 	if err != nil {
 		return nil, err
 	}
 	orgId := deleteRequestMap[orgIdKey].(string)
-	_, err = ad.DeleteOrg(ctx, &pkg.IdRequest{Id: orgId})
+	_, err = ad.DeleteOrg(ctx, &rpc.IdRequest{Id: orgId})
 	if err != nil {
 		return nil, err
 	}
@@ -50,14 +50,14 @@ func (ad *SysAccountRepo) onDeleteOrg(ctx context.Context, in *sharedCore.EventR
 	}, nil
 }
 
-func (ad *SysAccountRepo) onDeleteAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onDeleteAccount(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const accountIdKey = "account_id"
 	deleteRequestMap, err := getEventIdMap(in, accountIdKey)
 	if err != nil {
 		return nil, err
 	}
 	accountId := deleteRequestMap[accountIdKey].(string)
-	_, err = ad.DisableAccount(ctx, &pkg.DisableAccountRequest{AccountId: accountId})
+	_, err = ad.DisableAccount(ctx, &rpc.DisableAccountRequest{AccountId: accountId})
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (ad *SysAccountRepo) onDeleteAccount(ctx context.Context, in *sharedCore.Ev
 	}, nil
 }
 
-func getEventIdMap(in *sharedCore.EventRequest, key string) (map[string]interface{}, error) {
+func getEventIdMap(in *coreRpc.EventRequest, key string) (map[string]interface{}, error) {
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func getEventIdMap(in *sharedCore.EventRequest, key string) (map[string]interfac
 	return requestMap, nil
 }
 
-func (ad *SysAccountRepo) onCheckProjectExists(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onCheckProjectExists(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const projectIdKey = "sys_account_project_ref_id"
 	const projectNameKey = "sys_account_project_ref_name"
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
@@ -105,7 +105,7 @@ func (ad *SysAccountRepo) onCheckProjectExists(ctx context.Context, in *sharedCo
 	}, nil
 }
 
-func (ad *SysAccountRepo) onCheckOrgExists(_ context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onCheckOrgExists(_ context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const orgIdKey = "sys_account_org_ref_id"
 	const orgNameKey = "sys_account_org_ref_name"
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
@@ -129,7 +129,7 @@ func (ad *SysAccountRepo) onCheckOrgExists(_ context.Context, in *sharedCore.Eve
 	}, nil
 }
 
-func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const accountIdKey = "sys_account_user_ref_id"
 	const accountNameKey = "sys_account_user_ref_name"
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
@@ -153,7 +153,7 @@ func (ad *SysAccountRepo) onCheckAccountExists(ctx context.Context, in *sharedCo
 	}, nil
 }
 
-func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const accountIdKey = "sys_account_user_ref_id"
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
 	if err != nil {
@@ -173,7 +173,7 @@ func (ad *SysAccountRepo) onGetAccountEmail(ctx context.Context, in *sharedCore.
 	}, nil
 }
 
-func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	if err := ad.store.ResetAll(); err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (ad *SysAccountRepo) onResetAllSysAccount(ctx context.Context, in *sharedCo
 
 // onCheckAllowProject checks current user account claims see if they are allowed to do any data operations on DiscoProject
 // general rule is only superadmin, org admin, or the project admin for the specific project are allowed to do anything.
-func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const orgIdKey = "org_id"
 	const projectIdKey = "project_id"
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
@@ -211,7 +211,7 @@ func (ad *SysAccountRepo) onCheckAllowProject(ctx context.Context, in *sharedCor
 
 // onCheckAllowSurveyUser only allows either the superuesr (for backup reason) or the user itself to be able to
 // update or delete survey user data.
-func (ad *SysAccountRepo) onCheckAllowSurveyUser(ctx context.Context, in *sharedCore.EventRequest) (map[string]interface{}, error) {
+func (ad *SysAccountRepo) onCheckAllowSurveyUser(ctx context.Context, in *coreRpc.EventRequest) (map[string]interface{}, error) {
 	const accountIdKey = "user_id"
 	requestMap, err := coredb.UnmarshalToMap(in.JsonPayload)
 	if err != nil {
@@ -228,7 +228,7 @@ func (ad *SysAccountRepo) onCheckAllowSurveyUser(ctx context.Context, in *shared
 		return nil, status.Errorf(codes.Unauthenticated, sharedAuth.Error{Reason: sharedAuth.ErrRequestUnauthenticated, Err: err}.Error())
 	}
 	// allow superadmin to do anything
-	if sharedAuth.IsSuperadmin(curAcc.Role) || sharedAuth.AllowSelf(curAcc, requestMap[accountIdKey].(string)) {
+	if sharedAuth.IsSuperadmin(curAcc.GetRoles()) || sharedAuth.AllowSelf(curAcc, requestMap[accountIdKey].(string)) {
 		return map[string]interface{}{
 			"allowed": true,
 		}, nil

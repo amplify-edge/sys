@@ -1,6 +1,7 @@
 package repo
 
 import (
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 	"go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/superusers"
 	"go.amplifyedge.org/sys-v2/sys-account/service/go/pkg/telemetry"
@@ -30,6 +31,9 @@ type (
 		//initialSuperusersMail []string
 		bizmetrics *telemetry.SysAccountMetrics
 		superDao   *superusers.SuperUserIO
+		*rpc.UnimplementedAccountServiceServer
+		*rpc.UnimplementedAuthServiceServer
+		*rpc.UnimplementedOrgProjServiceServer
 	}
 )
 

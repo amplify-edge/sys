@@ -10,6 +10,7 @@ import (
 	"github.com/genjidb/genji/sql/query"
 	sharedConfig "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 	commonCfg "go.amplifyedge.org/sys-share-v2/sys-core/service/config/common"
+	coreRpc "go.amplifyedge.org/sys-share-v2/sys-core/service/go/rpc/v2"
 	log "go.amplifyedge.org/sys-share-v2/sys-core/service/logging"
 	"github.com/robfig/cron/v3"
 	"github.com/segmentio/encoding/json"
@@ -27,6 +28,7 @@ const (
 
 type AllDBService struct {
 	RegisteredDBs []*CoreDB
+	*coreRpc.UnimplementedDbAdminServiceServer
 }
 
 func NewAllDBService() *AllDBService {

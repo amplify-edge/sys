@@ -3,8 +3,8 @@ package dao
 import (
 	"errors"
 	"fmt"
+	rpc "go.amplifyedge.org/sys-share-v2/sys-account/service/go/rpc/v2"
 
-	"go.amplifyedge.org/sys-share-v2/sys-account/service/go/pkg"
 	utilities "go.amplifyedge.org/sys-share-v2/sys-core/service/config"
 	coresvc "go.amplifyedge.org/sys-v2/sys-core/service/go/pkg/coredb"
 
@@ -22,24 +22,24 @@ type Role struct {
 	UpdatedAt int64  `genji:"updated_at"`
 }
 
-func (a *AccountDB) FromPkgRoleRequest(role *pkg.UserRoles, accountId string) *Role {
+func (a *AccountDB) FromPkgRoleRequest(role *rpc.UserRoles, accountId string) *Role {
 	return &Role{
 		ID:        utilities.NewID(),
 		AccountId: accountId,
 		Role:      int(role.Role),
-		ProjectId: role.ProjectID,
-		OrgId:     role.OrgID,
+		ProjectId: role.ProjectId,
+		OrgId:     role.OrgId,
 		CreatedAt: utilities.CurrentTimestamp(),
 	}
 }
 
-func (a *AccountDB) FromPkgNewRoleRequest(role *pkg.NewUserRoles, accountId string) *Role {
+func (a *AccountDB) FromPkgNewRoleRequest(role *rpc.NewUserRoles, accountId string) *Role {
 	return &Role{
 		ID:        utilities.NewID(),
 		AccountId: accountId,
 		Role:      int(role.Role),
-		ProjectId: role.ProjectID,
-		OrgId:     role.OrgID,
+		ProjectId: role.ProjectId,
+		OrgId:     role.OrgId,
 		CreatedAt: utilities.CurrentTimestamp(),
 	}
 }
@@ -56,19 +56,19 @@ func (a *AccountDB) FetchRoles(accountId string) ([]*Role, error) {
 	return listRoles, nil
 }
 
-func (p *Role) ToPkgRole() (*pkg.UserRoles, error) {
+func (p *Role) ToPkgRole() (*rpc.UserRoles, error) {
 	role := p.Role
-	if role == int(pkg.INVALID) || role > int(pkg.SUPERADMIN) {
+	if role == int(rpc.Roles_INVALID) || role > int(rpc.Roles_SUPERADMIN) {
 		return nil, errors.New("invalid role")
 	}
-	userRole := &pkg.UserRoles{
-		Role: pkg.Roles(role),
+	userRole := &rpc.UserRoles{
+		Role: rpc.Roles(role),
 	}
 	if p.OrgId != "" {
-		userRole.OrgID = p.OrgId
+		userRole.OrgId = p.OrgId
 	}
 	if p.ProjectId != "" {
-		userRole.ProjectID = p.ProjectId
+		userRole.ProjectId = p.ProjectId
 	}
 	return userRole, nil
 }
