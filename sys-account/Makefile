@@ -77,7 +77,7 @@ config-clean:
 #	rm -rf $(EXAMPLE_SYS_ACCOUNT_CFG_PATH)
 
 config-dep:
-	cd $(SERVER_DIR) && jb install && jb update
+	cd $(SERVER_DIR) && booty jb install && booty jb update
 
 ## Build and Run Server Example (Temporary until structure/stack is fixed)
 ex-server-run:

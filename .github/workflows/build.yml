@@ -37,7 +37,15 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
 
-      - name: Check out THIS code into the Go module directory
+      - name: Check out sys-share code into the Go module directory
+        uses: actions/checkout@v2
+        with:
+          ref: master
+          repository: amplify-edge/sys-share
+          path: ${{ github.workspace }}/go/src/github.com/amplify-edge/sys-share
+
+
+      - name: Check out sys code into the Go module directory
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
