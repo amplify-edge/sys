@@ -1,6 +1,6 @@
 module go.amplifyedge.org/sys-v2
 
-go 1.15
+go 1.16
 
 replace go.amplifyedge.org/sys-share-v2 => ../sys-share/
 
