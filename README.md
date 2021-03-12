@@ -1,6 +1,8 @@
 
 # sys
 
+global code
+
 # basics
 
 Build:
