@@ -24,8 +24,8 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0
 	go.amplifyedge.org/sys-share-v2 v0.0.0-00010101000000-000000000000
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/net v0.7.0
 	google.golang.org/grpc v1.35.0
 	google.golang.org/grpc/examples v0.0.0-20210205041354-b753f4903c1b // indirect
 	google.golang.org/protobuf v1.25.0
